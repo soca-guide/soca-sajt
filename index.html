@@ -10,12 +10,21 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>QR Guest Guide</title>
+  <link rel="manifest" href="./manifest.json">
   <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
-  <!-- Bump ?v= on deploy for cache-bust (e.g. 20250207-1 = YYYYMMDD-N) -->
-  <link rel="stylesheet" href="./assets/app.css?v=1.2">
+  <!-- Bump ?v= on deploy for cache-bust (e.g. 20250219-1 = YYYYMMDD-N) -->
+  <link rel="stylesheet" href="./assets/app.css?v=20250219-1">
   <script>window.dataSdk=window.dataSdk||{};</script>
  </head>
- <body class="h-full"><!-- Welcome Overlay -->
+ <body class="h-full"><!--
+  STRUCTURE (for maintainability): Main entry index.html.
+  Cards/sections: Welcome Overlay | Hero | Quick Actions | Emergency panel | Rules panel | Parking panel |
+  Menu grid (Nujno, Parkiranje, Restavracije, Adrenalin/Aktivnosti, Znamenitosti, Daily essentials, Taxi/Bus, Soča Live, Izgubljeno) |
+  Recommendations panel | Info panel | Lightbox | Attractions screen | Trip Ideas | Daily Essentials | Taxi/Bus | Adrenalin screen |
+  Feedback modal | iframeModal (Restavracije, Soča Live, etc.). Logic: assets/app.js (all cards), assets/i18n.js, assets/modals.js.
+  Subpages: restavracije/, pravila/, soca-live/, izgubljeno-nadjeno/, rezervisi-ponovo/, virtuelna-tura/. TODO: optional split of app.js by card later.
+  -->
+ <!-- Welcome Overlay -->
   <div id="welcome-overlay">
    <div class="welcome-content">
     <div class="welcome-icon">
@@ -27,7 +36,7 @@
   </div><!-- Main App -->
   <div id="app-container"><!-- Glass Header -->
    <header class="glass-header">
-    <iframe class="weather-bg" src="weather-animations.html?v=20250207-1" title="Weather background"></iframe>
+    <iframe class="weather-bg" src="weather-animations.html?v=20250219-1" title="Weather background"></iframe>
     <div id="header-weather-scene" class="header-weather-scene" aria-hidden="true"></div>
     <div id="header-moon" class="header-moon" aria-hidden="true"></div>
     <div class="header-content">
@@ -363,10 +372,10 @@
    </div>
   </div><!-- Footer Attribution -->
   <footer class="app-footer" id="app-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
- <script src="./assets/config.js?v=20250207-2"></script>
- <script src="./assets/i18n.js?v=20250207-4"></script>
- <script src="./assets/utils.js?v=20250207-2"></script>
- <script src="./assets/app.js?v=20250207-3"></script>
+ <script src="./assets/config.js?v=20250219-1"></script>
+ <script src="./assets/i18n.js?v=20250219-1"></script>
+ <script src="./assets/utils.js?v=20250219-1"></script>
+ <script src="./assets/app.js?v=20250219-1"></script>
  <!-- Modal System -->
  <div id="iframeModal" class="vt-modal" aria-hidden="true">
   <div class="vt-overlay" id="vtOverlay"></div>
@@ -379,7 +388,7 @@
  </div>
  <script>
  (function(){
-   var __BUILD_ID='20250207-2'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
+   var __BUILD_ID='20250219-1'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
    document.write('<link rel="stylesheet" href="./assets/modals.css?v='+__BUILD_ID+'">');
    document.write('<script src="./assets/modals.js?v='+__BUILD_ID+'"><\/script>');
  })();
@@ -404,6 +413,16 @@
   }
    document.addEventListener('visibilitychange',panicUnlockScroll);
    window.addEventListener('pageshow',panicUnlockScroll);
+ })();
+ </script>
+ <script>
+ (function(){
+   if (!('serviceWorker' in navigator)) return;
+   navigator.serviceWorker.register('./sw.js').then(function(reg){
+     reg.addEventListener('updatefound',function(){ if (reg.installing) reg.installing.addEventListener('statechange',function(){ if (this.state==='installed'&&navigator.serviceWorker.controller) { console.log('New version available'); this.postMessage('skipWaiting'); } }); });
+     if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+   }).catch(function(){});
+   navigator.serviceWorker.addEventListener('controllerchange',function(){ window.location.reload(); });
  })();
  </script>
  </body>  

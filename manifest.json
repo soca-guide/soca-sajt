@@ -1,0 +1,9 @@
+{
+  "name": "Dolina Soče – Vodič za obiskovalce",
+  "short_name": "Soča Guide",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1612",
+  "theme_color": "#22d3ee",
+  "icons": []
+}
