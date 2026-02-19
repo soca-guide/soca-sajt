@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Restavracije & Kavarne – Bovec</title>
+  <link rel="stylesheet" href="../assets/app.css?v=1.4">
+  <style>
+    .rest-page { min-height: 100vh; background: linear-gradient(135deg, #0a1612 0%, #0f1e18 100%); color: #f0fdf4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .rest-header { position: sticky; top: 0; z-index: 10; background: rgba(16, 32, 32, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(34, 211, 238, 0.22); padding: 1rem; padding-top: calc(1rem + env(safe-area-inset-top)); display: flex; align-items: center; gap: 1rem; }
+    .rest-back { background: transparent; border: none; color: #f0fdf4; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; line-height: 1; }
+    .rest-title { font-size: 1.25rem; font-weight: 700; flex: 1; }
+    .rest-body { max-width: 480px; margin: 0 auto; padding: 1rem; padding-bottom: calc(2rem + env(safe-area-inset-bottom)); }
+    #restGrid { display: block; }
+    .rest-place-title { font-size: 1.125rem; font-weight: 700; color: #22d3ee; margin: 1.25rem 0 0.75rem; padding-bottom: 0.25rem; }
+    .rest-place-title:first-child { margin-top: 0; }
+    .rest-grid-sec { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; }
+    @media (max-width: 380px) { .rest-grid-sec { grid-template-columns: 1fr; } }
+    .rest-card { background: rgba(16, 32, 32, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(34, 211, 238, 0.22); border-radius: 10px; padding: 0.5rem 0.6rem; min-height: auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+    .rest-card-content { padding: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+    .rest-card-title { font-size: 0.875rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rest-card-type { font-size: 0.75rem; color: #22d3ee; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rest-card-desc { display: none; }
+    .rest-rating { display: none; }
+    .rest-actions { flex-shrink: 0; display: flex; gap: 0.35rem; }
+    .rest-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.3rem 0.55rem; font-size: 0.75rem; font-weight: 600; background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; text-decoration: none; transition: all 0.2s ease; }
+    .rest-btn:hover { background: rgba(6, 182, 212, 0.25); }
+  </style>
+</head>
+<body class="rest-page">
+  <header class="rest-header">
+    <button id="restBack" class="rest-back" type="button">←</button>
+    <div class="rest-title" id="restPageTitle">Restavracije & Kavarne</div>
+  </header>
+  <main class="rest-body">
+    <div class="rest-grid" id="restGrid"></div>
+  </main>
+  <script>
+    const SUPPORTED_LANGS = ['sl','en','de','it','pl','cs'];
+    function getLang() {
+      const raw = (localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
+      return SUPPORTED_LANGS.includes(raw) ? raw : 'sl';
+    }
+    const T = {
+      sl: { back: '← Nazaj', title: 'Restavracije & Kavarne', lokacija: 'Lokacija', pozovi: 'Pokliči', rest_empty: 'Ni vnosov.', tip_gostilna: 'Gostilna', tip_restavracija: 'Restavracija', tip_brewery: 'Pivovarna', tip_hotel: 'Hotel', tip_kavarna: 'Kavarna', tip_pizzerija: 'Pizzerija', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' },
+      en: { back: '← Back', title: 'Restaurants & Cafés', lokacija: 'Location', pozovi: 'Call', rest_empty: 'No entries.', tip_gostilna: 'Inn', tip_restavracija: 'Restaurant', tip_brewery: 'Brewery', tip_hotel: 'Hotel', tip_kavarna: 'Café', tip_pizzerija: 'Pizzeria', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' },
+      de: { back: '← Zurück', title: 'Restaurants & Cafés', lokacija: 'Standort', pozovi: 'Anrufen', rest_empty: 'Keine Einträge.', tip_gostilna: 'Gasthaus', tip_restavracija: 'Restaurant', tip_brewery: 'Brauerei', tip_hotel: 'Hotel', tip_kavarna: 'Café', tip_pizzerija: 'Pizzeria', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' },
+      it: { back: '← Indietro', title: 'Ristoranti & Caffè', lokacija: 'Posizione', pozovi: 'Chiama', rest_empty: 'Nessuna voce.', tip_gostilna: 'Locanda', tip_restavracija: 'Ristorante', tip_brewery: 'Birrificio', tip_hotel: 'Hotel', tip_kavarna: 'Caffè', tip_pizzerija: 'Pizzeria', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' },
+      pl: { back: '← Wstecz', title: 'Restauracje & Kawiarnie', lokacija: 'Lokalizacja', pozovi: 'Zadzwoń', rest_empty: 'Brak wpisów.', tip_gostilna: 'Gospoda', tip_restavracija: 'Restauracja', tip_brewery: 'Browar', tip_hotel: 'Hotel', tip_kavarna: 'Kawiarnia', tip_pizzerija: 'Pizzeria', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' },
+      cs: { back: '← Zpět', title: 'Restaurace & Kavárny', lokacija: 'Poloha', pozovi: 'Zavolat', rest_empty: 'Žádné záznamy.', tip_gostilna: 'Hostinec', tip_restavracija: 'Restaurace', tip_brewery: 'Pivovar', tip_hotel: 'Hotel', tip_kavarna: 'Kavárna', tip_pizzerija: 'Pizzeria', tip_bar: 'Bar', tip_bistro: 'Bistro', tip_street: 'Street food', place_bovec: 'Bovec', place_kot: 'Kot', place_mala_vas: 'Mala vas', place_cezsoca: 'Čezsoča', place_log_cezsoski: 'Log Čezsoški', place_log_mangart: 'Log pod Mangartom', place_lepena: 'Lepena', place_ledina: 'Ledina' }
+    };
+    const PLACE_ORDER = ['bovec','kot','mala_vas','ledina','cezsoca','log_cezsoski','log_mangart','lepena'];
+    const RESTAURANTS = [
+      { name: 'Gostišče Sovdat', type: 'gostilna', place: 'bovec', address: 'Trg golobarskih žrtev 24, 5230 Bovec', descSl: 'Družinska gostilna od 1969. Tradicionalna slovenska kuhinja, postrvi, žara in mednarodne jedi. Terasa ob soncu, vinske izbire iz Goriških Brd.', descEn: 'Family-run inn since 1969. Traditional Slovenian cuisine, trout, grill specialties and international dishes. Sunny terrace, wines from Goriška Brda.', rating: 4.4 },
+      { name: 'Restavracija Kot', type: 'restavracija', place: 'bovec', address: 'Trg golobarskih žrtev 1, 5230 Bovec', descSl: 'Modernna kuhinja v osrčju Bovca. Surovosti iz lokalnih virov, ustvarjalne predjedi in glavne jedi. Intimna atmosfera.', descEn: 'Modern cuisine in the heart of Bovec. Local ingredients, creative starters and mains. Intimate atmosphere.', rating: 4.6 },
+      { name: 'Felix', type: 'kavarna', place: 'bovec', address: 'Trg golobarskih žrtev 18, 5230 Bovec', descSl: 'Kavarna in sladolednica v centru Bovca. Kavica, torte, domači sladoled. Idealen postanek med izleti.', descEn: 'Café and gelateria in the centre of Bovec. Coffee, cakes, homemade ice cream. Perfect stop during excursions.', rating: 4.4 },
+      { name: 'Pizzerija in Pub Guliver', type: 'pizzerija', place: 'bovec', address: 'Trg golobarskih žrtev 15, 5230 Bovec', descSl: 'Pizzerija in pub s tradicionalno domačo hrano po ugodnih cenah. Dnevne malice, prijeten domač ambient.', descEn: 'Pizzeria and pub with traditional homemade food at fair prices. Daily menus, cosy atmosphere.', rating: 4.3 },
+      { name: 'Restavracija & Lounge Manu', type: 'restavracija', place: 'bovec', address: 'Trg golobarskih žrtev 22, 5230 Bovec', descSl: 'Restavracija »raj pod Alpami« in lounge bar. Okusi in sprostitev v središču Bovca.', descEn: 'Restaurant «paradise under the Alps» and lounge bar. Tastes and relaxation in the centre of Bovec.', rating: 4.5 },
+      { name: 'Bovec Kitch\'n (Bovška kuhn\'ca)', type: 'street', place: 'bovec', address: 'Trg golobarskih žrtev, 5230 Bovec', descSl: 'Street food na trgu: griljana postrv, čompe, frika, gobice. Lokalne specialitete v hitri obliki.', descEn: 'Street food on the square: grilled trout, čompe, frika, mushrooms. Local specialties on the go.', rating: 4.6 },
+      { name: 'Thirsty River Brewing', type: 'brewery', place: 'kot', address: 'Kot 39, 5230 Bovec', descSl: 'Lokalna pivovarna in tap room. Pivo lastne proizvodnje, zajtrki, prigrizki in koktajli. Idealno za popoldan po avanturah.', descEn: 'Local brewery and tap room. House-brewed beer, breakfast, snacks and cocktails. Perfect after outdoor adventures.', rating: 4.2 },
+      { name: 'Hotel Mangart', type: 'hotel', place: 'mala_vas', address: 'Mala vas 107, 5230 Bovec', descSl: 'Restavracija v 4-zvezdničnem hotelu. Elegantna jedilnica z razgledom na gore. Slovenska in mednarodna kuhinja.', descEn: 'Restaurant in a 4-star hotel. Elegant dining room with mountain views. Slovenian and international cuisine.', rating: 4.3 },
+      { name: 'Gostilna pod Lipco', type: 'gostilna', place: 'ledina', address: 'Ledina 8, 5230 Bovec', descSl: 'Tradicionalna gostilna z domačo hrano. Odprta 12:00–21:00 (zaprto ob torkih).', descEn: 'Traditional inn with homemade food. Open 12:00–21:00 (closed Tuesdays).', rating: 4.4 },
+      { name: 'Letni vrt', type: 'gostilna', place: 'cezsoca', address: 'Čezsoča 42, 5230 Bovec', descSl: 'Počitniška gostilna z vrtom. Domáče jedi, prijeten vrt za jed na prostem. Mir in priroda v bližini Soče.', descEn: 'Seasonal garden inn. Homemade dishes, pleasant garden for outdoor dining. Peace and nature near the Soča.', rating: 4.5 },
+      { name: 'Prijon Bar', type: 'bar', place: 'cezsoca', address: 'Čezsoča 15, 5230 Bovec', descSl: 'Bar v Čezsoči. Pijače in lažji prigrizki, prijetna atmosfera ob Soči.', descEn: 'Bar in Čezsoča. Drinks and light snacks, pleasant atmosphere by the Soča.', rating: 4.2 },
+      { name: 'Gostišče Jazbec', type: 'gostilna', place: 'log_cezsoski', address: 'Log Čezsoški 70, 5230 Bovec', descSl: 'Avtentična gostilna v Logu. Domača kuhinja, divina, domači pridelki. Idealno za obisk po planinski turi.', descEn: 'Authentic inn in Log. Homemade cuisine, game, local produce. Perfect after a mountain hike.', rating: 4.7 },
+      { name: 'Gostišče Mangrt', type: 'gostilna', place: 'log_mangart', address: 'Log pod Mangartom 57, 5230 Bovec', descSl: 'Izbirna restavracija z lokalno kuhinjo, sezonsko menijo in bogato vinsko karto.', descEn: 'Upscale restaurant with local cuisine, seasonal menu and impressive wine selection.', rating: 4.5 },
+      { name: 'Brunarica Restaurant', type: 'restavracija', place: 'log_mangart', address: 'Log pod Mangartom 31, 5230 Bovec', descSl: 'Tradicionalne slovenske jedi s sezonskimi sestavinami. Britanski šef: počasno kuhano meso, žar, domači deserti.', descEn: 'Traditional Slovenian dishes with seasonal ingredients. British chef: slow-cooked meats, BBQ, homemade desserts.', rating: 4.6 },
+      { name: 'Pristava Lepena', type: 'restavracija', place: 'lepena', address: 'Lepena 1, 5230 Bovec', descSl: 'Restavracija v dolini Lepena. Evropska in slovenska kuhinja, sveža postrv iz Soče, razgled na okolico.', descEn: 'Restaurant in Lepena valley. European and Slovenian cuisine, fresh Soča trout, scenic views.', rating: 4.5 },
+      { name: 'Boka Forest Bistro', type: 'bistro', place: 'lepena', address: 'Boka 1, 5230 Bovec', descSl: 'Bistro v gozdu pri Boki. Slovenska kuhinja, burgerji, vino. Zaprto nekaj dni v tednu – preverite.', descEn: 'Bistro in the forest near Boka. Slovenian cuisine, burgers, wine. Closed some days – check ahead.', rating: 4.6 },
+    ];
+    function mapsUrl(addr) {
+      return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+    }
+    function typeKey(t) {
+      const m = { gostilna: 'tip_gostilna', restavracija: 'tip_restavracija', brewery: 'tip_brewery', hotel: 'tip_hotel', kavarna: 'tip_kavarna', pizzerija: 'tip_pizzerija', bar: 'tip_bar', bistro: 'tip_bistro', street: 'tip_street' };
+      return m[t] || 'tip_restavracija';
+    }
+    function placeLabel(placeKey, lang) {
+      const key = 'place_' + placeKey;
+      return (T[lang] || T.sl)[key] || placeKey;
+    }
+    function applyLang() {
+      const lang = getLang();
+      const t = T[lang] || T.sl;
+      document.getElementById('restBack').textContent = t.back;
+      document.getElementById('restPageTitle').textContent = t.title;
+    }
+    function render() {
+      const lang = getLang();
+      const t = T[lang] || T.sl;
+      const grid = document.getElementById('restGrid');
+      const descKey = lang === 'sl' ? 'descSl' : 'descEn';
+      let html = '';
+      PLACE_ORDER.forEach(placeKey => {
+        const list = RESTAURANTS.filter(r => r.place === placeKey);
+        if (list.length === 0) { html += '<h2 class="rest-place-title">' + placeLabel(placeKey, lang) + '</h2><p class="rest-empty" style="color:var(--text-secondary,#94a3b8);font-size:0.875rem;">' + (t.rest_empty || 'Ni vnosov.') + '</p>'; return; }
+        html += '<h2 class="rest-place-title">' + placeLabel(placeKey, lang) + '</h2>';
+        html += '<div class="rest-grid-sec">';
+        html += list.map(r => {
+          const lokacijaBtn = '<a href="' + mapsUrl(r.address) + '" target="_blank" rel="noopener noreferrer" class="rest-btn">' + t.lokacija + '</a>';
+          const tel = (r.phone || r.tel || '').trim();
+          const pozoviBtn = tel ? ('<a href="tel:' + tel.replace(/\s/g, '') + '" class="rest-btn">' + t.pozovi + '</a>') : '';
+          return '<article class="rest-card"><div class="rest-card-content"><h3 class="rest-card-title">' + r.name + '</h3><span class="rest-card-type">' + (t[typeKey(r.type)] || r.type) + '</span></div><div class="rest-actions">' + lokacijaBtn + (pozoviBtn ? pozoviBtn : '') + '</div></article>';
+        }).join('');
+        html += '</div>';
+      });
+      grid.innerHTML = html;
+    }
+    document.getElementById('restBack').addEventListener('click', function() {
+      if (window.parent) window.parent.postMessage('CLOSE_MODAL', '*');
+    });
+    applyLang();
+    render();
+    window.addEventListener('storage', function() { applyLang(); render(); });
+  </script>
+</body>
+</html>

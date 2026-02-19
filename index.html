@@ -1,0 +1,410 @@
+
+<!doctype html>
+<html lang="sl" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>QR Guest Guide</title>
+  <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
+  <!-- Bump ?v= on deploy for cache-bust (e.g. 20250207-1 = YYYYMMDD-N) -->
+  <link rel="stylesheet" href="./assets/app.css?v=1.2">
+  <script>window.dataSdk=window.dataSdk||{};</script>
+ </head>
+ <body class="h-full"><!-- Welcome Overlay -->
+  <div id="welcome-overlay">
+   <div class="welcome-content">
+    <div class="welcome-icon">
+     🏔️
+    </div>
+    <h1 class="welcome-title" id="welcome-title">Welcome to Apartment</h1>
+    <p class="welcome-subtitle" id="welcome-subtitle">SOČA VALLEY</p>
+   </div>
+  </div><!-- Main App -->
+  <div id="app-container"><!-- Glass Header -->
+   <header class="glass-header">
+    <iframe class="weather-bg" src="weather-animations.html?v=20250207-1" title="Weather background"></iframe>
+    <div id="header-weather-scene" class="header-weather-scene" aria-hidden="true"></div>
+    <div id="header-moon" class="header-moon" aria-hidden="true"></div>
+    <div class="header-content">
+     <div class="header-title-section">
+      <h1 class="app-title" id="app-title">DOLINA SOČE</h1>
+      <p class="app-subtitle" id="app-subtitle">Vodič za obiskovalce</p>
+      <div class="lang-selector">
+       <select class="lang-select" id="lang-select">
+        <option value="sl">SL</option>
+        <option value="en">EN</option>
+        <option value="de">DE</option>
+        <option value="it">IT</option>
+        <option value="pl">PL</option>
+        <option value="cs">CS</option>
+       </select>
+      </div>
+     </div>
+     <div class="weather-widget" id="weather-widget">
+      <div class="weather-datetime">
+       <div id="weather-time">--:--</div>
+       <div id="weather-date">--</div>
+      </div>
+      <div class="weather-location" id="weather-location">Bovec</div>
+      <div class="weather-temp">
+       <span class="weather-icon" id="weather-icon">🌤️</span>
+       <span id="weather-temp">--°</span>
+      </div>
+      <div class="weather-desc" id="weather-desc" data-i18n="weather_loading">Nalaganje...</div>
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <main class="main-content"><!-- Hero Card -->
+    <div class="hero-card"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&amp;h=600&amp;fit=crop" alt="Mountain view" class="hero-image">
+     <div class="hero-overlay"><span class="hero-badge" id="hero-badge" data-i18n="guest_badge">Vodič za obiskovalce</span>
+      <h2 class="hero-title" id="hero-title">DOLINA SOČE</h2>
+      <p class="hero-location"><span>📍</span> <span id="hero-location">Slovenija</span></p>
+     </div>
+    </div><!-- Quick Actions -->
+    <div class="quick-actions"><a href="tel:+38640123456" class="quick-action-btn" id="call-action"> <span class="quick-action-icon">📞</span> <span class="quick-action-label" data-i18n="call_host">Pokliči gostitelja</span> </a> <a href="#" id="directions-action" target="_blank" rel="noopener noreferrer" class="quick-action-btn"> <span class="quick-action-icon">🗺️</span> <span class="quick-action-label" data-i18n="directions">Navodila</span> </a> <a href="./pravila/index.html" id="rules-action" class="quick-action-btn"> <span class="quick-action-icon">📋</span> <span class="quick-action-label" data-i18n="rules">Hišni red</span> </a>
+    </div>
+    <div class="reserve-again-wrap">
+     <button type="button" id="openRezervisiPonovo" class="reserve-again-btn"> <span class="reserve-again-icon">🔄</span> <span class="reserve-again-label" data-i18n="reserve_again_title">Rezerviraj znova</span> </button>
+    </div><!-- Emergency Panel (gore - odmah vidljiv kad se otvori) -->
+    <div class="accordion-panel" id="emergency-panel">
+     <div class="panel-content">
+      <div class="panel-header">
+       <h3 class="panel-title" data-i18n="emergency">Nujno</h3><button class="close-btn" data-close="emergency" type="button">×</button>
+      </div>
+      <div class="emergency-list" id="emergency-list-content"></div>
+     </div>
+    </div><!-- Rules Panel (gore - isto kao Nujno) -->
+    <div class="accordion-panel" id="rules-panel">
+     <div class="panel-content">
+      <div class="panel-header">
+       <h3 class="panel-title" data-i18n="rules">Hišni red</h3><button class="close-btn" data-close="rules" type="button">×</button>
+      </div>
+      <div class="rules-list">
+       <div class="rule-item"><span class="rule-icon">🔇</span>
+        <p class="rule-text" data-i18n="rule1">Prosimo za spoštovanje miru po 22. uri</p>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🚭</span>
+        <p class="rule-text" data-i18n="rule2">Kajenje je dovoljeno samo na terasi</p>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🗑️</span>
+        <p class="rule-text" data-i18n="rule3">Smeti odložite v zabojnik na hodniku</p>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🔐</span>
+        <p class="rule-text" data-i18n="rule4">Zaklenite vrata ob odhodu iz apartmaja</p>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🚪</span>
+        <p class="rule-text" data-i18n="rule5">Check-out ob 11:00. Ključe pustite v varnostni škatli</p>
+       </div>
+      </div>
+     </div>
+    </div><!-- Parking Panel (gore - kao Nujno) -->
+    <div class="accordion-panel" id="parking-panel">
+     <div class="panel-content">
+      <div class="panel-header">
+       <h3 class="panel-title" data-i18n="parking">Parkiranje</h3><button class="close-btn" data-close="parking" type="button">×</button>
+      </div>
+      <div class="rules-list">
+       <div class="rule-item"><span class="rule-icon">📍</span>
+        <div><strong data-i18n="parking_location">Lokacija:</strong>
+         <p class="rule-text">Trg golobarskih žrtev 12, 5230 Bovec</p>
+        </div>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🅿️</span>
+        <div><strong data-i18n="parking_spot">Parkirno mesto:</strong>
+         <p class="rule-text" data-i18n="parking_number">Označeno št. 15</p>
+        </div>
+       </div>
+       <div class="rule-item"><span class="rule-icon">💰</span>
+        <div><strong data-i18n="parking_price">Cena:</strong>
+         <p class="rule-text" data-i18n="parking_free">Brezplačno za goste</p>
+        </div>
+       </div>
+       <div class="rule-item"><span class="rule-icon">🕐</span>
+        <div><strong data-i18n="parking_hours">Raspoložljivost:</strong>
+         <p class="rule-text" data-i18n="parking_24">24/7 tekom vašega bivanja</p>
+        </div>
+       </div>
+      </div>
+      <div id="parking-dynamic" style="margin-top: 1.5rem;"></div>
+      <div id="parking-status" style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem; text-align: center;"></div>
+     </div>
+    </div><!-- Menu Grid -->
+    <div class="menu-grid">
+     <div class="menu-card" data-section="emergency">
+      <div class="menu-icon">
+       🚨
+      </div>
+      <h3 class="menu-title" data-i18n="emergency">Nujno</h3>
+      <p class="menu-subtitle" data-i18n="emergency_sub">Klici v sili</p>
+     </div>
+     <div class="menu-card" data-section="parking">
+      <div class="menu-icon">
+       🅿️
+      </div>
+      <h3 class="menu-title" data-i18n="parking">Parkiranje</h3>
+      <p class="menu-subtitle" data-i18n="parking_sub">Informacije</p>
+     </div>
+     <div class="menu-card" id="openRestavracije">
+      <div class="menu-icon">
+       🍽️
+      </div>
+      <h3 class="menu-title" data-i18n="restavracije_title">Restavracije & Kavarne</h3>
+      <p class="menu-subtitle" data-i18n="restavracije_sub">Gostilne in kavarne</p>
+     </div>
+     <div class="menu-card" id="adrenalin-card">
+      <div class="menu-icon">
+       🎯
+      </div>
+      <h3 class="menu-title" data-i18n="adrenalin">Adrenalin/Aktivnosti</h3>
+      <p class="menu-subtitle" data-i18n="adrenalin_sub">Aktivnosti</p>
+     </div>
+     <div class="menu-card" id="attractions-card">
+      <div class="menu-icon">
+       ⭐
+      </div>
+      <h3 class="menu-title" data-i18n="attractions">Znamenitosti</h3>
+      <p class="menu-subtitle" data-i18n="attractions_sub">Znamenitosti</p>
+     </div>
+     <div class="menu-card" id="daily-essentials-card">
+      <div class="menu-icon">
+       🛒
+      </div>
+      <h3 class="menu-title" data-i18n="daily_essentials">Daily essentials</h3>
+      <p class="menu-subtitle" data-i18n="daily_essentials_sub">Osnovno</p>
+     </div>
+     <div class="menu-card" id="taxi-bus-card">
+      <div class="menu-icon">
+       🚌
+      </div>
+      <h3 class="menu-title" data-i18n="taxi_bus">Taxi/Bus</h3>
+      <p class="menu-subtitle" data-i18n="taxi_bus_sub">Taxi/Bus</p>
+     </div>
+     <div class="menu-card" id="openSocaLive">
+      <div class="menu-icon">
+       🌊
+      </div>
+      <h3 class="menu-title" data-i18n="soca_live_title">Soča Live</h3>
+      <p class="menu-subtitle" data-i18n="soca_live_sub">Vodostaj • obvestila občin</p>
+     </div>
+     <div class="menu-card" id="openLostFound">
+      <div class="menu-icon">
+       🔍
+      </div>
+      <h3 class="menu-title" data-i18n="lost_found_title">Izgubljeno / Nađeno</h3>
+      <p class="menu-subtitle" data-i18n="lost_found_sub">Poruke turista (DEMO)</p>
+     </div>
+    </div><!-- Recommendations Panel -->
+    <div class="accordion-panel" id="recommendations-panel">
+     <div class="panel-content">
+      <div class="panel-header">
+       <h3 class="panel-title" data-i18n="recommendations">Priporočila</h3><button class="close-btn" data-close="recommendations" type="button">×</button>
+      </div>
+      <div class="gallery-grid">
+       <div class="gallery-item" data-gallery-index="0"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop" alt="Rafting" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML='<div class=\'placeholder\'><div class=\'play-icon\'>🖼️</div><div data-i18n=\'gallery_placeholder\'>Slika</div></div>';">
+       </div>
+       <div class="gallery-item" data-gallery-index="1"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=400&fit=crop" alt="Mountains" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML='<div class=\'placeholder\'><div class=\'play-icon\'>🖼️</div><div data-i18n=\'gallery_placeholder\'>Slika</div></div>';">
+       </div>
+       <div class="gallery-item" data-gallery-index="2"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop" alt="Waterfall" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML='<div class=\'placeholder\'><div class=\'play-icon\'>🖼️</div><div data-i18n=\'gallery_placeholder\'>Slika</div></div>';">
+       </div>
+       <div class="gallery-item" data-gallery-index="3"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=400&fit=crop" alt="Mountain view" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML='<div class=\'placeholder\'><div class=\'play-icon\'>🖼️</div><div data-i18n=\'gallery_placeholder\'>Slika</div></div>';">
+       </div>
+      </div>
+      <div class="recommendations-text">
+       <p data-i18n="rec_text1"><strong>🚣 Rafting na Soči:</strong> Nezaboravna izkušnja na najlepši smaragdni reki. 5 min vožnje, 40-60€.</p>
+       <p style="margin-top: 0.75rem;" data-i18n="rec_text2"><strong>🪂 Paragliding:</strong> Poletite nad dolino Soče s spektakularnimi pogledi. 10 min vožnje, 100-150€.</p>
+       <p style="margin-top: 0.75rem;" data-i18n="rec_text3"><strong>🥾 Slap Boka:</strong> Najvišji slap v Sloveniji (144m). Lahka sprehod z neverjetnim razgledom. Brezplačno.</p>
+       <p style="margin-top: 0.75rem;" data-i18n="rec_text4"><strong>🍽️ Gostilna Sovdat:</strong> Tradicionalna slovenska kuhinja. 3 min hoje, 15-30€.</p>
+      </div>
+     </div>
+    </div><!-- Info Panel -->
+    <div class="accordion-panel" id="info-panel">
+     <div class="panel-content">
+      <div class="panel-header">
+       <h3 class="panel-title" data-i18n="info_title">Info</h3><button class="close-btn" data-close="info" type="button">×</button>
+      </div>
+      <!-- Location -->
+      <div style="margin-bottom: 1.5rem;">
+       <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;" data-i18n="info_location">Lokacija</h4>
+       <p class="rule-text" id="info-address" style="margin-bottom: 0.75rem;">Trg golobarskih žrtev 12, 5230 Bovec, Slovenija</p>
+       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="call-btn" id="copy-address-btn" type="button" style="flex: 1; min-width: 120px;"><span data-i18n="copy_address">Kopiraj naslov</span></button>
+        <a href="#" id="directions-link" target="_blank" rel="noopener noreferrer" class="call-btn" style="flex: 1; min-width: 120px; text-align: center; display: inline-block;"><span data-i18n="directions">Navodila</span></a>
+       </div>
+      </div>
+      <!-- Check-in / Check-out -->
+      <div style="margin-bottom: 1.5rem;">
+       <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;" data-i18n="info_checkinout">Prijava / Odjava</h4>
+       <p class="rule-text" style="margin-bottom: 0.5rem;"><span data-i18n="checkin_from">Prijava: od</span> <span id="checkin-time">15:00</span></p>
+       <p class="rule-text" style="margin-bottom: 0.5rem;"><span data-i18n="checkout_until">Odjava: do</span> <span id="checkout-time">11:00</span></p>
+       <p class="rule-text" style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="checkin_helper">Samopostrežna prijava / ključna škatla</p>
+      </div>
+      <!-- Wi-Fi -->
+      <div style="margin-bottom: 1.5rem;">
+       <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;" data-i18n="info_wifi">Wi-Fi</h4>
+       <p class="rule-text" style="margin-bottom: 0.5rem;"><strong data-i18n="wifi_ssid_label">SSID:</strong> <span id="info-wifi-ssid">BovecMountain_5G</span></p>
+       <p class="rule-text" style="margin-bottom: 0.75rem;"><strong data-i18n="wifi_password_label">Geslo:</strong> <span id="info-wifi-password">AlpineView2024</span></p>
+       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="call-btn" id="copy-wifi-info-btn" type="button" style="flex: 1; min-width: 120px;"><span data-i18n="copy_wifi">Kopiraj Wi-Fi</span></button>
+        <button class="call-btn" id="show-qr-btn" type="button" style="flex: 1; min-width: 120px; background: rgba(34, 211, 238, 0.2); color: var(--accent); border: 1px solid var(--glass-border);"><span data-i18n="show_qr">Prikaži QR</span></button>
+       </div>
+      </div>
+      <!-- Host -->
+      <div style="margin-bottom: 1.5rem;">
+       <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;" data-i18n="info_host">Gostitelj</h4>
+       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+        <a href="tel:+38640123456" id="host-call-link" class="call-btn" style="flex: 1; min-width: 100px; text-align: center; display: inline-block;"><span data-i18n="call_host">Pokliči</span></a>
+        <a href="https://wa.me/38640123456" id="host-whatsapp-link" target="_blank" rel="noopener noreferrer" class="call-btn" style="flex: 1; min-width: 100px; text-align: center; display: inline-block; background: rgba(34, 211, 238, 0.2); color: var(--accent); border: 1px solid var(--glass-border);"><span data-i18n="whatsapp">WhatsApp</span></a>
+       </div>
+       <p class="rule-text" style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="host_helper">Veseli smo, da vam lahko pomagamo.</p>
+      </div>
+      <!-- House basics -->
+      <div>
+       <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;" data-i18n="info_basics">Osnove hiše</h4>
+       <p class="rule-text" style="margin-bottom: 0.5rem;" data-i18n="basics_quiet">🔇 Tihe ure: Po 22. uri</p>
+       <p class="rule-text" style="margin-bottom: 0.5rem;" data-i18n="basics_smoking">🚭 Kajenje: Samo na terasi</p>
+       <p class="rule-text" data-i18n="basics_trash">🗑️ Smeti: Zabojnik na hodniku</p>
+      </div>
+     </div>
+    </div>
+   </main><!-- Lightbox -->
+   <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close">×</button>
+    <button class="lightbox-nav prev" id="lightbox-prev">‹</button>
+    <button class="lightbox-nav next" id="lightbox-next">›</button>
+    <div class="lightbox-content" id="lightbox-content"></div>
+   </div><!-- Attractions Screen -->
+   <div id="attractions-screen" class="screen">
+    <div class="screen-header">
+     <button id="attractions-back" class="screen-back-btn" type="button">←</button>
+     <div class="screen-title" data-i18n="attractions_page_title">Znamenitosti</div>
+    </div>
+    <div class="screen-body" id="attractions-body"></div>
+    <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+   </div><!-- Trip Ideas Screen -->
+   <div id="trip-ideas-screen" class="screen">
+    <div class="screen-header">
+     <button id="trip-ideas-back" class="screen-back-btn" type="button">←</button>
+     <div class="screen-title" data-i18n="trip_ideas">Ideje za izlete</div>
+    </div>
+    <div class="screen-body" id="trip-ideas-body"></div>
+    <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+  </div><!-- Daily Essentials Screen -->
+  <div id="daily-essentials-screen" class="screen">
+   <div class="screen-header">
+    <button id="daily-essentials-back" class="screen-back-btn" type="button">←</button>
+    <div class="screen-title" data-i18n="daily_essentials">Daily essentials</div>
+   </div>
+   <div class="screen-body" id="daily-essentials-body"></div>
+   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+  </div><!-- Taxi/Bus Screen -->
+  <div id="taxi-bus-screen" class="screen">
+   <div class="screen-header">
+    <button id="taxi-bus-back" class="screen-back-btn" type="button">←</button>
+    <div class="screen-title" data-i18n="taxi_bus">Taxi/Bus</div>
+   </div>
+   <div class="screen-body" id="taxi-bus-body"></div>
+   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+  </div><!-- Adrenalin/Aktivnosti Screen -->
+  <div id="adrenalin-screen" class="screen">
+   <div class="screen-header">
+    <button id="adrenalin-back" class="screen-back-btn" type="button">←</button>
+    <div class="screen-title" data-i18n="adrenalin">Adrenalin/Aktivnosti</div>
+   </div>
+   <div class="screen-body" id="adrenalin-body"></div>
+   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+  </div><!-- Toast -->
+  <div class="toast" id="toast"><span class="toast-icon">✓</span> <span class="toast-text" id="toast-text" data-i18n="copied">Kopirano!</span>
+  </div><!-- Floating Feedback Button -->
+  <button id="feedback-button" class="feedback-button" type="button" aria-label="Send feedback">
+   <span class="feedback-icon">💬</span>
+   <span class="feedback-label" data-i18n="feedback_button">Predlagaj izboljšave</span>
+  </button><!-- Feedback Modal -->
+  <div id="feedback-modal" class="feedback-modal">
+   <div class="feedback-modal-overlay"></div>
+   <div class="feedback-modal-content">
+    <button id="feedback-modal-close" class="feedback-modal-close" type="button" aria-label="Close">×</button>
+    <h2 class="feedback-modal-title" data-i18n="feedback_title">Pomagajte izboljšati ta vodič</h2>
+    <p class="feedback-modal-subtitle" data-i18n="feedback_subtitle">Kaj bi dodali ali izboljšali?</p>
+    <form id="feedback-form" class="feedback-form">
+     <div class="feedback-field">
+      <label for="feedback-add" class="feedback-label" data-i18n="feedback_add_label">Kaj naj dodamo?</label>
+      <textarea id="feedback-add" name="add" class="feedback-textarea" required data-i18n-placeholder="feedback_add_placeholder"></textarea>
+     </div>
+     <div class="feedback-field">
+      <label for="feedback-confusing" class="feedback-label" data-i18n="feedback_confusing_label">Kaj je bilo nejasno ali manjkalo?</label>
+      <textarea id="feedback-confusing" name="confusing" class="feedback-textarea" data-i18n-placeholder="feedback_confusing_placeholder"></textarea>
+     </div>
+     <div class="feedback-field">
+      <label for="feedback-idea" class="feedback-label" data-i18n="feedback_idea_label">Vaša ideja / predlog</label>
+      <textarea id="feedback-idea" name="idea" class="feedback-textarea" data-i18n-placeholder="feedback_idea_placeholder"></textarea>
+     </div>
+     <div class="feedback-field">
+      <label class="feedback-radio-label">
+       <input type="radio" name="role" value="guest" checked>
+       <span data-i18n="feedback_role_guest">Sem gost</span>
+      </label>
+      <label class="feedback-radio-label">
+       <input type="radio" name="role" value="host">
+       <span data-i18n="feedback_role_host">Sem gostitelj / lastnik</span>
+      </label>
+     </div>
+     <div id="feedback-error" class="feedback-error" style="display: none;"></div>
+     <div id="feedback-success" class="feedback-success" style="display: none;" data-i18n="feedback_success">Hvala! Vaš predlog je shranjen (demo).</div>
+     <div class="feedback-actions">
+      <button type="button" id="feedback-cancel" class="feedback-btn feedback-btn-secondary" data-i18n="feedback_cancel">Prekliči</button>
+      <button type="submit" class="feedback-btn feedback-btn-primary" data-i18n="feedback_submit">Pošlji</button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Footer Attribution -->
+  <footer class="app-footer" id="app-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
+ <script src="./assets/config.js?v=20250207-2"></script>
+ <script src="./assets/i18n.js?v=20250207-4"></script>
+ <script src="./assets/utils.js?v=20250207-2"></script>
+ <script src="./assets/app.js?v=20250207-3"></script>
+ <!-- Modal System -->
+ <div id="iframeModal" class="vt-modal" aria-hidden="true">
+  <div class="vt-overlay" id="vtOverlay"></div>
+  <div class="vt-sheet" role="dialog" aria-modal="true">
+<div class="vt-topbar">
+       <div class="vt-badge" id="vtTitle">SOČA</div>
+      </div>
+   <iframe id="vtFrame" class="vt-iframe" title="Soča modal" src="" loading="lazy"></iframe>
+  </div>
+ </div>
+ <script>
+ (function(){
+   var __BUILD_ID='20250207-2'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
+   document.write('<link rel="stylesheet" href="./assets/modals.css?v='+__BUILD_ID+'">');
+   document.write('<script src="./assets/modals.js?v='+__BUILD_ID+'"><\/script>');
+ })();
+ </script>
+ <script>
+ (function(){
+  function panicUnlockScroll(){
+    var iframeModal=document.getElementById('iframeModal');
+    var lightbox=document.getElementById('lightbox');
+    var feedbackModal=document.getElementById('feedback-modal');
+    var anyOpen=(iframeModal&&iframeModal.classList.contains('open'))||(lightbox&&lightbox.classList.contains('active'))||(feedbackModal&&feedbackModal.classList.contains('show'));
+    // Force unlock if body is stuck in fixed position (Android back button bug recovery)
+    var isStuckFixed=document.body.style.position==='fixed'&&document.body.style.overflow==='hidden';
+    if(anyOpen&&!isStuckFixed) return;
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('width');
+    document.body.style.overflow='';
+    document.documentElement.style.overflow='';
+  }
+   document.addEventListener('visibilitychange',panicUnlockScroll);
+   window.addEventListener('pageshow',panicUnlockScroll);
+ })();
+ </script>
+ </body>  
+</html>
