@@ -1,0 +1,12 @@
+bovec-apartment
+bovec-center
+bovec-sport
+bovec-kanin
+kobarid-apartment
+kobarid-center
+kobarid-museum
+kobarid-soca
+tolmin-apartment
+tolmin-center
+tolmin-gorge
+tolmin-sport

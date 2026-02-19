@@ -1,0 +1,11 @@
+{
+  "id": "tolmin-sport",
+  "title": { "sl": "Športni park Tolmin", "en": "Sports park Tolmin", "de": "Sportpark Tolmin", "it": "Parco sportivo Tolmin" },
+  "address": "Športni park, Tolmin",
+  "town": "Tolmin",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto ob športnem parku", "en": "Official parking near sports park", "de": "Offizieller Parkplatz am Sportpark", "it": "Parcheggio ufficiale vicino al parco sportivo" },
+  "mapsQuery": "Športni park, Tolmin, Slovenija"
+}

@@ -121,6 +121,7 @@
       bootstrap();
       startHeaderClock();
       injectWeatherWidgetStacking();
+      loadParkingFromFolder();
     }, { once: true });
     if (document.readyState !== 'loading') {
       setTimeout(function() { bootstrap(); startHeaderClock(); injectWeatherWidgetStacking(); }, 0);
@@ -378,7 +379,14 @@
       if (dailyEssentialsScreen && dailyEssentialsScreen.classList.contains('show')) {
         renderDailyEssentialsContent();
       }
-      
+      var parkingBackLabel = document.getElementById('parking-back-label');
+      if (parkingBackLabel) parkingBackLabel.textContent = (trans.back_btn || 'Nazaj');
+      var parkingBackBtn = document.getElementById('parking-back');
+      if (parkingBackBtn) parkingBackBtn.setAttribute('aria-label', trans.back_btn || 'Nazaj');
+      var parkingScreen = document.getElementById('parking-screen');
+      if (parkingScreen && parkingScreen.classList.contains('show')) {
+        renderParkingPageContent();
+      }
     }
 
     // Initialize with saved language
@@ -566,7 +574,9 @@
     document.querySelectorAll('.menu-card').forEach(card => {
       card.addEventListener('click', () => {
         const section = card.getAttribute('data-section');
-        if (section) {
+        if (section === 'parking') {
+          openParkingScreen();
+        } else if (section) {
           openPanel(section);
         } else if (card.id === 'attractions-card') {
           openAttractions();
@@ -661,6 +671,28 @@
         panel.classList.remove('open');
       });
       activePanel = null;
+    }
+
+    const PARKING_DATA_PATH = 'assets/data/parking';
+    var parkingDataFromFolder = null;
+
+    function loadParkingFromFolder() {
+      fetch(PARKING_DATA_PATH + '/list.txt').then(function(r) { return r.ok ? r.text() : Promise.reject(); }).then(function(text) {
+        var ids = text.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (ids.length === 0) { parkingDataFromFolder = null; return; }
+        Promise.all(ids.map(function(id) {
+          return fetch(PARKING_DATA_PATH + '/' + id + '.json').then(function(res) { return res.ok ? res.json() : null; }).catch(function() { return null; });
+        })).then(function(results) {
+          var list = results.filter(Boolean);
+          parkingDataFromFolder = list.length ? list : null;
+        });
+      }).catch(function() {
+        parkingDataFromFolder = null;
+      });
+    }
+
+    function getParkingList() {
+      return (parkingDataFromFolder && parkingDataFromFolder.length) ? parkingDataFromFolder : parkingFallbackData;
     }
 
     const parkingFallbackData = [
@@ -1002,10 +1034,69 @@
       }
       
       html += '<div class="parking-card-actions">';
-      html += '<a href="' + mapsLink + '" target="_blank" rel="noopener noreferrer" class="call-btn" style="width: 100%; text-align: center;">🗺️ ' + (trans.parking_open_maps || 'V lokacija') + '</a>';
+      html += '<a href="' + mapsLink + '" target="_blank" rel="noopener noreferrer" class="call-btn" style="width: 100%; text-align: center; color: #111;">' + (trans.parking_btn_location || 'Lokacija') + '</a>';
       html += '</div></div>';
       
       return html;
+    }
+
+    function renderParkingPageContent() {
+      var body = document.getElementById('parking-body');
+      if (!body) return;
+      var list = getParkingList();
+      var apartmentAddress = defaultConfig.full_address || 'Trg golobarskih žrtev 12, 5230 Bovec, Slovenija';
+      var currentTown = window.APP.utils.getTownFromAddress(apartmentAddress);
+      var filtered = list.filter(function(p) { return p.town === currentTown; });
+      var apartmentOpt = filtered.find(function(p) { return p.type === 'apartment'; });
+      if (apartmentOpt) {
+        apartmentOpt.address = apartmentAddress.split(',')[0] + (apartmentAddress.indexOf(currentTown) !== -1 ? '' : ', ' + currentTown);
+        apartmentOpt.mapsQuery = apartmentAddress;
+      }
+      var recommended = filtered.filter(function(p) { return p.type === 'apartment'; });
+      var others = filtered.filter(function(p) { return p.type !== 'apartment'; });
+      var trans = translations[currentLang];
+      var html = '';
+      if (recommended.length > 0) {
+        html += '<div style="margin-bottom: 1.5rem;"><h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--accent);">⭐ ' + trans.parking_recommended + '</h4>';
+        recommended.forEach(function(opt) { html += renderParkingCard(opt, true); });
+        html += '</div>';
+      }
+      if (others.length > 0) {
+        html += '<div><h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">' + trans.parking_more_options + '</h4>';
+        others.forEach(function(opt) { html += renderParkingCard(opt, false); });
+        html += '</div>';
+      }
+      body.innerHTML = html || '<p style="padding: 1rem; color: var(--text-secondary);">' + (trans.parking_loading || 'Nalaganje...') + '</p>';
+    }
+
+    function showParkingScreen() {
+      var screen = document.getElementById('parking-screen');
+      if (screen) {
+        screen.classList.add('show');
+        renderParkingPageContent();
+        var backLabel = document.getElementById('parking-back-label');
+        if (backLabel) backLabel.textContent = (translations[currentLang] && translations[currentLang].back_btn) || 'Nazaj';
+        var backBtn = document.getElementById('parking-back');
+        if (backBtn) backBtn.setAttribute('aria-label', (translations[currentLang] && translations[currentLang].back_btn) || 'Nazaj');
+        history.pushState({ overlay: 'parking' }, '', window.location.pathname + window.location.search + (window.location.hash || ''));
+      }
+    }
+
+    function hideParkingScreen() {
+      var screen = document.getElementById('parking-screen');
+      if (screen) screen.classList.remove('show');
+    }
+
+    function openParkingScreen() {
+      closeAllPanels();
+      showParkingScreen();
+    }
+
+    function closeParkingScreen() {
+      hideParkingScreen();
+      if (window.APP && window.APP.utils && window.APP.utils.scrollToTopReliable) {
+        window.APP.utils.scrollToTopReliable();
+      }
     }
     
     // Trip Ideas data structure
@@ -2861,7 +2952,10 @@
     if (adrenalinScreen) {
       addSwipeBack(adrenalinScreen, closeAdrenalin);
     }
-    
+    const parkingScreenEl = document.getElementById('parking-screen');
+    if (parkingScreenEl) {
+      addSwipeBack(parkingScreenEl, closeParkingScreen);
+    }
     // Swipe-back gesture for trip-ideas screen
     const tripIdeasScreen = document.getElementById('trip-ideas-screen');
     if (tripIdeasScreen) {
@@ -3135,6 +3229,10 @@
     if (adrenalinBack) {
       adrenalinBack.addEventListener('click', closeAdrenalin);
     }
+    const parkingBack = document.getElementById('parking-back');
+    if (parkingBack) {
+      parkingBack.addEventListener('click', closeParkingScreen);
+    }
     
     // Android (and browser) back button: close overlay instead of leaving page
     window.addEventListener('popstate', function() {
@@ -3161,6 +3259,11 @@
         closeTaxiBus();
       } else if (adrenalinScreen && adrenalinScreen.classList.contains('show')) {
         closeAdrenalin();
+      } else {
+        var parkingScreenEl = document.getElementById('parking-screen');
+        if (parkingScreenEl && parkingScreenEl.classList.contains('show')) {
+          closeParkingScreen();
+        }
       }
     });
     

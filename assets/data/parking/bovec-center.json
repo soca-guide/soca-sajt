@@ -1,0 +1,11 @@
+{
+  "id": "bovec-center",
+  "title": { "sl": "Parkiranje v centru Bovec", "en": "Bovec center parking", "de": "Parken im Zentrum Bovec", "it": "Parcheggio centro Bovec" },
+  "address": "Trg golobarskih žrtev, Bovec",
+  "town": "Bovec",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto u centru", "en": "Official parking in town center", "de": "Offizieller Parkplatz im Stadtzentrum", "it": "Parcheggio ufficiale nel centro città" },
+  "mapsQuery": "Trg golobarskih žrtev, 5230 Bovec, Slovenija"
+}

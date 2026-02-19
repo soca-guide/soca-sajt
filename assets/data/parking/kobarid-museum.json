@@ -1,0 +1,11 @@
+{
+  "id": "kobarid-museum",
+  "title": { "sl": "Parkiranje ob muzeju", "en": "Museum parking", "de": "Museum Parken", "it": "Parcheggio museo" },
+  "address": "Kobaridski muzej, Kobarid",
+  "town": "Kobarid",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto ob muzeju", "en": "Official parking near museum", "de": "Offizieller Parkplatz am Museum", "it": "Parcheggio ufficiale vicino al museo" },
+  "mapsQuery": "Kobaridski muzej, Kobarid, Slovenija"
+}

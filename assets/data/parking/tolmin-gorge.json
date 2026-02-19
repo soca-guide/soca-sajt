@@ -1,0 +1,11 @@
+{
+  "id": "tolmin-gorge",
+  "title": { "sl": "Parkiranje ob Tolminski koriti", "en": "Tolmin Gorge parking", "de": "Tolminer Schlucht Parken", "it": "Parcheggio Gola di Tolmin" },
+  "address": "Tolminska korita, Tolmin",
+  "town": "Tolmin",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto ob koritu", "en": "Official parking near gorge", "de": "Offizieller Parkplatz an der Schlucht", "it": "Parcheggio ufficiale vicino alla gola" },
+  "mapsQuery": "Tolminska korita, Tolmin, Slovenija"
+}

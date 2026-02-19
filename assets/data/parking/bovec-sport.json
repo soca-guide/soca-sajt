@@ -1,0 +1,11 @@
+{
+  "id": "bovec-sport",
+  "title": { "sl": "Športni center Bovec", "en": "Sports center Bovec", "de": "Sportzentrum Bovec", "it": "Centro sportivo Bovec" },
+  "address": "Športni center, Bovec",
+  "town": "Bovec",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto ob športnem centru", "en": "Official parking near sports center", "de": "Offizieller Parkplatz am Sportzentrum", "it": "Parcheggio ufficiale vicino al centro sportivo" },
+  "mapsQuery": "Športni center Bovec, 5230 Bovec, Slovenija"
+}

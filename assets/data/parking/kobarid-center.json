@@ -1,0 +1,11 @@
+{
+  "id": "kobarid-center",
+  "title": { "sl": "Parkiranje v centru Kobarid", "en": "Kobarid center parking", "de": "Parken im Zentrum Kobarid", "it": "Parcheggio centro Kobarid" },
+  "address": "Trg svobode, Kobarid",
+  "town": "Kobarid",
+  "type": "public",
+  "paid": true,
+  "hours": "24/7",
+  "notes": { "sl": "Uradno parkirno mesto u centru", "en": "Official parking in town center", "de": "Offizieller Parkplatz im Stadtzentrum", "it": "Parcheggio ufficiale nel centro città" },
+  "mapsQuery": "Trg svobode, Kobarid, Slovenija"
+}
