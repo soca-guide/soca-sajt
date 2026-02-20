@@ -495,6 +495,7 @@
         }, 100);
       } else if (panelId === 'rules') {
         // Hišni red isto na vrhu kao Nujno
+        loadBaseRules(); // lazy-load base rules from DB on first open
         setTimeout(() => {
           const panelContent = panel.querySelector('.panel-content');
           if (panelContent) {
@@ -615,8 +616,24 @@
       if (!ov) return;
       window.__TENANT_OVERRIDES = window.__TENANT_OVERRIDES || {};
 
-      // 1) Quick actions + optional apartment_name
-      if (ov.config && ov.config.apartment_name) defaultConfig.apartment_name = ov.config.apartment_name;
+      // 1) Safe config fields from tenant override + quick actions
+      if (ov.config) {
+        var _oc = ov.config;
+        // apartment_name / full_address (direct keys)
+        if (_oc.apartment_name) defaultConfig.apartment_name = _oc.apartment_name;
+        if (_oc.full_address)   defaultConfig.full_address   = _oc.full_address;
+        // DB may use compact keys (phone, nav_link, checkin, checkout) OR legacy full keys
+        var _ocPhone = _oc.phone      || _oc.host_phone;
+        var _ocNav   = _oc.nav_link   || _oc.maps_link;
+        var _ocCi    = _oc.checkin    || _oc.checkin_time;
+        var _ocCo    = _oc.checkout   || _oc.checkout_time;
+        if (_ocPhone) { defaultConfig.host_phone    = _ocPhone;
+                        defaultConfig.host_whatsapp = defaultConfig.host_whatsapp || _ocPhone; }
+        if (_ocNav)   defaultConfig.maps_link      = _ocNav;
+        if (_ocCi)    defaultConfig.checkin_time   = _ocCi;
+        if (_ocCo)    defaultConfig.checkout_time  = _ocCo;
+        updateInfoPanel(); // refresh address / checkin / checkout display
+      }
       applyQuickActions(ov.config || null, new URLSearchParams(window.location.search).get('t'));
 
       // 2) Parking recommended — store override; renderParkingPanel reads it on each call
@@ -704,6 +721,48 @@
       // Always update text via textContent (never innerHTML)
       var bodyEl = document.getElementById('tenant-private-rules-body');
       if (bodyEl) bodyEl.textContent = text;
+    }
+
+    // ── Lazy-load base house rules from Supabase (global house_rules/base row) ───
+    var _baseRulesState = 'idle'; // idle | loading | loaded | failed
+
+    function loadBaseRules() {
+      if (_baseRulesState !== 'idle') return; // already loading or loaded
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      _baseRulesState = 'loading';
+      window.supabaseClient
+        .from('items')
+        .select('data_json')
+        .eq('section_key', 'house_rules')
+        .eq('item_key', 'base')
+        .eq('visible', true)
+        .is('tenant_id', null)
+        .maybeSingle()
+        .then(function (r) {
+          _baseRulesState = 'loaded';
+          if (r.error || !r.data || !r.data.data_json) return; // keep static fallback
+          var dj = r.data.data_json;
+          var baseItems = [];
+          if (Array.isArray(dj.items) && dj.items.length > 0) {
+            baseItems = dj.items;
+          } else if (typeof dj.text === 'string' && dj.text.trim()) {
+            baseItems = dj.text.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+          }
+          if (!baseItems.length) return; // no usable data; keep static fallback
+          // Replace static .rules-list with DB-driven items (plain text only — never innerHTML)
+          var rulesList = document.querySelector('#rules-panel .rules-list');
+          if (!rulesList) return;
+          rulesList.innerHTML = '';
+          baseItems.forEach(function (txt) {
+            var div = document.createElement('div');  div.className = 'rule-item';
+            var icon = document.createElement('span'); icon.className = 'rule-icon'; icon.textContent = '•';
+            var p = document.createElement('p');       p.className = 'rule-text';   p.textContent = txt;
+            div.appendChild(icon); div.appendChild(p);
+            rulesList.appendChild(div);
+          });
+          if (window.__DEBUG) console.log('[BASE-RULES] loaded', baseItems.length, 'items');
+        })
+        .catch(function () { _baseRulesState = 'failed'; }); // silent fallback
     }
 
     // Close all panels
