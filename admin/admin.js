@@ -37,6 +37,7 @@
   var tenantSlugInput      = document.getElementById('tenant-slug');
   var createTenantStatus   = document.getElementById('create-tenant-status');
   var btnCreateTenant      = document.getElementById('btn-create-tenant');
+  var ownerEmailInput      = document.getElementById('owner-email');
   var ownerUserIdInput     = document.getElementById('owner-user-id');
   var ownerTenantSelect    = document.getElementById('owner-tenant-select');
   var linkOwnerStatus      = document.getElementById('link-owner-status');
@@ -253,6 +254,9 @@
           '<a href="' + esc(guestUrl) + '" target="_blank" rel="noopener" ' +
              'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
                     'background:#1e3a2a;color:#4ade80;font-size:0.75rem;text-decoration:none">Otvori</a>' +
+          '<a href="../admin/" target="_blank" rel="noopener" ' +
+             'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
+                    'background:#1a2a3a;color:#93c5fd;font-size:0.75rem;text-decoration:none">Admin</a>' +
           '<button class="btn-sm btn-copy-link" data-url="' + esc(guestUrl) + '">Kopiraj</button>' +
           '<button class="btn-sm btn-edit-tenant"' +
             ' data-tid="'    + esc(t.tenant_id)   + '"' +
@@ -328,6 +332,68 @@
       setStatus(tenantsStatus,
         'Greška: ' + (err && err.message || '?'), 'error');
     });
+  }
+
+  // ── MASTER: Export tenant items as JSON ──────────────────────────────────────
+  function exportTenantJson() {
+    var tenantId = masterTenantSelect.value;
+    if (!tenantId) {
+      alert('Najpre izaberi tenant iz padajućeg menija (sekcija "TENANT").');
+      return;
+    }
+    var meta = {};
+    _allTenants.forEach(function (t) { if (t.tenant_id === tenantId) meta = t; });
+    sb.from('items')
+      .select('section_key, item_key, data_json, visible')
+      .eq('tenant_id', tenantId)
+      .then(function (r) {
+        if (r.error) { alert('Greška pri exportu: ' + r.error.message); return; }
+        var payload = { tenant: meta, items: r.data || [] };
+        var blob = new Blob([JSON.stringify(payload, null, 2)],
+          { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tenant-' + (meta.slug || tenantId) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      });
+  }
+
+  // ── MASTER: Export all tenants summary as JSON + CSV ─────────────────────────
+  function exportAllTenants() {
+    if (!_allTenants.length) {
+      alert('Lista tenanta je prazna — prvo osveži.');
+      return;
+    }
+    // JSON download
+    var jsonBlob = new Blob([JSON.stringify(_allTenants, null, 2)],
+      { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(jsonBlob);
+    a.download = 'all-tenants.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    // CSV download
+    var header = 'soca_id,slug,name,status,owner_email';
+    var rows = _allTenants.map(function (t) {
+      return [t.external_id, t.slug, t.name, t.status, t.ownerEmail]
+        .map(function (v) {
+          return '"' + String(v || '').replace(/"/g, '""') + '"';
+        }).join(',');
+    });
+    var csvBlob = new Blob([[header].concat(rows).join('\n')],
+      { type: 'text/csv' });
+    var b = document.createElement('a');
+    b.href = URL.createObjectURL(csvBlob);
+    b.download = 'all-tenants.csv';
+    document.body.appendChild(b);
+    b.click();
+    document.body.removeChild(b);
+    URL.revokeObjectURL(b.href);
   }
 
   // ── MASTER: Open editor for a specific tenant ─────────────────────────────────
@@ -513,9 +579,14 @@
 
   // ── MASTER: Link OWNER to tenant + seed permissions ───────────────────────────
   function linkOwnerToTenant() {
-    var userId   = ownerUserIdInput.value.trim();
-    var tenantId = ownerTenantSelect.value;
+    var ownerEmail = ownerEmailInput ? ownerEmailInput.value.trim().toLowerCase() : '';
+    var userId     = ownerUserIdInput.value.trim();
+    var tenantId   = ownerTenantSelect.value;
 
+    if (!ownerEmail) {
+      setStatus(linkOwnerStatus, 'Unesite OWNER e-mail.', 'error');
+      return;
+    }
     if (!userId || !tenantId) {
       setStatus(linkOwnerStatus, 'Unesite user_id i izaberite tenant.', 'error');
       return;
@@ -529,9 +600,9 @@
     btnLinkOwner.disabled = true;
     setStatus(linkOwnerStatus, 'Vežem OWNER…', 'info');
 
-    // Step 1: upsert user_profiles
+    // Step 1: upsert user_profiles (always include email so Vlasnik column populates)
     sb.from('user_profiles')
-      .upsert({ user_id: userId, role: 'OWNER', tenant_id: tenantId }, { onConflict: 'user_id' })
+      .upsert({ user_id: userId, role: 'OWNER', tenant_id: tenantId, email: ownerEmail }, { onConflict: 'user_id' })
       .then(function (r1) {
         if (r1.error) {
           btnLinkOwner.disabled = false;
@@ -560,6 +631,7 @@
 
             setStatus(linkOwnerStatus,
               'OWNER vezan! Profil + 3 dozvole upisane za tenant.', 'info');
+            if (ownerEmailInput) ownerEmailInput.value = '';
             ownerUserIdInput.value   = '';
             ownerTenantSelect.value  = '';
           });
@@ -939,8 +1011,8 @@
         } else if (data.role === 'OWNER') {
           if (data.disabled) {
             showDashStatus(
-              'Pristup deaktiviran. Kontaktirajte administratora.', 'warning');
-            dashRole.textContent = 'OWNER (deaktiviran)';
+              'Dostop je onemogočen. Kontaktirajte administratorja.', 'warning');
+            dashRole.textContent = 'OWNER (onemogočen)';
           } else {
             ownerPanel.classList.remove('hidden');
             loadOwnerEditableData(data.tenant_id);
@@ -1073,6 +1145,12 @@
   btnMasterLoad.addEventListener('click', loadMasterTenantData);
   btnMasterSave.addEventListener('click', saveMasterTenantData);
 
+  // ── Master export events ──────────────────────────────────────────────────────
+  var btnExportTenant = document.getElementById('btn-export-tenant');
+  var btnExportAll    = document.getElementById('btn-export-all');
+  if (btnExportTenant) btnExportTenant.addEventListener('click', exportTenantJson);
+  if (btnExportAll)    btnExportAll.addEventListener('click', exportAllTenants);
+
   // ── Owner panel events ────────────────────────────────────────────────────────
   btnOwnerSave.addEventListener('click', saveOwnerData);
 
@@ -1090,7 +1168,7 @@
       masterPanel.classList.add('hidden');
       ownerPanel.classList.add('hidden');
       _currentRole   = null;
-      tenantsTbody.innerHTML = '<tr><td colspan="4" class="table-empty">—</td></tr>';
+      tenantsTbody.innerHTML = '<tr><td colspan="6" class="table-empty">—</td></tr>';
       // Reset owner form + state
       _ownerTenantId = null;
       _ownerData     = {};
