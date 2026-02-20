@@ -14,6 +14,7 @@ body {
 
 .view { width: 100%; max-width: 440px; }
 .view.hidden { display: none !important; }
+#view-dashboard { max-width: 860px; }
 
 .card {
   background: #1e293b;
@@ -30,7 +31,9 @@ h1 { font-size: 1.3rem; font-weight: 600; color: #f1f5f9; margin-bottom: 0.25rem
 label { font-size: 0.82rem; color: #94a3b8; font-weight: 500; }
 
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+input[type="text"],
+select {
   width: 100%;
   padding: 0.55rem 0.75rem;
   border-radius: 6px;
@@ -110,3 +113,95 @@ button:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
   color: #475569;
   font-size: 0.9rem;
 }
+
+/* ── Master panel additions ─────────────────────────────────────────────────── */
+
+#master-panel.hidden,
+#owner-placeholder.hidden { display: none !important; }
+
+.section-divider {
+  border: none;
+  border-top: 1px solid #334155;
+  margin: 0.25rem 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+h2 { font-size: 1rem; font-weight: 600; color: #cbd5e1; }
+
+.btn-sm {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  margin-top: 0;
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+thead tr { background: #0f172a; }
+th {
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid #334155;
+}
+
+tbody tr { border-bottom: 1px solid #1e293b; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #0f172a; }
+td {
+  padding: 0.45rem 0.7rem;
+  color: #cbd5e1;
+  word-break: break-all;
+}
+
+.table-empty { text-align: center; color: #475569; padding: 1rem; }
+
+/* How-to box */
+.howto-box {
+  background: #0f172a;
+  border: 1px solid #1e3a5f;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.howto-note {
+  font-size: 0.82rem;
+  color: #7dd3fc;
+  font-style: italic;
+}
+
+.howto-steps {
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.howto-steps li {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.howto-steps strong { color: #e2e8f0; }

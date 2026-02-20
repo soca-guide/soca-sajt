@@ -40,10 +40,73 @@
       </div>
       <p id="dash-status" class="msg hidden"></p>
 
-      <!-- placeholder for future editing UI -->
-      <div class="placeholder">
-        <p>Upravljačka ploča — sadržaj dolazi u sledećoj fazi.</p>
+      <!-- ── MASTER-ONLY PANEL ── -->
+      <div id="master-panel" class="hidden">
+
+        <hr class="section-divider" />
+
+        <!-- 1) Tenants table -->
+        <div class="section-header">
+          <h2>Tenants</h2>
+          <button id="btn-refresh-tenants" class="btn-secondary btn-sm">Osveži</button>
+        </div>
+        <p id="tenants-status" class="msg hidden"></p>
+        <div class="table-wrap">
+          <table id="tenants-table">
+            <thead>
+              <tr>
+                <th>tenant_id</th>
+                <th>slug</th>
+                <th>name</th>
+                <th>status</th>
+              </tr>
+            </thead>
+            <tbody id="tenants-tbody">
+              <tr><td colspan="4" class="table-empty">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- 2) Create tenant -->
+        <h2>Dodaj tenant</h2>
+        <label for="tenant-name">Naziv</label>
+        <input id="tenant-name" type="text" placeholder="Apartman Soča View" />
+        <label for="tenant-slug">Slug (auto-generisan)</label>
+        <input id="tenant-slug" type="text" placeholder="apartman-soca-view" />
+        <p id="create-tenant-status" class="msg hidden"></p>
+        <button id="btn-create-tenant">Kreiraj tenant</button>
+
+        <hr class="section-divider" />
+
+        <!-- 3) Link OWNER -->
+        <h2>Dodeli OWNER</h2>
+        <div class="howto-box">
+          <p class="howto-note">OWNER nalog kreiraš u Supabase Authentication → Users. Ovde samo vežemo profil + dozvole.</p>
+          <ol class="howto-steps">
+            <li>Kreiraj Auth user u Supabase UI (Authentication → Users → Invite / Create user).</li>
+            <li>Kopiraj <strong>user_id</strong> (UUID) iz tog unosa.</li>
+            <li>Nalepi ga ispod i izaberi tenant.</li>
+            <li>OWNER vidi svoju ulogu pri sledećoj prijavi (OWNER UI dolazi u sledećoj fazi).</li>
+          </ol>
+        </div>
+        <label for="owner-user-id">OWNER user_id (UUID — kopiraj iz Supabase Auth)</label>
+        <input id="owner-user-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        <label for="owner-tenant-select">Tenant</label>
+        <select id="owner-tenant-select">
+          <option value="">— izaberi tenant —</option>
+        </select>
+        <p id="link-owner-status" class="msg hidden"></p>
+        <button id="btn-link-owner">Veži OWNER</button>
+
+      </div><!-- /#master-panel -->
+
+      <!-- placeholder for OWNER editing UI (future phase) -->
+      <div id="owner-placeholder" class="placeholder hidden">
+        <p>OWNER upravljačka ploča — dolazi u sledećoj fazi.</p>
       </div>
+
     </div>
   </div>
 
