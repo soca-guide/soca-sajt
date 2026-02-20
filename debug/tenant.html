@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tenant Debug — Soča Sajt</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0a1612; color: #f0fdf4; margin: 0; padding: 1.5rem; }
+    h1   { font-size: 1.1rem; color: #22d3ee; margin: 0 0 1rem; }
+    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(34,211,238,0.2);
+            border-radius: 0.75rem; padding: 1.25rem; max-width: 600px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    th { color: #94a3b8; font-weight: 500; width: 38%; }
+    .ok   { color: #4ade80; font-weight: 600; }
+    .fail { color: #f87171; font-weight: 600; }
+    .info { color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; }
+    a    { color: #22d3ee; font-size: 0.9rem; }
+    #status { color: #fbbf24; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Tenant Health Check</h1>
+    <p id="status">Loading…</p>
+    <table id="tbl" style="display:none">
+      <tbody id="tbl-body"></tbody>
+    </table>
+    <p class="info" id="back-link"></p>
+  </div>
+
+  <script src="../assets/supabase-client.js?v=20260220-1"></script>
+  <script src="../assets/tenant-loader.js?v=20260220-1"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    var slug = new URLSearchParams(window.location.search).get('t') || null;
+    var statusEl  = document.getElementById('status');
+    var tbl       = document.getElementById('tbl');
+    var tblBody   = document.getElementById('tbl-body');
+    var backLink  = document.getElementById('back-link');
+
+    function row(label, val, cls) {
+      var tr = document.createElement('tr');
+      var th = document.createElement('th'); th.textContent = label;
+      var td = document.createElement('td'); td.textContent = val;
+      if (cls) td.className = cls;
+      tr.appendChild(th); tr.appendChild(td);
+      tblBody.appendChild(tr);
+    }
+
+    function show(ov) {
+      tblBody.innerHTML = '';
+      var h = (ov && ov.__health) || null;
+
+      row('slug (from ?t=)',  slug || '(none)');
+
+      if (!slug) {
+        statusEl.textContent = 'No ?t= parameter in URL. Append ?t=your-tenant-slug to test.';
+        return;
+      }
+
+      if (!h) {
+        statusEl.textContent = 'TenantLoader returned null or no __health. Check supabase-client.js load order.';
+        return;
+      }
+
+      statusEl.textContent = '';
+      row('ok',           h.ok ? 'true' : 'false',  h.ok ? 'ok' : 'fail');
+      row('reason',       h.reason || '—');
+      row('tenant_id',    h.tenant_id || '(null)');
+      row('items_count',  String(h.items_count));
+      row('cached',       String(h.cached));
+      row('ts',           h.ts ? new Date(h.ts).toISOString() : '—');
+
+      if (ov) {
+        row('config',             ov.config          ? '✓ present' : '(null)');
+        row('parkingRecommended', ov.parkingRecommended ? '✓ present' : '(null)');
+        row('houseRulesPrivate',  ov.houseRulesPrivate  ? '✓ present' : '(null)');
+      }
+
+      tbl.style.display = '';
+    }
+
+    // Back link
+    if (slug) {
+      backLink.innerHTML = '<a href="../index.html?t=' + encodeURIComponent(slug) + '">← Open guest site with this tenant</a>';
+    } else {
+      backLink.innerHTML = '<a href="../index.html">← Open guest site</a>';
+    }
+
+    if (!slug) {
+      show(null);
+      return;
+    }
+
+    if (!window.TenantLoader || typeof window.TenantLoader.loadOverrides !== 'function') {
+      statusEl.textContent = 'ERROR: TenantLoader not available. Check script load order.';
+      return;
+    }
+
+    window.TenantLoader.loadOverrides(slug)
+      .then(function (ov) { show(ov); })
+      .catch(function (err) {
+        statusEl.textContent = 'Unexpected error: ' + (err && err.message);
+      });
+  })();
+  </script>
+</body>
+</html>

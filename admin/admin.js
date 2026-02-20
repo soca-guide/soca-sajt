@@ -1,17 +1,18 @@
 (function () {
   'use strict';
 
-  // ── Supabase config ──────────────────────────────────────────────────────────
-  var SUPABASE_URL = 'https://hkztanenhxoducivluor.supabase.co';
-  var SUPABASE_KEY = 'sb_publishable_VJewQ-VKXAyCQyK_FtVPow_HOP0_UiT';
+  // ── Supabase client (initialised by assets/supabase-client.js) ───────────────
+  var sb = window.supabaseClient || null;
 
-  // The CDN UMD build exposes window.supabase = { createClient, ... }
-  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-    alert('Supabase CDN nije učitan. Provjeri internet vezu.');
+  if (!sb || typeof sb.from !== 'function') {
+    // Surface a visible error instead of crashing silently
+    document.body.innerHTML =
+      '<div style="padding:2rem;font-family:sans-serif;color:#f87171;background:#0a1612;min-height:100vh">' +
+      '<h2>Supabase client nije inicijalizovan.</h2>' +
+      '<p>Provjeri internet vezu i ponovo učitaj stranicu.</p>' +
+      '</div>';
     return;
   }
-
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // ── DOM refs ─────────────────────────────────────────────────────────────────
   var viewLogin     = document.getElementById('view-login');
@@ -225,6 +226,21 @@
   // ── OWNER: state cache ────────────────────────────────────────────────────────
   var _ownerTenantId = null;
   var _ownerData     = {};
+  var _currentRole   = null; // set by loadProfile(); used for save guard
+
+  // Keys an OWNER is permitted to write (client-side mirror of permissions table)
+  var OWNER_ALLOWED = [
+    { section: 'info',        item: 'default_config' },
+    { section: 'house_rules', item: 'house_rules_private' },
+    { section: 'parking',     item: 'parking_recommended' }
+  ];
+
+  function ownerMayWrite(sectionKey, itemKey) {
+    if (_currentRole === 'MASTER') return true;
+    return OWNER_ALLOWED.some(function (r) {
+      return r.section === sectionKey && r.item === itemKey;
+    });
+  }
 
   // ── OWNER: helpers ────────────────────────────────────────────────────────────
   function isValidLink(v) {
@@ -318,6 +334,19 @@
       return;
     }
 
+    // Client-side permission guard: OWNER may only write the 3 allowed keys
+    var saveTargets = [
+      { section: 'info',        item: 'default_config' },
+      { section: 'house_rules', item: 'house_rules_private' },
+      { section: 'parking',     item: 'parking_recommended' }
+    ];
+    for (var _gi = 0; _gi < saveTargets.length; _gi++) {
+      if (!ownerMayWrite(saveTargets[_gi].section, saveTargets[_gi].item)) {
+        setStatus(ownerSaveStatus, 'Nema dozvole za sekciju: ' + saveTargets[_gi].section + '/' + saveTargets[_gi].item, 'error');
+        return;
+      }
+    }
+
     btnOwnerSave.disabled = true;
     setStatus(ownerSaveStatus, 'Snimam…', 'info');
 
@@ -405,6 +434,7 @@
           return;
         }
 
+        _currentRole = data.role || null;
         dashRole.textContent   = data.role   || '—';
         dashTenant.textContent = data.tenant_id || 'null';
         hideDashStatus();
@@ -488,6 +518,7 @@
       loginError.className = 'msg hidden';
       masterPanel.classList.add('hidden');
       ownerPanel.classList.add('hidden');
+      _currentRole   = null;
       tenantsTbody.innerHTML = '<tr><td colspan="4" class="table-empty">—</td></tr>';
       // Reset owner form + state
       _ownerTenantId = null;

@@ -16,6 +16,9 @@
   var translations = window.APP && window.APP.translations;
   var utils = window.APP && window.APP.utils;
   var CL = window.ContentLoader || null;
+
+  // ?debug=1 enables verbose tenant + loader logs without editing any file
+  window.__DEBUG = (new URLSearchParams(window.location.search).get('debug') === '1');
   if (!defaultConfig || !translations) {
     console.error('APP defaultConfig or translations not loaded. Load config.js and i18n.js first.');
     return;
@@ -138,7 +141,8 @@
         // Apply quick actions with defaults immediately (sync, before Supabase resolves)
         applyQuickActions(null, _slug);
         window.TenantLoader.loadOverrides(_slug).then(function (ov) {
-          if (ov) applyTenantOverrides(ov);
+          if (window.__DEBUG) console.log('[TENANT]', ov && (ov.__health || ov));
+          if (ov && ov.__health && ov.__health.ok) applyTenantOverrides(ov);
         }).catch(function () {});
       }
     })();
