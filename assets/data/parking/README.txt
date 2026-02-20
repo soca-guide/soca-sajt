@@ -13,19 +13,20 @@ BRISANJE kartice
 DODAVANJE nove kartice
   1. Kopiraj neki postojeći .json (npr. bovec-center.json).
   2. Preimenuj u novi-id.json (npr. novo-parkiraliste.json).
-  3. U njemu izmeni sve podatke (id, title, address, town, type, paid, hours, notes, mapsQuery).
+  3. U njemu izmeni sve podatke (vidi polja ispod).
   4. U list.txt dodaj jednu novu liniju: novi-id (npr. novo-parkiraliste).
 
 IZMENA
-  Otvori samo jedan .json fajl i promeni tekst. Ostalo ne diraj.
+  Otvori samo jedan .json fajl i promeni šta ti treba. Sve može da se menja.
 
-Polja u svakom .json:
+Polja u svakom .json (sve je menjivo):
   id – isto kao ime fajla (bez .json)
   title – naziv po jezicima: sl, en, de, it
-  address – adresa na kartici
-  town – Bovec / Kobarid / Tolmin (filtrira se po lokaciji apartmana)
+  address – adresa koja se prikazuje na kartici
+  town – Bovec / Kobarid / Tolmin (koje mesto vidi ovu karticu)
   type – "apartment" (prikazuje se pod Priporočeno) ili "public"
-  paid – true / false
+  paid – true (plačljivo) ili false (besplatno)
   hours – npr. "24/7"
-  notes – opombe po jezicima
-  mapsQuery – adresa za Google Maps
+  notes – opombe po jezicima: sl, en, de, it
+  mapsQuery – adresa za Google Maps (koristi se ako nema mapsLink)
+  mapsLink – PUN URL link za dugme "Lokacija". Ako staviš ovde link, dugme vodi tačno na njega (npr. Google Maps, bilo koji sajt). Ako izostaviš mapsLink, link se pravi automatski iz mapsQuery.

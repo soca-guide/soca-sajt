@@ -134,24 +134,7 @@
       if (p.maps_url) return p.maps_url;
       return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((p.name || '') + ' Bovec');
     }
-    const BOVEC_PROVIDERS = [
-      { id: 'bovec-rafting-team', name: 'Bovec Rafting Team', categories: ['rafting'], website: 'https://www.bovec-rafting-team.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting', tier: 'premium', priority: 0, weight: 2, active: true },
-      { id: 'soca-rafting', name: 'Soča Rafting', categories: ['rafting'], website: 'https://www.socarafting.si/en/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'soca-adventure', name: 'Soča Adventure', categories: ['rafting','canyoning'], website: 'https://www.soca-adventure.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting • Canyoning', tier: 'featured', priority: 0, weight: 1, active: true },
-      { id: 'rock-the-boat-europe', name: 'Rock The Boat Europe', categories: ['rafting'], website: 'https://rocktheboateurope.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'bovecsport', name: 'BovecSport / Alpe Šport', categories: ['rafting','kayaking','outdoor'], website: 'https://www.bovecsport.com/en', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting • Kayaking', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'kayak-soca', name: 'Kayak Soča', categories: ['kayaking','rafting'], website: 'https://kayak-soca.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Kayaking • Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'bovec-canyoning', name: 'Bovec Canyoning', categories: ['canyoning'], website: 'https://www.bovec-canyoning.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Canyoning', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'hydromania', name: 'Hydromania', categories: ['hydrospeed','rafting'], website: 'https://www.hydromania.si/en/activities/hydrospeed/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Hydrospeed • Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'dk-sport', name: 'DK Sport', categories: ['rafting','outdoor'], website: 'https://www.dksport.si/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting • Outdoor', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'alpi-center', name: 'Alpi Center', categories: ['outdoor','hiking'], website: 'https://alpicenter.eu/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Outdoor • Hiking', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'terramystica', name: 'Terramystica', categories: ['outdoor','canyoning'], website: 'https://www.terramystica.si/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Outdoor • Canyoning', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'outdoor-galaxy', name: 'Outdoor Galaxy', categories: ['outdoor','rafting'], website: 'https://www.outdoor-galaxy.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Outdoor • Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'natures-ways', name: "Nature's Ways", categories: ['outdoor','rafting'], website: 'https://www.econaturesways.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Outdoor • Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'soca-rider', name: 'Soča Rider', categories: ['rafting'], website: 'https://www.raftingslovenia.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Rafting', tier: 'free', priority: 0, weight: 1, active: true },
-      { id: 'flying-bear-paragliding', name: 'Flying Bear Paragliding', categories: ['paragliding'], website: 'https://paragliding-bovec.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Paragliding', tier: 'premium', priority: 0, weight: 2, active: true },
-      { id: 'paragliding-bovec', name: 'Paragliding Bovec', categories: ['paragliding'], website: 'https://www.paraglidingbovec.com/', address_text: null, maps_url: '', municipality: 'Bovec', settlement: null, banner_text: 'Paragliding', tier: 'free', priority: 0, weight: 1, active: true }
-    ].map(function(p) { p.maps_url = p.maps_url || providerMapsUrl(p); return p; });
+    const BOVEC_PROVIDERS = (window.APP_DATA && window.APP_DATA.bovecProviders || []).map(function(p) { p.maps_url = p.maps_url || providerMapsUrl(p); return p; });
     function getDateSeedKey() {
       var d = new Date();
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -436,65 +419,9 @@
       </div>`;
       
       // Services list
-      const services = [
-        {
-          name: trans.service_tourist_medical || 'Tourist medical service (Bovec)',
-          address: 'Kot 85, 5230 Bovec',
-          phone: '+386 5 620 33 22',
-          tel: 'tel:+38656203322',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Kot+85%2C+5230+Bovec'
-        },
-        {
-          name: trans.service_emergency_medical || 'Emergency medical service (Tolmin) – 24 hours a day',
-          address: 'Prešernova 6/a, 5220 Tolmin',
-          phone: '+386 5 38 81 120',
-          tel: 'tel:+38653881120',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Pre%C5%A1ernova+6%2Fa%2C+5220+Tolmin'
-        },
-        {
-          name: trans.service_dental || 'Health Center Dental Care Nova Gorica',
-          address: '',
-          phone: '+386 5 39 38 700',
-          tel: 'tel:+38653938700',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Health+Center+Dental+Care+Nova+Gorica'
-        },
-        {
-          name: trans.service_pharmacy_bovec || 'Pharmacy Bovec',
-          address: 'Kot 86, 5230 Bovec',
-          phone: '+386 5 38 96 180',
-          tel: 'tel:+38653896180',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Kot+86%2C+5230+Bovec'
-        },
-        {
-          name: trans.service_pharmacy_kobarid || 'Pharmacy Kobarid',
-          address: 'Trg svobode 3b, 5222 Kobarid',
-          phone: '+386 5 38 85 077',
-          tel: 'tel:+38653885077',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Trg+svobode+3b%2C+5222+Kobarid'
-        },
-        {
-          name: trans.service_pharmacy_tolmin || 'Pharmacy Tolmin',
-          address: 'Trg maršala Tita 11, 5220 Tolmin',
-          phone: '+386 5 38 11 480',
-          tel: 'tel:+38653811480',
-          web: 'www.lekarna-tolmin.si',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Trg+mar%C5%A1ala+Tita+11%2C+5220+Tolmin'
-        },
-        {
-          name: trans.service_police || 'Police station in Bovec',
-          address: '',
-          phone: '05 389 68 50',
-          tel: 'tel:+38653896850',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Police+Station+Bovec+Slovenia'
-        },
-        {
-          name: trans.service_firefighters || 'Firefighters (Bovec)',
-          address: '',
-          phone: '05 388 60 95',
-          tel: 'tel:+38653886095',
-          directions: 'https://www.google.com/maps/search/?api=1&query=Firefighters+Bovec+Slovenia'
-        }
-      ];
+      const services = (window.APP_DATA && window.APP_DATA.emergencyServices || []).map(function(s) {
+        return { name: trans[s.nameKey] || s.nameDefault, address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
+      });
       
       services.forEach(service => {
         html += `<div class="quick-help-service-item">
@@ -1100,83 +1027,14 @@
     }
     
     // Trip Ideas data structure
-    const tripIdeasData = {
-      tolmin: {
-        titleKey: 'trip_ideas_tolmin_title',
-        overviewKey: 'trip_ideas_tolmin_overview',
-        shortKey: 'trip_ideas_tolmin_short',
-        halfKey: 'trip_ideas_tolmin_half',
-        fullKey: 'trip_ideas_tolmin_full',
-        kidsKey: 'trip_ideas_tolmin_kids',
-        rainKey: 'trip_ideas_tolmin_rain',
-        tipsKey: 'trip_ideas_tolmin_tips'
-      },
-      kobarid: {
-        titleKey: 'trip_ideas_kobarid_title',
-        overviewKey: 'trip_ideas_kobarid_overview',
-        shortKey: 'trip_ideas_kobarid_short',
-        halfKey: 'trip_ideas_kobarid_half',
-        fullKey: 'trip_ideas_kobarid_full',
-        kidsKey: 'trip_ideas_kobarid_kids',
-        rainKey: 'trip_ideas_kobarid_rain',
-        tipsKey: 'trip_ideas_kobarid_tips'
-      },
-      srpenica: {
-        titleKey: 'trip_ideas_srpenica_title',
-        overviewKey: 'trip_ideas_srpenica_overview',
-        shortKey: 'trip_ideas_srpenica_short',
-        halfKey: 'trip_ideas_srpenica_half',
-        fullKey: 'trip_ideas_srpenica_full',
-        kidsKey: 'trip_ideas_srpenica_kids',
-        rainKey: 'trip_ideas_srpenica_rain',
-        tipsKey: 'trip_ideas_srpenica_tips'
-      },
-      zaga: {
-        titleKey: 'trip_ideas_zaga_title',
-        overviewKey: 'trip_ideas_zaga_overview',
-        shortKey: 'trip_ideas_zaga_short',
-        halfKey: 'trip_ideas_zaga_half',
-        fullKey: 'trip_ideas_zaga_full',
-        kidsKey: 'trip_ideas_zaga_kids',
-        rainKey: 'trip_ideas_zaga_rain',
-        tipsKey: 'trip_ideas_zaga_tips'
-      },
-      bovec: {
-        titleKey: 'trip_ideas_bovec_title',
-        overviewKey: 'trip_ideas_bovec_overview',
-        shortKey: 'trip_ideas_bovec_short',
-        halfKey: 'trip_ideas_bovec_half',
-        fullKey: 'trip_ideas_bovec_full',
-        kidsKey: 'trip_ideas_bovec_kids',
-        rainKey: 'trip_ideas_bovec_rain',
-        tipsKey: 'trip_ideas_bovec_tips'
-      },
-      cezsoča: {
-        titleKey: 'trip_ideas_cezsoča_title',
-        overviewKey: 'trip_ideas_cezsoča_overview',
-        shortKey: 'trip_ideas_cezsoča_short',
-        halfKey: 'trip_ideas_cezsoča_half',
-        fullKey: 'trip_ideas_cezsoča_full',
-        kidsKey: 'trip_ideas_cezsoča_kids',
-        rainKey: 'trip_ideas_cezsoča_rain',
-        tipsKey: 'trip_ideas_cezsoča_tips'
-      },
-      vodenca: {
-        titleKey: 'trip_ideas_vodenca_title',
-        overviewKey: 'trip_ideas_vodenca_overview',
-        shortKey: 'trip_ideas_vodenca_short',
-        halfKey: 'trip_ideas_vodenca_half',
-        fullKey: 'trip_ideas_vodenca_full',
-        kidsKey: 'trip_ideas_vodenca_kids',
-        rainKey: 'trip_ideas_vodenca_rain',
-        tipsKey: 'trip_ideas_vodenca_tips'
-      }
-    };
-    
-    const tripIdeasPlaces = ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezsoča', 'vodenca'];
+    const tripIdeasData = (window.APP_DATA && window.APP_DATA.tripIdeasData) || {};
+    const tripIdeasPlaces = (window.APP_DATA && window.APP_DATA.tripIdeasPlaces) || ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezso\u010da', 'vodenca'];
     
     // ATTRACTIONS DATA MODEL
-    const ATTRACTIONS = {
+    const ATTRACTIONS = (window.APP_DATA && window.APP_DATA.attractions) || {};
+
+    /* ATTRACTIONS_PLACEHOLDER_START — remove after confirming window.APP_DATA loads correctly
+    const _ATTRACTIONS_UNUSED = {
       tolmin: {
         nameKey: 'attractions_place_tolmin',
         introKey: 'attractions_tolmin_intro',
@@ -1952,8 +1810,7 @@
             ]
           }
         ]
-      }
-    };
+    */
 
     function showAttractionsScreen() {
       const screen = document.getElementById('attractions-screen');
@@ -3008,31 +2865,17 @@
       const trans = translations[currentLang];
       if (!trans) return;
       
-      let html = `<div style="padding: 1rem;">
-        <div class="quick-help-section">
-          <h2 class="quick-help-section-title">${trans.daily_essentials || 'Daily essentials'}</h2>
-          
-          <a href="https://www.google.com/maps/search/?api=1&query=supermarket%20near%20me" target="_blank" rel="noopener noreferrer" class="quick-help-button">
-            <div class="quick-help-button-title">${trans.quick_help_supermarket || ''}</div>
-          </a>
-          
-          <a href="https://www.google.com/maps/search/?api=1&query=ATM%20near%20me" target="_blank" rel="noopener noreferrer" class="quick-help-button">
-            <div class="quick-help-button-title">${trans.quick_help_atm || ''}</div>
-          </a>
-          
-          <a href="https://www.google.com/maps/search/?api=1&query=gas%20station%20near%20me" target="_blank" rel="noopener noreferrer" class="quick-help-button">
-            <div class="quick-help-button-title">${trans.quick_help_gas || ''}</div>
-          </a>
-          
-          <a href="https://www.google.com/maps/search/?api=1&query=parking%20near%20me" target="_blank" rel="noopener noreferrer" class="quick-help-button">
-            <div class="quick-help-button-title">${trans.quick_help_parking || ''}</div>
-          </a>
-          
-          <a href="https://www.google.com/maps/search/?api=1&query=public%20toilet%20near%20me" target="_blank" rel="noopener noreferrer" class="quick-help-button">
-            <div class="quick-help-button-title">${trans.quick_help_toilet || ''}</div>
-          </a>
-        </div>
-      </div>`;
+      var _deItems = (window.APP_DATA && window.APP_DATA.dailyEssentials) || [];
+      var _deLinks = _deItems.map(function(item) {
+        return '<a href="' + item.url + '" target="_blank" rel="noopener noreferrer" class="quick-help-button">' +
+               '<div class="quick-help-button-title">' + (trans[item.labelKey] || '') + '</div>' +
+               '</a>';
+      }).join('\n          ');
+      let html = '<div style="padding: 1rem;">' +
+        '<div class="quick-help-section">' +
+        '<h2 class="quick-help-section-title">' + (trans.daily_essentials || 'Daily essentials') + '</h2>' +
+        _deLinks +
+        '</div></div>';
       
       body.innerHTML = html;
     }
@@ -3490,112 +3333,26 @@
         origin = 'bovec';
       }
       
-      // Origin names for display
-      const originNames = {
-        tolmin: { sl: 'Tolmin', en: 'Tolmin', de: 'Tolmin', it: 'Tolmin' },
-        kobarid: { sl: 'Kobarid', en: 'Kobarid', de: 'Kobarid', it: 'Kobarid' },
-        srpenica: { sl: 'Srpenica', en: 'Srpenica', de: 'Srpenica', it: 'Srpenica' },
-        zaga: { sl: 'Žaga', en: 'Žaga', de: 'Žaga', it: 'Žaga' },
-        bovec: { sl: 'Bovec', en: 'Bovec', de: 'Bovec', it: 'Bovec' },
-        cezsoča: { sl: 'Čezsoča', en: 'Čezsoča', de: 'Čezsoča', it: 'Čezsoča' }
-      };
-      
-      // Route URLs mapping based on origin
-      const routeUrls = {
-        tolmin: {
-          bovec: 'https://www.google.com/maps/dir/?api=1&origin=Tolmin%2C%20Slovenia&destination=Bovec%20bus%20station%2C%20Slovenia',
-          kobarid: 'https://www.google.com/maps/dir/?api=1&origin=Tolmin%2C%20Slovenia&destination=Kobarid%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=Tolmin%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=Tolmin%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=Tolmin%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        },
-        kobarid: {
-          bovec: 'https://www.google.com/maps/dir/?api=1&origin=Kobarid%2C%20Slovenia&destination=Bovec%20bus%20station%2C%20Slovenia',
-          tolmin: 'https://www.google.com/maps/dir/?api=1&origin=Kobarid%2C%20Slovenia&destination=Tolmin%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=Kobarid%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=Kobarid%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=Kobarid%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        },
-        srpenica: {
-          bovec: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Bovec%20bus%20station%2C%20Slovenia',
-          tolmin: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Tolmin%2C%20Slovenia',
-          kobarid: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Kobarid%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=Srpenica%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        },
-        zaga: {
-          bovec: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Bovec%20bus%20station%2C%20Slovenia',
-          tolmin: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Tolmin%2C%20Slovenia',
-          kobarid: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Kobarid%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=%C5%BDaga%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        },
-        bovec: {
-          tolmin: 'https://www.google.com/maps/dir/?api=1&origin=Bovec%20bus%20station%2C%20Slovenia&destination=Tolmin%2C%20Slovenia',
-          kobarid: 'https://www.google.com/maps/dir/?api=1&origin=Bovec%20bus%20station%2C%20Slovenia&destination=Kobarid%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=Bovec%20bus%20station%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=Bovec%20bus%20station%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=Bovec%20bus%20station%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        },
-        cezsoča: {
-          bovec: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Bovec%20bus%20station%2C%20Slovenia',
-          tolmin: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Tolmin%2C%20Slovenia',
-          kobarid: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Kobarid%2C%20Slovenia',
-          most: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Most%20na%20So%C4%8Di%20train%20station%2C%20Slovenia',
-          nova_gorica: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Nova%20Gorica%2C%20Slovenia',
-          ljubljana: 'https://www.google.com/maps/dir/?api=1&origin=%C4%8Cezso%C4%8Da%2C%20Slovenia&destination=Ljubljana%2C%20Slovenia'
-        }
-      };
-      
-      // Destination mapping
-      const destinations = [
-        { key: 'bovec', labelKey: 'quick_help_route_to_bovec' },
-        { key: 'tolmin', labelKey: 'quick_help_route_to_tolmin' },
-        { key: 'kobarid', labelKey: 'quick_help_route_to_kobarid' },
-        { key: 'most', labelKey: 'quick_help_route_to_most' },
-        { key: 'nova_gorica', labelKey: 'quick_help_route_to_nova_gorica' },
-        { key: 'ljubljana', labelKey: 'quick_help_route_to_ljubljana' }
-      ];
+      // Origin names, routes and destinations from data file
+      var _tbData = (window.APP_DATA && window.APP_DATA.taxiBus) || {};
+      const originNames = _tbData.originNames || {};
+      const routeUrls = _tbData.routeUrls || {};
+      const destinations = _tbData.destinations || [];
       
       let html = `<div style="padding: 1rem;">`;
       
       // Taxi Services Section (before Transport)
+      var _taxiListHtml = (_tbData.taxiServices || []).map(function(svc) {
+        return '<div class="quick-help-taxi-item">' +
+          '<div class="quick-help-taxi-name">' + svc.name + '</div>' +
+          '<div class="quick-help-taxi-actions">' +
+          '<span class="quick-help-taxi-phone-display">' + svc.phone + '</span>' +
+          '<a href="' + svc.tel + '" class="quick-help-call-btn">' + (trans.call || 'Pozovi') + '</a>' +
+          '</div></div>';
+      }).join('');
       html += `<div class="quick-help-section">
         <h2 class="quick-help-section-title">${trans.taxi_services || 'Taxi službe'}</h2>
-        
-        <div class="quick-help-taxi-list">
-          <div class="quick-help-taxi-item">
-            <div class="quick-help-taxi-name">Soča Taxi Express</div>
-            <div class="quick-help-taxi-actions">
-              <span class="quick-help-taxi-phone-display">+386 30 123 456</span>
-              <a href="tel:+38630123456" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
-            </div>
-          </div>
-          <div class="quick-help-taxi-item">
-            <div class="quick-help-taxi-name">Kanin Ride</div>
-            <div class="quick-help-taxi-actions">
-              <span class="quick-help-taxi-phone-display">+386 31 234 567</span>
-              <a href="tel:+38631234567" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
-            </div>
-          </div>
-          <div class="quick-help-taxi-item">
-            <div class="quick-help-taxi-name">Bovec QuickCab</div>
-            <div class="quick-help-taxi-actions">
-              <span class="quick-help-taxi-phone-display">+386 40 345 678</span>
-              <a href="tel:+38640345678" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
-            </div>
-          </div>
-          <div class="quick-help-taxi-item">
-            <div class="quick-help-taxi-name">Emerald Valley Taxi</div>
-            <div class="quick-help-taxi-actions">
-              <span class="quick-help-taxi-phone-display">+386 51 567 890</span>
-              <a href="tel:+38651567890" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
-            </div>
-          </div>
-        </div>
-        
+        <div class="quick-help-taxi-list">${_taxiListHtml}</div>
       </div>`;
       
       // Origin Selector
@@ -3603,7 +3360,7 @@
         <div class="quick-help-origin-label">${trans.quick_help_where_are_you || ''}</div>
         <div class="quick-help-origin-grid">`;
       
-      const originOrder = ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezsoča'];
+      const originOrder = _tbData.originOrder || ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezso\u010da'];
       originOrder.forEach(orig => {
         const isSelected = orig === origin;
         const name = originNames[orig]?.[currentLang] || orig;
