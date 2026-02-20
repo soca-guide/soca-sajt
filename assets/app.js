@@ -15,6 +15,7 @@
   var defaultConfig = window.APP && window.APP.defaultConfig;
   var translations = window.APP && window.APP.translations;
   var utils = window.APP && window.APP.utils;
+  var CL = window.ContentLoader || null;
   if (!defaultConfig || !translations) {
     console.error('APP defaultConfig or translations not loaded. Load config.js and i18n.js first.');
     return;
@@ -134,7 +135,7 @@
       if (p.maps_url) return p.maps_url;
       return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((p.name || '') + ' Bovec');
     }
-    const BOVEC_PROVIDERS = (window.APP_DATA && window.APP_DATA.bovecProviders || []).map(function(p) { p.maps_url = p.maps_url || providerMapsUrl(p); return p; });
+    const BOVEC_PROVIDERS = ((CL && CL.getDataset('bovecProviders')) || []).map(function(p) { p.maps_url = p.maps_url || providerMapsUrl(p); return p; });
     function getDateSeedKey() {
       var d = new Date();
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -419,7 +420,7 @@
       </div>`;
       
       // Services list
-      const services = (window.APP_DATA && window.APP_DATA.emergencyServices || []).map(function(s) {
+      const services = ((CL && CL.getDataset('emergencyServices')) || []).map(function(s) {
         return { name: trans[s.nameKey] || s.nameDefault, address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
       });
       
@@ -1027,11 +1028,11 @@
     }
     
     // Trip Ideas data structure
-    const tripIdeasData = (window.APP_DATA && window.APP_DATA.tripIdeasData) || {};
-    const tripIdeasPlaces = (window.APP_DATA && window.APP_DATA.tripIdeasPlaces) || ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezso\u010da', 'vodenca'];
+    const tripIdeasData = (CL && CL.getDataset('tripIdeasData')) || {};
+    const tripIdeasPlaces = (CL && CL.getDataset('tripIdeasPlaces')) || ['tolmin', 'kobarid', 'srpenica', 'zaga', 'bovec', 'cezso\u010da', 'vodenca'];
     
     // ATTRACTIONS DATA MODEL
-    const ATTRACTIONS = (window.APP_DATA && window.APP_DATA.attractions) || {};
+    const ATTRACTIONS = (CL && CL.getDataset('attractions')) || {};
 
     /* ATTRACTIONS_PLACEHOLDER_START — remove after confirming window.APP_DATA loads correctly
     const _ATTRACTIONS_UNUSED = {
@@ -2865,7 +2866,7 @@
       const trans = translations[currentLang];
       if (!trans) return;
       
-      var _deItems = (window.APP_DATA && window.APP_DATA.dailyEssentials) || [];
+      var _deItems = (CL && CL.getDataset('dailyEssentials')) || [];
       var _deLinks = _deItems.map(function(item) {
         return '<a href="' + item.url + '" target="_blank" rel="noopener noreferrer" class="quick-help-button">' +
                '<div class="quick-help-button-title">' + (trans[item.labelKey] || '') + '</div>' +
@@ -3334,7 +3335,7 @@
       }
       
       // Origin names, routes and destinations from data file
-      var _tbData = (window.APP_DATA && window.APP_DATA.taxiBus) || {};
+      var _tbData = (CL && CL.getDataset('taxiBus')) || {};
       const originNames = _tbData.originNames || {};
       const routeUrls = _tbData.routeUrls || {};
       const destinations = _tbData.destinations || [];
