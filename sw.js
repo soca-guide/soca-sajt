@@ -38,6 +38,11 @@ self.addEventListener('activate', function (e) {
 });
 
 self.addEventListener('fetch', function (e) {
+  // Guard: skip non-GET and non-http(s) requests (e.g. chrome-extension://)
+  if (e.request.method !== 'GET') return;
+  try { var _p = new URL(e.request.url).protocol; if (_p !== 'http:' && _p !== 'https:') return; }
+  catch (err) { return; }
+
   var url = e.request.url;
   var isNav = e.request.mode === 'navigate';
   var isHtml = url.indexOf('.html') !== -1 || (url.endsWith('/') || url.endsWith('/index.html'));

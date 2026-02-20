@@ -28,5 +28,55 @@
     <div class="rule-item"><span class="rule-icon">🔐</span><p class="rule-text">Zaklenite vrata ob odhodu iz apartmaja</p></div>
     <div class="rule-item"><span class="rule-icon">🚪</span><p class="rule-text">Check-out ob 11:00. Ključe pustite v varnostni škatli</p></div>
   </main>
+
+  <!-- Tenant private rules (loads only when ?t=<slug> is present) -->
+  <script src="../assets/supabase-client.js?v=20250219-1"></script>
+  <script src="../assets/tenant-loader.js?v=20250219-1"></script>
+  <script>
+  (function () {
+    'use strict';
+    var slug = new URLSearchParams(window.location.search).get('t') || null;
+
+    // Preserve slug on back link so pressing ← keeps tenant context
+    if (slug) {
+      var backEl = document.getElementById('rulesBack');
+      if (backEl) backEl.href = '../index.html?t=' + encodeURIComponent(slug);
+    }
+
+    if (!slug) return;
+    if (!window.TenantLoader || typeof window.TenantLoader.loadOverrides !== 'function') return;
+
+    window.TenantLoader.loadOverrides(slug).then(function (ov) {
+      if (!ov || !ov.houseRulesPrivate) return;
+      var hr = ov.houseRulesPrivate;
+
+      // Accept both { text: "..." } and { rules: ["...","..."] }
+      var text = '';
+      if (typeof hr.text === 'string' && hr.text.trim()) {
+        text = hr.text.trim();
+      } else if (Array.isArray(hr.rules) && hr.rules.length > 0) {
+        text = hr.rules.join('\n');
+      }
+      if (!text) return;
+
+      var section = document.createElement('section');
+      section.style.cssText = 'margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(34,211,238,0.2);';
+
+      var title = document.createElement('p');
+      title.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(240,253,244,0.5);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem;';
+      title.textContent = 'Dodatna pravila apartmaja';
+
+      var body = document.createElement('div');
+      body.style.cssText = 'font-size:0.95rem;line-height:1.6;white-space:pre-line;color:#f0fdf4;';
+      body.textContent = text;
+
+      section.appendChild(title);
+      section.appendChild(body);
+
+      var main = document.querySelector('.rules-body');
+      if (main) main.appendChild(section);
+    }).catch(function () {});
+  })();
+  </script>
 </body>
 </html>

@@ -130,6 +130,19 @@
       setTimeout(function() { bootstrap(); startHeaderClock(); injectWeatherWidgetStacking(); }, 100);
     }
 
+    // Optional tenant override — non-blocking, only fires when ?t=<slug> is present
+    (function () {
+      var _slug = window.TenantLoader && typeof window.TenantLoader.getTenantSlug === 'function'
+        ? window.TenantLoader.getTenantSlug() : null;
+      if (_slug && typeof window.TenantLoader.loadOverrides === 'function') {
+        // Apply quick actions with defaults immediately (sync, before Supabase resolves)
+        applyQuickActions(null, _slug);
+        window.TenantLoader.loadOverrides(_slug).then(function (ov) {
+          if (ov) applyTenantOverrides(ov);
+        }).catch(function () {});
+      }
+    })();
+
     // Bovec providers (defined before updateLanguage to avoid TDZ)
     function providerMapsUrl(p) {
       if (p.maps_url) return p.maps_url;
@@ -593,6 +606,102 @@
       directionsAction.href = defaultConfig.maps_link;
     }
 
+    // ── Tenant override application (called async after TenantLoader resolves) ──
+    function applyTenantOverrides(ov) {
+      if (!ov) return;
+      window.__TENANT_OVERRIDES = window.__TENANT_OVERRIDES || {};
+
+      // 1) Quick actions + optional apartment_name
+      if (ov.config && ov.config.apartment_name) defaultConfig.apartment_name = ov.config.apartment_name;
+      applyQuickActions(ov.config || null, new URLSearchParams(window.location.search).get('t'));
+
+      // 2) Parking recommended — store override; renderParkingPanel reads it on each call
+      if (ov.parkingRecommended && ov.parkingRecommended.title) {
+        window.__TENANT_OVERRIDES.parkingRecommended = ov.parkingRecommended;
+        // Re-render parking panel immediately if it is already visible
+        var _pd = document.getElementById('parking-dynamic');
+        if (_pd && _pd.children.length) { loadParkingOptions(); }
+      }
+
+      // 3) House rules private — inject into rules panel
+      window.__TENANT_OVERRIDES.houseRulesPrivate = ov.houseRulesPrivate || null;
+      applyPrivateRulesToUI();
+    }
+
+    // ── Apply quick action links (call / directions / rules) ──────────────────
+    function applyQuickActions(cfg, slug) {
+      var _phone = (cfg && (cfg.quick_call_phone || cfg.host_phone)) || defaultConfig.host_phone || '';
+      var _dirs  = (cfg && (cfg.quick_directions_link || cfg.maps_link)) || defaultConfig.maps_link || '';
+      var _rulesBase = (cfg && (cfg.quick_rules_url || cfg.rules_url)) || './pravila/index.html';
+      var _baseNoQ = _rulesBase.split('?')[0];
+      var _isLocalPravila = _baseNoQ === './pravila/index.html' || _baseNoQ === '/pravila/index.html';
+      var _rules = (_isLocalPravila && slug) ? (_baseNoQ + '?t=' + encodeURIComponent(slug)) : _rulesBase;
+
+      if (_phone) {
+        var _ca = document.getElementById('call-action');
+        if (_ca) _ca.href = 'tel:' + _phone.replace(/\s+/g, '');
+        var _hcl = document.getElementById('host-call-link');
+        if (_hcl) _hcl.href = 'tel:' + _phone.replace(/\s+/g, '');
+      }
+      if (_dirs) {
+        var _da = document.getElementById('directions-action');
+        if (_da) _da.href = _dirs;
+        var _dl = document.getElementById('directions-link');
+        if (_dl) _dl.href = _dirs;
+      }
+      var _ra = document.getElementById('rules-action');
+      if (_ra) _ra.href = _rules;
+    }
+
+    // ── Inject tenant private rules into #rules-panel ─────────────────────────
+    function applyPrivateRulesToUI() {
+      var hr = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.houseRulesPrivate;
+
+      // Resolve text from either supported format
+      var text = '';
+      if (hr && typeof hr.text === 'string' && hr.text.trim()) {
+        text = hr.text.trim();
+      } else if (hr && Array.isArray(hr.rules) && hr.rules.length > 0) {
+        text = hr.rules.join('\n');
+      }
+
+      var existing = document.getElementById('tenant-private-rules');
+
+      // No text: remove injected block if present, then stop
+      if (!text) {
+        if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+        return;
+      }
+
+      // Create block once
+      if (!existing) {
+        existing = document.createElement('div');
+        existing.id = 'tenant-private-rules';
+        existing.style.cssText = 'margin-top:1rem;padding-top:1rem;border-top:1px solid var(--glass-border,rgba(255,255,255,0.1));';
+
+        var title = document.createElement('p');
+        title.style.cssText = 'font-size:0.78rem;font-weight:600;color:var(--text-secondary,#94a3b8);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;';
+        title.textContent = 'Dodatna pravila apartmaja';
+
+        var body = document.createElement('div');
+        body.id = 'tenant-private-rules-body';
+        body.style.cssText = 'font-size:0.92rem;line-height:1.6;white-space:pre-line;color:var(--text-primary,#e2e8f0);';
+
+        existing.appendChild(title);
+        existing.appendChild(body);
+
+        var rulesPanel = document.getElementById('rules-panel');
+        var panelContent = rulesPanel && rulesPanel.querySelector('.panel-content');
+        var target = panelContent || rulesPanel;
+        if (!target) return; // panel not in DOM yet — safe no-op
+        target.appendChild(existing);
+      }
+
+      // Always update text via textContent (never innerHTML)
+      var bodyEl = document.getElementById('tenant-private-rules-body');
+      if (bodyEl) bodyEl.textContent = text;
+    }
+
     // Close all panels
     function closeAllPanels() {
       document.querySelectorAll('.accordion-panel').forEach(panel => {
@@ -912,9 +1021,16 @@
       if (!container) return;
       
       const trans = translations[currentLang];
-      const recommended = options.filter(p => p.type === 'apartment');
+      let recommended = options.filter(p => p.type === 'apartment');
       const others = options.filter(p => p.type !== 'apartment');
-      
+
+      // Tenant override: replace first recommended card only
+      var _tpo = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.parkingRecommended;
+      if (_tpo && _tpo.title) {
+        var _tpoC = { type: 'apartment', title: { sl: _tpo.title, en: _tpo.title }, address: _tpo.address || '', mapsLink: _tpo.mapsLink || '', notes: _tpo.notes ? { sl: _tpo.notes, en: _tpo.notes } : null, paid: null, hours: null };
+        recommended = [_tpoC].concat(recommended.slice(1));
+      }
+
       let html = '';
       
       if (recommended.length > 0) {
@@ -982,6 +1098,14 @@
       }
       var recommended = filtered.filter(function(p) { return p.type === 'apartment'; });
       var others = filtered.filter(function(p) { return p.type !== 'apartment'; });
+
+      // Tenant override: replace first recommended card only
+      var _tpo2 = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.parkingRecommended;
+      if (_tpo2 && _tpo2.title) {
+        var _tpoC2 = { type: 'apartment', title: { sl: _tpo2.title, en: _tpo2.title }, address: _tpo2.address || '', mapsLink: _tpo2.mapsLink || '', notes: _tpo2.notes ? { sl: _tpo2.notes, en: _tpo2.notes } : null, paid: null, hours: null };
+        recommended = [_tpoC2].concat(recommended.slice(1));
+      }
+
       var trans = translations[currentLang];
       var html = '';
       if (recommended.length > 0) {
@@ -3594,4 +3718,27 @@
         mapToEditPanelValues
       });
     }
+
+    // ── Robust rules-link interceptor: always preserves ?t= slug ─────────────
+    // Runs in capture phase so it fires before any existing handlers.
+    document.addEventListener('click', function (e) {
+      var slug = new URLSearchParams(window.location.search).get('t');
+      if (!slug) return;
+
+      var el = e.target && e.target.closest ? e.target.closest('a,button') : null;
+      if (!el) return;
+
+      var href = (el.getAttribute && el.getAttribute('href')) || '';
+      var isRules =
+        (el.id === 'rules-action') ||
+        (href && href.indexOf('pravila/index.html') !== -1);
+
+      if (!isRules) return;
+
+      var forced = './pravila/index.html?t=' + encodeURIComponent(slug);
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.href = forced;
+    }, true); // capture=true: runs before any bubbling handlers
+
 })();

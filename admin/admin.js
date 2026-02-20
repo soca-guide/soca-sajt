@@ -28,7 +28,7 @@
 
   // Master panel refs
   var masterPanel          = document.getElementById('master-panel');
-  var ownerPlaceholder     = document.getElementById('owner-placeholder');
+  var ownerPanel           = document.getElementById('owner-panel');
   var btnRefreshTenants    = document.getElementById('btn-refresh-tenants');
   var tenantsStatus        = document.getElementById('tenants-status');
   var tenantsTbody         = document.getElementById('tenants-tbody');
@@ -40,6 +40,18 @@
   var ownerTenantSelect    = document.getElementById('owner-tenant-select');
   var linkOwnerStatus      = document.getElementById('link-owner-status');
   var btnLinkOwner         = document.getElementById('btn-link-owner');
+
+  // Owner panel refs
+  var ownerCallPhoneInput      = document.getElementById('owner-call-phone');
+  var ownerDirectionsLinkInput = document.getElementById('owner-directions-link');
+  var ownerRulesUrlInput       = document.getElementById('owner-rules-url');
+  var ownerRulesTextArea       = document.getElementById('owner-rules-text');
+  var ownerParkingTitleInput   = document.getElementById('owner-parking-title');
+  var ownerParkingAddressInput = document.getElementById('owner-parking-address');
+  var ownerParkingMapsInput    = document.getElementById('owner-parking-maps');
+  var ownerParkingNotesArea    = document.getElementById('owner-parking-notes');
+  var ownerSaveStatus          = document.getElementById('owner-save-status');
+  var btnOwnerSave             = document.getElementById('btn-owner-save');
 
   // ── Slug helper ──────────────────────────────────────────────────────────────
   var DIACRITIC_MAP = {
@@ -210,6 +222,139 @@
       });
   }
 
+  // ── OWNER: state cache ────────────────────────────────────────────────────────
+  var _ownerTenantId = null;
+  var _ownerData     = {};
+
+  // ── OWNER: helpers ────────────────────────────────────────────────────────────
+  function isValidLink(v) {
+    return !v || v.startsWith('http://') || v.startsWith('https://') || v.startsWith('./');
+  }
+
+  function upsertItem(tenantId, sectionKey, itemKey, type, orderVal, visible, dataObj) {
+    return sb.from('items').upsert({
+      tenant_id:   tenantId,
+      section_key: sectionKey,
+      item_key:    itemKey,
+      type:        type,
+      order:       orderVal,
+      visible:     visible,
+      data_json:   dataObj,
+      updated_at:  new Date().toISOString()
+    }, { onConflict: 'tenant_id,section_key,item_key' });
+  }
+
+  // ── OWNER: load editable data ─────────────────────────────────────────────────
+  function loadOwnerEditableData(tenantId) {
+    _ownerTenantId = tenantId;
+    setStatus(ownerSaveStatus, 'Učitavam podatke…', 'info');
+
+    sb.from('items')
+      .select('section_key, item_key, data_json')
+      .eq('tenant_id', tenantId)
+      .in('item_key', ['default_config', 'house_rules_private', 'parking_recommended'])
+      .then(function (result) {
+        if (result.error) {
+          setStatus(ownerSaveStatus, 'Greška pri učitavanju: ' + result.error.message, 'error');
+          return;
+        }
+
+        var byKey = {};
+        (result.data || []).forEach(function (r) { byKey[r.item_key] = r.data_json || {}; });
+
+        // default_config — keep full object in cache so merge never wipes other keys
+        var cfg = byKey['default_config'] || {};
+        _ownerData.defaultConfig = cfg;
+        ownerCallPhoneInput.value      = cfg.quick_call_phone      || cfg.host_phone  || '';
+        ownerDirectionsLinkInput.value = cfg.quick_directions_link || cfg.maps_link   || '';
+        ownerRulesUrlInput.value       = cfg.quick_rules_url       || './pravila/index.html';
+
+        // house_rules_private
+        var rules = byKey['house_rules_private'] || {};
+        _ownerData.houseRulesPrivate = rules;
+        ownerRulesTextArea.value = rules.text || '';
+
+        // parking_recommended
+        var park = byKey['parking_recommended'] || {};
+        _ownerData.parkingRecommended = park;
+        ownerParkingTitleInput.value   = park.title    || '';
+        ownerParkingAddressInput.value = park.address  || '';
+        ownerParkingMapsInput.value    = park.mapsLink || '';
+        ownerParkingNotesArea.value    = park.notes    || '';
+
+        clearStatus(ownerSaveStatus);
+      });
+  }
+
+  // ── OWNER: save ───────────────────────────────────────────────────────────────
+  function saveOwnerData() {
+    var phone    = ownerCallPhoneInput.value.trim();
+    var dirLink  = ownerDirectionsLinkInput.value.trim();
+    var rulesUrl = ownerRulesUrlInput.value.trim();
+    var rulesText     = ownerRulesTextArea.value;
+    var parkTitle     = ownerParkingTitleInput.value.trim();
+    var parkAddr      = ownerParkingAddressInput.value.trim();
+    var parkMaps      = ownerParkingMapsInput.value.trim();
+    var parkNotes     = ownerParkingNotesArea.value.trim();
+
+    if (!phone) {
+      setStatus(ownerSaveStatus, 'Telefon ne može biti prazan.', 'error');
+      return;
+    }
+    if (!isValidLink(dirLink)) {
+      setStatus(ownerSaveStatus, 'Link za navigaciju nije validan (http://, https:// ili ./).', 'error');
+      return;
+    }
+    if (!isValidLink(rulesUrl)) {
+      setStatus(ownerSaveStatus, 'Link za hišni red nije validan (http://, https:// ili ./).', 'error');
+      return;
+    }
+    if (!isValidLink(parkMaps)) {
+      setStatus(ownerSaveStatus, 'Maps link za parking nije validan (http://, https:// ili ./).', 'error');
+      return;
+    }
+    if (!_ownerTenantId) {
+      setStatus(ownerSaveStatus, 'Greška: tenant_id nedostaje. Pokušaj ponovo da se prijaviš.', 'error');
+      return;
+    }
+
+    btnOwnerSave.disabled = true;
+    setStatus(ownerSaveStatus, 'Snimam…', 'info');
+
+    // Merge only the 3 quick keys into the full cached config object (other keys untouched)
+    var configData = Object.assign({}, _ownerData.defaultConfig || {});
+    configData.quick_call_phone      = phone;
+    configData.quick_directions_link = dirLink;
+    configData.quick_rules_url       = rulesUrl || './pravila/index.html';
+
+    var houseRulesData = { text: rulesText };
+    var parkingData    = { title: parkTitle, address: parkAddr, mapsLink: parkMaps, notes: parkNotes };
+
+    Promise.all([
+      upsertItem(_ownerTenantId, 'info',        'default_config',       'config',  0, true, configData),
+      upsertItem(_ownerTenantId, 'house_rules',  'house_rules_private',  'rules',   0, true, houseRulesData),
+      upsertItem(_ownerTenantId, 'parking',      'parking_recommended',  'parking', 0, true, parkingData)
+    ]).then(function (results) {
+      btnOwnerSave.disabled = false;
+      var errors = results
+        .filter(function (r) { return r && r.error; })
+        .map(function (r) { return r.error.message; });
+
+      if (errors.length) {
+        setStatus(ownerSaveStatus, 'Greška: ' + errors.join('; '), 'error');
+        return;
+      }
+      // Update local cache so re-save merges correctly without refetch
+      _ownerData.defaultConfig      = configData;
+      _ownerData.houseRulesPrivate  = houseRulesData;
+      _ownerData.parkingRecommended = parkingData;
+      setStatus(ownerSaveStatus, 'Sačuvano! ✓', 'info');
+    }).catch(function (err) {
+      btnOwnerSave.disabled = false;
+      setStatus(ownerSaveStatus, 'Neočekivana greška: ' + (err && err.message), 'error');
+    });
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
   function showView(name) {
     viewLogin.classList.toggle('hidden', name !== 'login');
@@ -236,7 +381,7 @@
 
     // Hide role-specific panels until role is known
     masterPanel.classList.add('hidden');
-    ownerPlaceholder.classList.add('hidden');
+    ownerPanel.classList.add('hidden');
 
     sb.from('user_profiles')
       .select('role, tenant_id')
@@ -268,7 +413,8 @@
           masterPanel.classList.remove('hidden');
           loadTenants();
         } else if (data.role === 'OWNER') {
-          ownerPlaceholder.classList.remove('hidden');
+          ownerPanel.classList.remove('hidden');
+          loadOwnerEditableData(data.tenant_id);
         }
       });
   }
@@ -326,6 +472,9 @@
 
   btnLinkOwner.addEventListener('click', linkOwnerToTenant);
 
+  // ── Owner panel events ────────────────────────────────────────────────────────
+  btnOwnerSave.addEventListener('click', saveOwnerData);
+
   // ── Logout ───────────────────────────────────────────────────────────────────
   btnLogout.addEventListener('click', function () {
     btnLogout.disabled   = true;
@@ -338,8 +487,20 @@
       inputPassword.value = '';
       loginError.className = 'msg hidden';
       masterPanel.classList.add('hidden');
-      ownerPlaceholder.classList.add('hidden');
+      ownerPanel.classList.add('hidden');
       tenantsTbody.innerHTML = '<tr><td colspan="4" class="table-empty">—</td></tr>';
+      // Reset owner form + state
+      _ownerTenantId = null;
+      _ownerData     = {};
+      ownerCallPhoneInput.value      = '';
+      ownerDirectionsLinkInput.value = '';
+      ownerRulesUrlInput.value       = '';
+      ownerRulesTextArea.value       = '';
+      ownerParkingTitleInput.value   = '';
+      ownerParkingAddressInput.value = '';
+      ownerParkingMapsInput.value    = '';
+      ownerParkingNotesArea.value    = '';
+      clearStatus(ownerSaveStatus);
       showView('login');
     });
   });

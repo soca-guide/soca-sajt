@@ -102,10 +102,44 @@
 
       </div><!-- /#master-panel -->
 
-      <!-- placeholder for OWNER editing UI (future phase) -->
-      <div id="owner-placeholder" class="placeholder hidden">
-        <p>OWNER upravljačka ploča — dolazi u sledećoj fazi.</p>
-      </div>
+      <!-- ── OWNER PANEL ── -->
+      <div id="owner-panel" class="hidden">
+
+        <hr class="section-divider" />
+
+        <!-- Section 1: Quick dugmad -->
+        <h2>Quick dugmad</h2>
+        <label for="owner-call-phone">📞 Pokliči lastnika (telefon)</label>
+        <input id="owner-call-phone" type="text" placeholder="+386 31 123 456" />
+        <label for="owner-directions-link">🗺️ Do apartmana (link)</label>
+        <input id="owner-directions-link" type="text" placeholder="https://maps.google.com/..." />
+        <label for="owner-rules-url">📋 Hišni red (link)</label>
+        <input id="owner-rules-url" type="text" placeholder="./pravila/index.html" />
+
+        <hr class="section-divider" />
+
+        <!-- Section 2: House rules private -->
+        <h2>Hišni red (privatno)</h2>
+        <label for="owner-rules-text">Tekst / sadržaj</label>
+        <textarea id="owner-rules-text" rows="8" placeholder="Unesite privatna pravila stanara…"></textarea>
+
+        <hr class="section-divider" />
+
+        <!-- Section 3: Parking recommended -->
+        <h2>Parking — preporučeno (prva kartica)</h2>
+        <label for="owner-parking-title">Naziv</label>
+        <input id="owner-parking-title" type="text" placeholder="Parking Bovec centar" />
+        <label for="owner-parking-address">Adresa</label>
+        <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
+        <label for="owner-parking-maps">Maps link</label>
+        <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+        <label for="owner-parking-notes">Napomena</label>
+        <textarea id="owner-parking-notes" rows="3" placeholder="Besplatno do 2h, zatim 1 €/h…"></textarea>
+
+        <p id="owner-save-status" class="msg hidden"></p>
+        <button id="btn-owner-save">Sačuvaj</button>
+
+      </div><!-- /#owner-panel -->
 
     </div>
   </div>
