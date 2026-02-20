@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Soča Sajt</title>
+  <link rel="stylesheet" href="./admin.css" />
+</head>
+<body>
+
+  <!-- ── LOGIN VIEW ── -->
+  <div id="view-login" class="view">
+    <div class="card">
+      <h1>Admin prijava</h1>
+      <p id="login-error" class="msg error hidden"></p>
+      <label for="input-email">E-mail</label>
+      <input id="input-email" type="email" autocomplete="username" placeholder="admin@primer.com" />
+      <label for="input-password">Lozinka</label>
+      <input id="input-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <button id="btn-login">Prijava</button>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD VIEW ── -->
+  <div id="view-dashboard" class="view hidden">
+    <div class="card">
+      <div class="dash-header">
+        <h1>Admin panel</h1>
+        <button id="btn-logout" class="btn-secondary">Odjava</button>
+      </div>
+      <div class="info-block">
+        <span class="label">Ulogovan kao:</span>
+        <span id="dash-email" class="value">—</span>
+      </div>
+      <div class="info-block">
+        <span class="label">Uloga:</span>
+        <span id="dash-role" class="value">—</span>
+        <span class="label" style="margin-left:1.5rem;">tenant_id:</span>
+        <span id="dash-tenant" class="value">—</span>
+      </div>
+      <p id="dash-status" class="msg hidden"></p>
+
+      <!-- placeholder for future editing UI -->
+      <div class="placeholder">
+        <p>Upravljačka ploča — sadržaj dolazi u sledećoj fazi.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase v2 UMD (exposes window.supabase) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>
