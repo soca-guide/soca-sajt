@@ -388,6 +388,8 @@
       if (parkingScreen && parkingScreen.classList.contains('show')) {
         renderParkingPageContent();
       }
+      // Re-render base rules for the new language (only if DB rules were previously loaded)
+      if (_baseRulesDJ) _applyBaseRulesToPanel(_baseRulesDJ);
     }
 
     // Initialize with saved language
@@ -725,6 +727,57 @@
 
     // ── Lazy-load base house rules from Supabase (global house_rules/base row) ───
     var _baseRulesState = 'idle'; // idle | loading | loaded | failed
+    var _baseRulesDJ = null;     // cached DB data_json for language-switch re-render
+
+    // Rebuilds the static hardcoded rules using current translations (restores after DB override)
+    function _restoreI18nRules(rulesList) {
+      if (!rulesList) return;
+      var trans = translations[currentLang] || translations.sl;
+      var STATIC = [
+        ['🔇','rule1'], ['🚭','rule2'], ['🗑️','rule3'], ['🔐','rule4'], ['🚪','rule5']
+      ];
+      rulesList.innerHTML = '';
+      STATIC.forEach(function (r) {
+        var div  = document.createElement('div');  div.className  = 'rule-item';
+        var icon = document.createElement('span'); icon.className = 'rule-icon'; icon.textContent = r[0];
+        var p    = document.createElement('p');    p.className    = 'rule-text';  p.textContent    = trans[r[1]] || '';
+        div.appendChild(icon); div.appendChild(p);
+        rulesList.appendChild(div);
+      });
+    }
+
+    // Renders DB base rules for current language; restores translated static rules when DB data
+    // doesn't cover the active language (single-lang DB content is treated as Slovenian only).
+    function _applyBaseRulesToPanel(dj) {
+      var rulesList = document.querySelector('#rules-panel .rules-list');
+      if (!rulesList) return;
+      var baseItems = [];
+      // Multilingual format: dj.by_lang or dj.items_by_lang → { "sl":[...], "en":[...], ... }
+      var byLang = dj.by_lang || dj.items_by_lang;
+      if (byLang && typeof byLang === 'object') {
+        var langItems = byLang[currentLang] || byLang.en || byLang.sl || [];
+        if (Array.isArray(langItems) && langItems.length > 0) baseItems = langItems;
+      }
+      // Single-language fallback: only apply for Slovenian (DB content assumed to be in Slovenian)
+      if (!baseItems.length && currentLang === 'sl') {
+        if (Array.isArray(dj.items) && dj.items.length > 0) {
+          baseItems = dj.items;
+        } else if (typeof dj.text === 'string' && dj.text.trim()) {
+          baseItems = dj.text.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        }
+      }
+      // No usable data for this language → restore translated static rules
+      if (!baseItems.length) { _restoreI18nRules(rulesList); return; }
+      rulesList.innerHTML = '';
+      baseItems.forEach(function (txt) {
+        var div  = document.createElement('div');  div.className  = 'rule-item';
+        var icon = document.createElement('span'); icon.className = 'rule-icon'; icon.textContent = '•';
+        var p    = document.createElement('p');    p.className    = 'rule-text';  p.textContent    = txt;
+        div.appendChild(icon); div.appendChild(p);
+        rulesList.appendChild(div);
+      });
+      if (window.__DEBUG) console.log('[BASE-RULES] rendered', baseItems.length, 'items for lang:', currentLang);
+    }
 
     function loadBaseRules() {
       if (_baseRulesState !== 'idle') return; // already loading or loaded
@@ -741,26 +794,8 @@
         .then(function (r) {
           _baseRulesState = 'loaded';
           if (r.error || !r.data || !r.data.data_json) return; // keep static fallback
-          var dj = r.data.data_json;
-          var baseItems = [];
-          if (Array.isArray(dj.items) && dj.items.length > 0) {
-            baseItems = dj.items;
-          } else if (typeof dj.text === 'string' && dj.text.trim()) {
-            baseItems = dj.text.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-          }
-          if (!baseItems.length) return; // no usable data; keep static fallback
-          // Replace static .rules-list with DB-driven items (plain text only — never innerHTML)
-          var rulesList = document.querySelector('#rules-panel .rules-list');
-          if (!rulesList) return;
-          rulesList.innerHTML = '';
-          baseItems.forEach(function (txt) {
-            var div = document.createElement('div');  div.className = 'rule-item';
-            var icon = document.createElement('span'); icon.className = 'rule-icon'; icon.textContent = '•';
-            var p = document.createElement('p');       p.className = 'rule-text';   p.textContent = txt;
-            div.appendChild(icon); div.appendChild(p);
-            rulesList.appendChild(div);
-          });
-          if (window.__DEBUG) console.log('[BASE-RULES] loaded', baseItems.length, 'items');
+          _baseRulesDJ = r.data.data_json;
+          _applyBaseRulesToPanel(_baseRulesDJ);
         })
         .catch(function () { _baseRulesState = 'failed'; }); // silent fallback
     }

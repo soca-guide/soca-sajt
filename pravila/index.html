@@ -22,24 +22,56 @@
     <div class="rules-title">Hišni red</div>
   </header>
   <main class="rules-body">
-    <div class="rule-item"><span class="rule-icon">🔇</span><p class="rule-text">Prosimo za spoštovanje miru po 22. uri</p></div>
-    <div class="rule-item"><span class="rule-icon">🚭</span><p class="rule-text">Kajenje je dovoljeno samo na terasi</p></div>
-    <div class="rule-item"><span class="rule-icon">🗑️</span><p class="rule-text">Smeti odložite v zabojnik na hodniku</p></div>
-    <div class="rule-item"><span class="rule-icon">🔐</span><p class="rule-text">Zaklenite vrata ob odhodu iz apartmaja</p></div>
-    <div class="rule-item"><span class="rule-icon">🚪</span><p class="rule-text">Check-out ob 11:00. Ključe pustite v varnostni škatli</p></div>
+    <div class="rule-item"><span class="rule-icon">🔇</span><p class="rule-text" data-i18n="rule1">Prosimo za spoštovanje miru po 22. uri</p></div>
+    <div class="rule-item"><span class="rule-icon">🚭</span><p class="rule-text" data-i18n="rule2">Kajenje je dovoljeno samo na terasi</p></div>
+    <div class="rule-item"><span class="rule-icon">🗑️</span><p class="rule-text" data-i18n="rule3">Smeti odložite v zabojnik na hodniku</p></div>
+    <div class="rule-item"><span class="rule-icon">🔐</span><p class="rule-text" data-i18n="rule4">Zaklenite vrata ob odhodu iz apartmaja</p></div>
+    <div class="rule-item"><span class="rule-icon">🚪</span><p class="rule-text" data-i18n="rule5">Check-out ob 11:00. Ključe pustite v varnostni škatli</p></div>
   </main>
 
-  <!-- Tenant private rules (loads only when ?t=<slug> is present) -->
+  <!-- i18n + tenant private rules -->
+  <script src="../assets/i18n.js?v=20260220-1"></script>
   <script src="../assets/supabase-client.js?v=20260220-1"></script>
   <script src="../assets/tenant-loader.js?v=20260220-1"></script>
   <script>
   (function () {
     'use strict';
+
+    // ── Language detection (same localStorage key as main SPA) ──────────
+    var SUPPORTED = ['sl','en','de','it','pl','cs'];
+    function detectLang() {
+      var raw = (localStorage.getItem('preferredLanguage') || localStorage.getItem('lang') || '').toLowerCase().trim();
+      if (SUPPORTED.indexOf(raw) >= 0) return raw;
+      raw = (new URLSearchParams(window.location.search).get('lang') || '').toLowerCase().trim();
+      if (SUPPORTED.indexOf(raw) >= 0) return raw;
+      return 'sl';
+    }
+    var lang = detectLang();
+    var t = (window.APP && window.APP.translations && window.APP.translations[lang]) || {};
+
+    // Apply [data-i18n] rule items
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (t[key]) el.textContent = t[key];
+    });
+
+    // Header title + browser tab title
+    var titleEl = document.querySelector('.rules-title');
+    if (titleEl && t.rules) titleEl.textContent = t.rules;
+    if (t.rules) document.title = t.rules + ' \u2013 Dolina So\u010de';
+
+    // Back button text (← kept as prefix)
+    var backEl = document.getElementById('rulesBack');
+    if (backEl && t.back_btn) backEl.textContent = '\u2190 ' + t.back_btn;
+
+    // HTML lang attribute
+    document.documentElement.lang = lang;
+
+    // ── Slug / tenant overrides ─────────────────────────────────────────
     var slug = new URLSearchParams(window.location.search).get('t') || null;
 
     // Preserve slug on back link so pressing ← keeps tenant context
     if (slug) {
-      var backEl = document.getElementById('rulesBack');
       if (backEl) backEl.href = '../index.html?t=' + encodeURIComponent(slug);
     }
 
@@ -64,7 +96,7 @@
 
       var title = document.createElement('p');
       title.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(240,253,244,0.5);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem;';
-      title.textContent = 'Dodatna pravila apartmaja';
+      title.textContent = t.rules_private_section || 'Dodatna pravila apartmaja';
 
       var body = document.createElement('div');
       body.style.cssText = 'font-size:0.95rem;line-height:1.6;white-space:pre-line;color:#f0fdf4;';

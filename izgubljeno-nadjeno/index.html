@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Izgubljeno / Nađeno</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/supabase-client.js?v=20260220-1"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
     <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
       <button id="backBtn" class="px-3 py-2 rounded-xl border border-white/15 bg-white/5"></button>
       <div class="font-semibold" id="pageTitle">Izgubljeno / Nađeno</div>
-      <div class="text-xs px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300">DEMO</div>
+      <div></div>
     </div>
   </div>
 
@@ -44,11 +45,11 @@
   }
   var labelsByLang = {
     sl: { back:'← Nazaj', title:'Izgubljeno / Najdeno', intro:'Vnesi svojo e-pošto in sporočilo (max 500 znakov). Sprejemamo največ 3 objave/spremembe objav na uporabnika v izogib zlorabam. Sporočila, starejša od 30 dni, se brišejo samodejno.', yourEmail:'Tvoj email', messageMax:'Sporočilo (max 500)', placeholderMsg:'Npr. Izgubil sem modro jakno v bližini...', publish:'Objavi / Shrani', limitReached:'Dosežena omejitev (max 3 spremembe na e-pošto).', messagesTitle:'Sporočila (zadnjih 30 dni)', noMessages:'Ni sporočil.' },
-    en: { back:'← Back', title:'Lost & Found', intro:'No login: enter your email and message (max 500 characters). Same email can edit/publish max 3 times. Messages older than 30 days are automatically deleted (DEMO).', yourEmail:'Your email', messageMax:'Message (max 500)', placeholderMsg:'E.g. I lost a blue jacket near...', publish:'Publish / Save', limitReached:'Limit reached (max 3 edits per email).', messagesTitle:'Messages (last 30 days)', noMessages:'No messages.' },
-    de: { back:'← Zurück', title:'Verloren / Gefunden', intro:'Ohne Anmeldung: E-Mail und Nachricht eingeben (max 500 Zeichen). Dieselbe E-Mail kann max 3-mal bearbeiten/veröffentlichen. Nachrichten älter als 30 Tage werden automatisch gelöscht (DEMO).', yourEmail:'Deine E-Mail', messageMax:'Nachricht (max 500)', placeholderMsg:'Z.B. Ich habe eine blaue Jacke verloren bei...', publish:'Veröffentlichen / Speichern', limitReached:'Limit erreicht (max 3 Bearbeitungen pro E-Mail).', messagesTitle:'Nachrichten (letzte 30 Tage)', noMessages:'Keine Nachrichten.' },
-    pl: { back:'← Wstecz', title:'Zgubione / Znalezione', intro:'Bez logowania: wpisz e-mail i wiadomość (max 500 znaków). Ten sam e-mail może edytować/opublikować max 3 razy. Wiadomości starsze niż 30 dni są automatycznie usuwane (DEMO).', yourEmail:'Twój e-mail', messageMax:'Wiadomość (max 500)', placeholderMsg:'Np. Zgubiłem niebieską kurtkę w okolicy...', publish:'Opublikuj / Zapisz', limitReached:'Osiągnięto limit (max 3 edycje na e-mail).', messagesTitle:'Wiadomości (ostatnie 30 dni)', noMessages:'Brak wiadomości.' },
-    cs: { back:'← Zpět', title:'Ztraceno / Nalezeno', intro:'Bez přihlášení: zadejte e-mail a zprávu (max 500 znaků). Stejný e-mail může upravit/zveřejnit max 3×. Zprávy starší než 30 dní se automaticky smažou (DEMO).', yourEmail:'Váš e-mail', messageMax:'Zpráva (max 500)', placeholderMsg:'Např. Ztratil jsem modrou bundu u...', publish:'Publikovat / Uložit', limitReached:'Dosažen limit (max 3 úpravy na e-mail).', messagesTitle:'Zprávy (posledních 30 dní)', noMessages:'Žádné zprávy.' },
-    it: { back:'← Indietro', title:'Perso / Trovato', intro:'Senza accesso: inserisci email e messaggio (max 500 caratteri). Stessa email può modificare/pubblicare max 3 volte. Messaggi più vecchi di 30 giorni vengono cancellati automaticamente (DEMO).', yourEmail:'La tua email', messageMax:'Messaggio (max 500)', placeholderMsg:'Es. Ho perso una giacca blu vicino a...', publish:'Pubblica / Salva', limitReached:'Limite raggiunto (max 3 modifiche per email).', messagesTitle:'Messaggi (ultimi 30 giorni)', noMessages:'Nessun messaggio.' }
+    en: { back:'← Back', title:'Lost & Found', intro:'No login required: enter your email and message (max 500 characters). Same email can edit/publish max 3 times. Messages older than 30 days are deleted automatically.', yourEmail:'Your email', messageMax:'Message (max 500)', placeholderMsg:'E.g. I lost a blue jacket near...', publish:'Publish / Save', limitReached:'Limit reached (max 3 edits per email).', messagesTitle:'Messages (last 30 days)', noMessages:'No messages.' },
+    de: { back:'← Zurück', title:'Verloren / Gefunden', intro:'Ohne Anmeldung: E-Mail und Nachricht eingeben (max 500 Zeichen). Dieselbe E-Mail kann max 3-mal bearbeiten/veröffentlichen. Nachrichten älter als 30 Tage werden automatisch gelöscht.', yourEmail:'Deine E-Mail', messageMax:'Nachricht (max 500)', placeholderMsg:'Z.B. Ich habe eine blaue Jacke verloren bei...', publish:'Veröffentlichen / Speichern', limitReached:'Limit erreicht (max 3 Bearbeitungen pro E-Mail).', messagesTitle:'Nachrichten (letzte 30 Tage)', noMessages:'Keine Nachrichten.' },
+    pl: { back:'← Wstecz', title:'Zgubione / Znalezione', intro:'Bez logowania: wpisz e-mail i wiadomość (max 500 znaków). Ten sam e-mail może edytować/opublikować max 3 razy. Wiadomości starsze niż 30 dni są usuwane automatycznie.', yourEmail:'Twój e-mail', messageMax:'Wiadomość (max 500)', placeholderMsg:'Np. Zgubiłem niebieską kurtkę w okolicy...', publish:'Opublikuj / Zapisz', limitReached:'Osiągnięto limit (max 3 edycje na e-mail).', messagesTitle:'Wiadomości (ostatnie 30 dni)', noMessages:'Brak wiadomości.' },
+    cs: { back:'← Zpět', title:'Ztraceno / Nalezeno', intro:'Bez přihlášení: zadejte e-mail a zprávu (max 500 znaků). Stejný e-mail může upravit/zveřejnit max 3×. Zprávy starší než 30 dní se automaticky smažou.', yourEmail:'Váš e-mail', messageMax:'Zpráva (max 500)', placeholderMsg:'Např. Ztratil jsem modrou bundu u...', publish:'Publikovat / Uložit', limitReached:'Dosažen limit (max 3 úpravy na e-mail).', messagesTitle:'Zprávy (posledních 30 dní)', noMessages:'Žádné zprávy.' },
+    it: { back:'← Indietro', title:'Perso / Trovato', intro:'Senza accesso: inserisci email e messaggio (max 500 caratteri). Stessa email può modificare/pubblicare max 3 volte. Messaggi più vecchi di 30 giorni vengono cancellati automaticamente.', yourEmail:'La tua email', messageMax:'Messaggio (max 500)', placeholderMsg:'Es. Ho perso una giacca blu vicino a...', publish:'Pubblica / Salva', limitReached:'Limite raggiunto (max 3 modifiche per email).', messagesTitle:'Messaggi (ultimi 30 giorni)', noMessages:'Nessun messaggio.' }
   };
   function applyLang(){
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
@@ -85,88 +86,80 @@
   applyLang();
   window.addEventListener('storage', function(e){ if(e.key==='preferredLanguage'){ applyLang(); } });
 
-  const KEY = "lost_found_v1";
-
-  function loadAll(){
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, function(m) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];
+    });
   }
 
-  function saveAll(items){
-    localStorage.setItem(KEY, JSON.stringify(items));
-  }
-
-  function purgeOld(items){
-    const now = Date.now();
-    const limit = 30 * 24 * 60 * 60 * 1000;
-    return items.filter(x => (now - x.ts) <= limit);
-  }
-
-  function render(){
-    let items = purgeOld(loadAll());
-    saveAll(items);
-    var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
-
-    const list = document.getElementById("list");
-    if (!items.length){
+  function render() {
+    var t    = labelsByLang[getSelectedLang()] || labelsByLang.en;
+    var list = document.getElementById('list');
+    if (!list) return;
+    if (!window.supabaseClient) {
       list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
       return;
     }
-
-    items.sort((a,b)=>b.ts-a.ts);
-
-    list.innerHTML = items.map(x => `
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-300">${x.email}</div>
-          <div class="text-xs text-gray-400">${new Date(x.ts).toLocaleString()}</div>
-        </div>
-        <div class="mt-2 text-sm">${escapeHtml(x.msg)}</div>
-      </div>
-    `).join("");
+    list.innerHTML = '<div class="text-sm text-gray-400">\u2026</div>';
+    window.supabaseClient
+      .from('lost_found_posts')
+      .select('id, created_at, email, message')
+      .order('created_at', { ascending: false })
+      .then(function(r) {
+        var items = (!r.error && r.data) ? r.data : [];
+        if (!items.length) {
+          list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
+          return;
+        }
+        list.innerHTML = items.map(function(x) {
+          return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4">' +
+            '<div class="flex items-center justify-between">' +
+            '<div class="text-sm text-gray-300">' + escapeHtml(x.email) + '</div>' +
+            '<div class="text-xs text-gray-400">' + new Date(x.created_at).toLocaleString() + '</div>' +
+            '</div>' +
+            '<div class="mt-2 text-sm">' + escapeHtml(x.message) + '</div>' +
+            '</div>';
+        }).join('');
+      })
+      .catch(function() {
+        list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
+      });
   }
 
-  function escapeHtml(s){
-    return (s||"").replace(/[&<>"']/g, (m)=>({
-      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-    }[m]));
-  }
-
-  function getEditCount(email){
-    const items = loadAll();
-    const found = items.find(x => x.email === email);
-    return found ? (found.edits || 0) : 0;
-  }
-
-  document.getElementById("save").addEventListener("click", () => {
-    const email = (document.getElementById("email").value || "").trim().toLowerCase();
-    const msg = (document.getElementById("msg").value || "").trim();
-
+  document.getElementById('save').addEventListener('click', function() {
+    var email   = (document.getElementById('email').value || '').trim().toLowerCase();
+    var msg     = (document.getElementById('msg').value   || '').trim();
+    var limitEl = document.getElementById('limit');
     if (!email || !msg) return;
-
-    let items = purgeOld(loadAll());
-
-    const existing = items.find(x => x.email === email);
-    const limitEl = document.getElementById("limit");
-
-    if (existing){
-      const edits = existing.edits || 0;
-      if (edits >= 3){
-        limitEl.classList.remove("hidden");
-        return;
-      }
-      existing.msg = msg;
-      existing.ts = Date.now();
-      existing.edits = edits + 1;
-      limitEl.classList.add("hidden");
-    } else {
-      items.push({ email, msg, ts: Date.now(), edits: 1 });
-      limitEl.classList.add("hidden");
+    if (email.indexOf('@') < 0 || email.length > 100) {
+      limitEl.classList.remove('hidden'); return;
     }
-
-    saveAll(items);
-    render();
+    if (!window.supabaseClient) return;
+    var slug    = new URLSearchParams(window.location.search).get('t') || null;
+    var saveBtn = document.getElementById('save');
+    saveBtn.disabled = true;
+    window.supabaseClient
+      .rpc('create_lost_found_post', { p_email: email, p_message: msg, p_tenant_slug: slug })
+      .then(function(r) {
+        saveBtn.disabled = false;
+        if (r.error) {
+          var errMsg = r.error.message || '';
+          if (errMsg.indexOf('LIMIT_REACHED') >= 0 || errMsg.indexOf('Limit') >= 0) {
+            limitEl.classList.remove('hidden');
+          }
+          return;
+        }
+        limitEl.classList.add('hidden');
+        document.getElementById('msg').value = '';
+        render();
+      })
+      .catch(function() { saveBtn.disabled = false; });
   });
+
+  // Non-blocking cleanup: keeps DB tidy (RLS already hides old rows for reads)
+  if (window.supabaseClient) {
+    window.supabaseClient.rpc('cleanup_lost_found_posts').catch(function(){});
+  }
 
   render();
 </script>

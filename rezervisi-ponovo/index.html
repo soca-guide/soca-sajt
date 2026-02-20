@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Rezerviši ponovo</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/supabase-client.js?v=20260220-1"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
     <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
       <button id="backBtn" class="px-3 py-2 rounded-xl border border-white/15 bg-white/5"></button>
       <div class="font-semibold" id="pageTitle">Rezerviši ponovo</div>
-      <div class="text-xs px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300">DEMO</div>
+      <div></div>
     </div>
   </div>
 
@@ -35,7 +36,7 @@
     </div>
 
     <div id="result" class="hidden rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-      <div class="text-sm text-gray-300" id="labelMessage">Poruka (DEMO):</div>
+      <div class="text-sm text-gray-300" id="labelMessage">Poruka:</div>
       <pre id="msg" class="whitespace-pre-wrap text-sm bg-black/30 border border-white/10 rounded-xl p-3"></pre>
       <div class="flex gap-2">
         <button id="copy" class="flex-1 py-2 rounded-xl border border-white/15 bg-white/5"></button>
@@ -51,12 +52,12 @@
     return SUPPORTED_LANGS.indexOf(raw) >= 0 ? raw : 'en';
   }
   var labelsByLang = {
-    sl: { back:'← Nazaj', title:'Rezerviraj znova', what:'Kaj dobiš na e-pošto?', l1:'Ime apartmaja', l2:'Telefon lastnika', l3:'E-pošta lastnika', l4:'Povezava za ponovno rezerviranje (če obstaja)', l5:'Navodila za rezervacijo za naslednje leto', demoNote:'*V DEMO različici se sporočilo ustvari in ga lahko kopiraš ali odpreš mailto. Kasneje bo samodejno pošiljanje z strežnika.', yourEmail:'Tvoj email', placeholder:'npr. marko@gmail.com', send:'Pošlji mi podatke', messageDemo:'Sporočilo (DEMO):', copy:'Kopiraj', openMailto:'Odpri mailto', mailIntro:'Pozdravljeni!\n\nTu so podatki za ponovno rezervacijo:\n\n', mailOutro:'\nKako rezervirati:\n1) Pokliči ali pošlji e-pošto lastniku\n2) Pošlji željene datume\n3) Potrdi ceno in pogoje\n4) Dogovori plačilo / polog\n\nSporočilo prek Soča Guest Guide (DEMO).', subjectPrefix:'Rezervacija – ' },
-    en: { back:'← Back', title:'Book again', what:'What do you get by email?', l1:'Apartment name', l2:'Owner phone', l3:'Owner email', l4:'Booking link (if any)', l5:'How to book for next year', demoNote:'*In DEMO version the message is generated and you can copy or open mailto. Later: automatic send from backend.', yourEmail:'Your email', placeholder:'e.g. mark@example.com', send:'Send me the details', messageDemo:'Message (DEMO):', copy:'Copy', openMailto:'Open mailto', mailIntro:'Hello!\n\nHere are the details for booking again:\n\n', mailOutro:'\nHow to book:\n1) Call or email the owner\n2) Send your preferred dates\n3) Confirm price and conditions\n4) Arrange payment / deposit\n\nMessage via Soča Guest Guide (DEMO).', subjectPrefix:'Booking – ' },
-    de: { back:'← Zurück', title:'Erneut buchen', what:'Was bekommst du per E-Mail?', l1:'Apartmentname', l2:'Telefon Vermieter', l3:'E-Mail Vermieter', l4:'Buchungslink (falls vorhanden)', l5:'Anleitung für Buchung im nächsten Jahr', demoNote:'*In der DEMO-Version wird die Nachricht erzeugt; du kannst kopieren oder mailto öffnen. Später: automatischer Versand vom Backend.', yourEmail:'Deine E-Mail', placeholder:'z.B. mark@example.com', send:'Daten an mich senden', messageDemo:'Nachricht (DEMO):', copy:'Kopieren', openMailto:'Mailto öffnen', mailIntro:'Hallo!\n\nHier die Daten für eine erneute Buchung:\n\n', mailOutro:'\nSo buchst du:\n1) Vermieter anrufen oder mailen\n2) Wunschdaten senden\n3) Preis und Bedingungen bestätigen\n4) Zahlung / Anzahlung vereinbaren\n\nNachricht über Soča Guest Guide (DEMO).', subjectPrefix:'Buchung – ' },
-    pl: { back:'← Wstecz', title:'Zarezerwuj ponownie', what:'Co otrzymasz e-mailem?', l1:'Nazwa apartamentu', l2:'Telefon właściciela', l3:'E-mail właściciela', l4:'Link do rezerwacji (jeśli jest)', l5:'Jak zarezerwować na następny rok', demoNote:'*W wersji DEMO wiadomość jest generowana – możesz skopiować lub otworzyć mailto. Później: automatyczne wysyłanie z backendu.', yourEmail:'Twój e-mail', placeholder:'np. jan@example.com', send:'Wyślij mi dane', messageDemo:'Wiadomość (DEMO):', copy:'Kopiuj', openMailto:'Otwórz mailto', mailIntro:'Cześć!\n\nOto dane do ponownej rezerwacji:\n\n', mailOutro:'\nJak zarezerwować:\n1) Zadzwoń lub napisz do właściciela\n2) Podaj preferowane daty\n3) Potwierdź cenę i warunki\n4) Uzgodnij płatność / zaliczkę\n\nWiadomość przez Soča Guest Guide (DEMO).', subjectPrefix:'Rezerwacja – ' },
-    cs: { back:'← Zpět', title:'Rezervovat znovu', what:'Co dostanete e-mailem?', l1:'Název apartmánu', l2:'Telefon majitele', l3:'E-mail majitele', l4:'Odkaz na rezervaci (pokud je)', l5:'Jak rezervovat na příští rok', demoNote:'*V DEMO verzi se zpráva vygeneruje – můžete kopírovat nebo otevřít mailto. Později: automatické odeslání z backendu.', yourEmail:'Váš e-mail', placeholder:'např. jan@example.com', send:'Pošlete mi údaje', messageDemo:'Zpráva (DEMO):', copy:'Kopírovat', openMailto:'Otevřít mailto', mailIntro:'Ahoj!\n\nZde jsou údaje pro znovu rezervaci:\n\n', mailOutro:'\nJak rezervovat:\n1) Zavolejte nebo napište majiteli\n2) Pošlete požadované termíny\n3) Potvrďte cenu a podmínky\n4) Dohodněte platbu / zálohu\n\nZpráva přes Soča Guest Guide (DEMO).', subjectPrefix:'Rezervace – ' },
-    it: { back:'← Indietro', title:'Prenota di nuovo', what:'Cosa ricevi via email?', l1:'Nome appartamento', l2:'Telefono proprietario', l3:'Email proprietario', l4:'Link prenotazione (se presente)', l5:'Come prenotare per l\'anno prossimo', demoNote:'*Nella versione DEMO il messaggio viene generato e puoi copiarlo o aprire mailto. In seguito: invio automatico dal backend.', yourEmail:'La tua email', placeholder:'es. marco@example.com', send:'Invia i dati', messageDemo:'Messaggio (DEMO):', copy:'Copia', openMailto:'Apri mailto', mailIntro:'Ciao!\n\nEcco i dati per prenotare di nuovo:\n\n', mailOutro:'\nCome prenotare:\n1) Chiama o scrivi al proprietario\n2) Invia le date preferite\n3) Conferma prezzo e condizioni\n4) Concorda pagamento / acconto\n\nMessaggio tramite Soča Guest Guide (DEMO).', subjectPrefix:'Prenotazione – ' }
+    sl: { back:'← Nazaj', title:'Rezerviraj znova', what:'Kaj dobiš na e-pošto?', l1:'Ime apartmaja', l2:'Telefon lastnika', l3:'E-pošta lastnika', l4:'Povezava za ponovno rezerviranje (če obstaja)', l5:'Navodila za rezervacijo za naslednje leto', demoNote:'', yourEmail:'Tvoj email', placeholder:'npr. marko@gmail.com', send:'Pošlji mi podatke', messageDemo:'Sporočilo:', copy:'Kopiraj', openMailto:'Odpri mailto', mailIntro:'Pozdravljeni!\n\nTu so podatki za ponovno rezervacijo:\n\n', mailOutro:'\nKako rezervirati:\n1) Pokliči ali pošlji e-pošto lastniku\n2) Pošlji željene datume\n3) Potrdi ceno in pogoje\n4) Dogovori plačilo / polog\n\nSporočilo prek Soča Guest Guide.', subjectPrefix:'Rezervacija – ' },
+    en: { back:'← Back', title:'Book again', what:'What do you get by email?', l1:'Apartment name', l2:'Owner phone', l3:'Owner email', l4:'Booking link (if any)', l5:'How to book for next year', demoNote:'', yourEmail:'Your email', placeholder:'e.g. mark@example.com', send:'Send me the details', messageDemo:'Message:', copy:'Copy', openMailto:'Open mailto', mailIntro:'Hello!\n\nHere are the details for booking again:\n\n', mailOutro:'\nHow to book:\n1) Call or email the owner\n2) Send your preferred dates\n3) Confirm price and conditions\n4) Arrange payment / deposit\n\nMessage via Soča Guest Guide.', subjectPrefix:'Booking – ' },
+    de: { back:'← Zurück', title:'Erneut buchen', what:'Was bekommst du per E-Mail?', l1:'Apartmentname', l2:'Telefon Vermieter', l3:'E-Mail Vermieter', l4:'Buchungslink (falls vorhanden)', l5:'Anleitung für Buchung im nächsten Jahr', demoNote:'', yourEmail:'Deine E-Mail', placeholder:'z.B. mark@example.com', send:'Daten an mich senden', messageDemo:'Nachricht:', copy:'Kopieren', openMailto:'Mailto öffnen', mailIntro:'Hallo!\n\nHier die Daten für eine erneute Buchung:\n\n', mailOutro:'\nSo buchst du:\n1) Vermieter anrufen oder mailen\n2) Wunschdaten senden\n3) Preis und Bedingungen bestätigen\n4) Zahlung / Anzahlung vereinbaren\n\nNachricht über Soča Guest Guide.', subjectPrefix:'Buchung – ' },
+    pl: { back:'← Wstecz', title:'Zarezerwuj ponownie', what:'Co otrzymasz e-mailem?', l1:'Nazwa apartamentu', l2:'Telefon właściciela', l3:'E-mail właściciela', l4:'Link do rezerwacji (jeśli jest)', l5:'Jak zarezerwować na następny rok', demoNote:'', yourEmail:'Twój e-mail', placeholder:'np. jan@example.com', send:'Wyślij mi dane', messageDemo:'Wiadomość:', copy:'Kopiuj', openMailto:'Otwórz mailto', mailIntro:'Cześć!\n\nOto dane do ponownej rezerwacji:\n\n', mailOutro:'\nJak zarezerwować:\n1) Zadzwoń lub napisz do właściciela\n2) Podaj preferowane daty\n3) Potwierdź cenę i warunki\n4) Uzgodnij płatność / zaliczkę\n\nWiadomość przez Soča Guest Guide.', subjectPrefix:'Rezerwacja – ' },
+    cs: { back:'← Zpět', title:'Rezervovat znovu', what:'Co dostanete e-mailem?', l1:'Název apartmánu', l2:'Telefon majitele', l3:'E-mail majitele', l4:'Odkaz na rezervaci (pokud je)', l5:'Jak rezervovat na příští rok', demoNote:'', yourEmail:'Váš e-mail', placeholder:'např. jan@example.com', send:'Pošlete mi údaje', messageDemo:'Zpráva:', copy:'Kopírovat', openMailto:'Otevřít mailto', mailIntro:'Ahoj!\n\nZde jsou údaje pro znovu rezervaci:\n\n', mailOutro:'\nJak rezervovat:\n1) Zavolejte nebo napište majiteli\n2) Pošlete požadované termíny\n3) Potvrďte cenu a podmínky\n4) Dohodněte platbu / zálohu\n\nZpráva přes Soča Guest Guide.', subjectPrefix:'Rezervace – ' },
+    it: { back:'← Indietro', title:'Prenota di nuovo', what:'Cosa ricevi via email?', l1:'Nome appartamento', l2:'Telefono proprietario', l3:'Email proprietario', l4:'Link prenotazione (se presente)', l5:'Come prenotare per l\'anno prossimo', demoNote:'', yourEmail:'La tua email', placeholder:'es. marco@example.com', send:'Invia i dati', messageDemo:'Messaggio:', copy:'Copia', openMailto:'Apri mailto', mailIntro:'Ciao!\n\nEcco i dati per prenotare di nuovo:\n\n', mailOutro:'\nCome prenotare:\n1) Chiama o scrivi al proprietario\n2) Invia le date preferite\n3) Conferma prezzo e condizioni\n4) Concorda pagamento / acconto\n\nMessaggio tramite Soča Guest Guide.', subjectPrefix:'Prenotazione – ' }
   };
   function applyLang(){
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
@@ -95,23 +96,60 @@
   applyLang();
   window.addEventListener('storage', function(e){ if(e.key==='preferredLanguage') applyLang(); });
 
-  const APARTMAN = { name: "Apartman Soča (DEMO)", owner_phone: "+386 00 000 000", owner_email: "owner@example.com", booking_link: "https://example.com/rezervacija" };
-  const emailEl = document.getElementById('email');
-  const result = document.getElementById('result');
-  const msgEl = document.getElementById('msg');
-  const mailtoEl = document.getElementById('mailto');
+  // ── Tenant rebook data (fetched from Supabase if ?t= present) ─────────
+  var rbData   = null;
+  var _rbSlug  = new URLSearchParams(window.location.search).get('t') || null;
+  var emailEl  = document.getElementById('email');
+  var result   = document.getElementById('result');
+  var msgEl    = document.getElementById('msg');
+  var mailtoEl = document.getElementById('mailto');
+  var statusEl = document.getElementById('demoNote'); // repurposed as inline status
 
-  document.getElementById('send').addEventListener('click', () => {
-    const userEmail = (emailEl.value || "").trim();
-    if (!userEmail) { emailEl.focus(); return; }
+  (function _fetchRebook() {
+    if (!_rbSlug || !window.supabaseClient) return;
+    window.supabaseClient
+      .from('tenants').select('tenant_id')
+      .eq('slug', _rbSlug).eq('status', 'active').maybeSingle()
+      .then(function(r1) {
+        if (r1.error || !r1.data) return;
+        return window.supabaseClient
+          .from('items').select('data_json')
+          .eq('tenant_id', r1.data.tenant_id)
+          .eq('section_key', 'booking').eq('item_key', 'rebook').eq('visible', true)
+          .maybeSingle()
+          .then(function(r2) {
+            if (!r2.error && r2.data && r2.data.data_json) rbData = r2.data.data_json;
+          });
+      }).catch(function(){});
+  })();
+
+  document.getElementById('send').addEventListener('click', function() {
+    var userEmail = (emailEl.value || '').trim();
+    if (!userEmail || userEmail.indexOf('@') < 0 || userEmail.length > 100) { emailEl.focus(); return; }
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
-    const subject = t.subjectPrefix + APARTMAN.name;
-    const body = t.mailIntro + 'Apartman: ' + APARTMAN.name + '\n' + (t.l2 || 'Phone') + ': ' + APARTMAN.owner_phone + '\n' + (t.l3 || 'Email') + ': ' + APARTMAN.owner_email + '\n' + (t.l4 || 'Link') + ': ' + APARTMAN.booking_link + t.mailOutro;
+    if (!rbData || !rbData.owner_email) {
+      if (statusEl) statusEl.textContent = 'Vlasnik još nije uneo podatke za rezervaciju.';
+      return;
+    }
+    if (statusEl) statusEl.textContent = '';
+    var aptName = rbData.apartment_name || '';
+    var body = t.mailIntro
+      + 'Apartman: ' + aptName + '\n'
+      + (t.l2 || 'Telefon') + ': ' + (rbData.owner_phone || '') + '\n'
+      + (t.l3 || 'Email') + ': ' + rbData.owner_email + '\n'
+      + (rbData.rebook_link ? (t.l4 || 'Link') + ': ' + rbData.rebook_link + '\n' : '')
+      + (rbData.instructions ? '\n' + rbData.instructions : '')
+      + t.mailOutro;
+    var subject = t.subjectPrefix + aptName + ' (' + userEmail + ')';
     msgEl.textContent = body;
     result.classList.remove('hidden');
-    mailtoEl.href = 'mailto:' + encodeURIComponent(userEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    mailtoEl.href = 'mailto:' + encodeURIComponent(rbData.owner_email)
+      + '?subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
   });
-  document.getElementById('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(msgEl.textContent); } catch(e){} });
+  document.getElementById('copy').addEventListener('click', async function() {
+    try { await navigator.clipboard.writeText(msgEl.textContent); } catch(e) {}
+  });
 </script>
 </body>
 </html>

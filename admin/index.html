@@ -50,33 +50,53 @@
           <h2>Tenants</h2>
           <button id="btn-refresh-tenants" class="btn-secondary btn-sm">Osveži</button>
         </div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;align-items:center">
+          <input id="tenants-search" type="text" placeholder="Pretraži: SOCA_ID / naziv / slug / vlasnik…" style="flex:1;min-width:160px" />
+          <select id="tenants-filter-status" style="flex:0 0 auto;width:auto">
+            <option value="">Sve</option>
+            <option value="active">active</option>
+            <option value="inactive">inactive</option>
+          </select>
+        </div>
         <p id="tenants-status" class="msg hidden"></p>
         <div class="table-wrap">
           <table id="tenants-table">
             <thead>
               <tr>
-                <th>tenant_id</th>
-                <th>slug</th>
-                <th>name</th>
-                <th>status</th>
+                <th>SOCA_ID</th>
+                <th>Naziv</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th>Vlasnik</th>
+                <th>Akcije</th>
               </tr>
             </thead>
             <tbody id="tenants-tbody">
-              <tr><td colspan="4" class="table-empty">—</td></tr>
+              <tr><td colspan="6" class="table-empty">—</td></tr>
             </tbody>
           </table>
         </div>
 
         <hr class="section-divider" />
 
-        <!-- 2) Create tenant -->
-        <h2>Dodaj tenant</h2>
-        <label for="tenant-name">Naziv</label>
+        <!-- 2) Brzo dodavanje -->
+        <h2>⚡ Brzo dodavanje</h2>
+        <p style="font-size:0.83rem;opacity:0.65;margin:0 0 0.5rem">Kreira apartman, podrazumevane stavke i (opciono) šalje pozivnicu vlasniku putem e-maila.</p>
+        <label for="quick-soca-id">SOCA_ID <small style="opacity:0.6">(Google Sheet, kolona R)</small></label>
+        <input id="quick-soca-id" type="text" placeholder="BVC-042" />
+        <label for="tenant-name">Naziv apartmana</label>
         <input id="tenant-name" type="text" placeholder="Apartman Soča View" />
         <label for="tenant-slug">Slug (auto-generisan)</label>
         <input id="tenant-slug" type="text" placeholder="apartman-soca-view" />
+        <label for="quick-owner-email">E-mail vlasnika</label>
+        <input id="quick-owner-email" type="email" placeholder="vlasnik@primer.com" />
+        <label for="quick-location">Lokacija <small style="opacity:0.6">(opciono)</small></label>
+        <input id="quick-location" type="text" placeholder="Bovec, Slovenija" />
         <p id="create-tenant-status" class="msg hidden"></p>
-        <button id="btn-create-tenant">Kreiraj tenant</button>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.25rem">
+          <button id="btn-create-tenant">Kreiraj apartman</button>
+          <button id="btn-quick-invite" class="btn-secondary">Kreiraj + Pošalji poziv</button>
+        </div>
 
         <hr class="section-divider" />
 
@@ -99,6 +119,76 @@
         </select>
         <p id="link-owner-status" class="msg hidden"></p>
         <button id="btn-link-owner">Veži OWNER</button>
+
+        <hr class="section-divider" />
+
+        <!-- 4) Global config -->
+        <h2>🌐 GLOBAL (svi apartmani)</h2>
+        <label for="global-home-cards">Home Cards Config (JSON)</label>
+        <textarea id="global-home-cards" rows="8" placeholder='{"cards":[]}'></textarea>
+        <p id="global-save-status" class="msg hidden"></p>
+        <button id="btn-global-save">Sačuvaj globalno</button>
+
+        <hr class="section-divider" />
+
+        <!-- 5) Tenant editor (Master) -->
+        <h2>🏠 TENANT (izaberi apartman)</h2>
+        <label for="master-tenant-select">Tenant</label>
+        <select id="master-tenant-select">
+          <option value="">— izaberi tenant —</option>
+        </select>
+        <button id="btn-master-load" class="btn-secondary" style="margin-top:0.5rem">Učitaj podatke</button>
+        <p id="master-save-status" class="msg hidden"></p>
+
+        <div id="master-tenant-fields" class="hidden">
+          <div id="master-editor-header" style="background:rgba(255,255,255,0.06);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:0.4rem;font-size:0.82rem;line-height:1.7">
+            <strong>Uređuješ:</strong>
+            <span style="font-family:monospace" id="meditor-soca-id">—</span> —
+            <span id="meditor-name">—</span>
+            <span id="meditor-slug" style="opacity:0.6"></span>
+            &nbsp;|&nbsp; Vlasnik: <span id="meditor-owner">—</span>
+            &nbsp;|&nbsp; Status: <span id="meditor-status">—</span>
+          </div>
+          <hr class="section-divider" />
+          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Quick dugmad</h3>
+          <label for="master-call-phone">📞 Telefon</label>
+          <input id="master-call-phone" type="text" placeholder="+386 31 123 456" />
+          <label for="master-directions-link">🗺️ Link do apartmana</label>
+          <input id="master-directions-link" type="text" placeholder="https://maps.google.com/..." />
+          <label for="master-rules-url">📋 Hišni red (link)</label>
+          <input id="master-rules-url" type="text" placeholder="./pravila/index.html" />
+
+          <hr class="section-divider" />
+          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Hišni red (privatno)</h3>
+          <label for="master-rules-text">Tekst</label>
+          <textarea id="master-rules-text" rows="6" placeholder="Privatna pravila…"></textarea>
+
+          <hr class="section-divider" />
+          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Parking — preporučeno</h3>
+          <label for="master-parking-title">Naziv</label>
+          <input id="master-parking-title" type="text" placeholder="Parking Bovec centar" />
+          <label for="master-parking-address">Adresa</label>
+          <input id="master-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8" />
+          <label for="master-parking-maps">Maps link</label>
+          <input id="master-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+          <label for="master-parking-notes">Napomena</label>
+          <textarea id="master-parking-notes" rows="3" placeholder="Besplatno do 2h…"></textarea>
+
+          <hr class="section-divider" />
+          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Rezerviši ponovo</h3>
+          <label for="master-rebook-name">Naziv apartmana</label>
+          <input id="master-rebook-name" type="text" placeholder="Apartman Soča View" />
+          <label for="master-rebook-phone">Telefon vlasnika</label>
+          <input id="master-rebook-phone" type="text" placeholder="+386 31 123 456" />
+          <label for="master-rebook-email">E-mail vlasnika</label>
+          <input id="master-rebook-email" type="email" placeholder="owner@example.com" />
+          <label for="master-rebook-link">Link za rezervaciju</label>
+          <input id="master-rebook-link" type="text" placeholder="https://booking.com/..." />
+          <label for="master-rebook-instructions">Uputstvo za goste</label>
+          <textarea id="master-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
+
+          <button id="btn-master-save">Sačuvaj za ovaj tenant</button>
+        </div>
 
       </div><!-- /#master-panel -->
 
@@ -135,6 +225,21 @@
         <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
         <label for="owner-parking-notes">Napomena</label>
         <textarea id="owner-parking-notes" rows="3" placeholder="Besplatno do 2h, zatim 1 €/h…"></textarea>
+
+        <hr class="section-divider" />
+
+        <!-- Section 4: Rezerviši ponovo -->
+        <h2>Rezerviši ponovo</h2>
+        <label for="owner-rebook-name">Naziv apartmana</label>
+        <input id="owner-rebook-name" type="text" placeholder="Apartman Soča View" />
+        <label for="owner-rebook-phone">Telefon vlasnika</label>
+        <input id="owner-rebook-phone" type="text" placeholder="+386 31 123 456" />
+        <label for="owner-rebook-email">E-mail vlasnika (za mailto)</label>
+        <input id="owner-rebook-email" type="email" placeholder="owner@example.com" />
+        <label for="owner-rebook-link">Link za rezervaciju (opciono)</label>
+        <input id="owner-rebook-link" type="text" placeholder="https://booking.com/..." />
+        <label for="owner-rebook-instructions">Uputstvo za goste (opciono)</label>
+        <textarea id="owner-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
 
         <p id="owner-save-status" class="msg hidden"></p>
         <button id="btn-owner-save">Sačuvaj</button>

@@ -33,6 +33,7 @@
         rule3: "Smeti odložite v zabojnik na hodniku",
         rule4: "Zaklenite vrata ob odhodu iz apartmaja",
         rule5: "Check-out ob 11:00. Ključe pustite v varnostni škatli",
+        rules_private_section: "Dodatna pravila apartmaja",
         parking_location: "Lokacija:",
         parking_spot: "Parkirno mesto:",
         parking_number: "Označeno št. 15",
@@ -597,7 +598,7 @@
         feedback_role_host: "Sem gostitelj / lastnik",
         feedback_submit: "Pošlji",
         feedback_cancel: "Prekliči",
-        feedback_success: "Hvala! Vaš predlog je shranjen (demo).",
+        feedback_success: "Hvala! Vaš predlog je shranjen.",
         feedback_error: "Prosimo, napišite vsaj en predlog.",
         trip_ideas_tolmin_title: "Tolmin",
         trip_ideas_tolmin_overview: "Tolmin je največje mesto v dolini Soče, odlična izhodiščna točka za raziskovanje naravnih znamenitosti. Mesto ponuja mirne sprehode ob rekah, dostop do Tolminskih klisurev in lepe razgledne točke. Idealno za obiskovalce, ki iščejo kombinacijo narave in kulturne dediščine.",
@@ -662,7 +663,7 @@
         reserve_again_title: "Rezerviraj znova",
         reserve_again_sub: "Pošlji si podatke",
         lost_found_title: "Izgubljeno / Najdeno",
-        lost_found_sub: "Sporočila turistov (DEMO)"
+        lost_found_sub: "Sporočila turistov"
       },
       en: {
         welcome: "Welcome",
@@ -697,6 +698,7 @@
         rule3: "Dispose trash in the hallway container",
         rule4: "Lock doors when leaving the apartment",
         rule5: "Check-out at 11:00 AM. Leave keys in security box",
+        rules_private_section: "Additional apartment rules",
         parking_location: "Location:",
         parking_spot: "Parking spot:",
         parking_number: "Marked #15",
@@ -1266,7 +1268,7 @@
         feedback_role_host: "I am a host/owner",
         feedback_submit: "Send",
         feedback_cancel: "Cancel",
-        feedback_success: "Thanks! Your feedback was saved (demo).",
+        feedback_success: "Thanks! Your feedback was saved.",
         feedback_error: "Please write at least one suggestion.",
         trip_ideas_tolmin_title: "Tolmin",
         trip_ideas_tolmin_overview: "Tolmin is the largest town in the Soča Valley, an excellent base for exploring natural attractions. The town offers calm walks along rivers, access to Tolmin Gorges, and beautiful viewpoints. Ideal for visitors seeking a combination of nature and cultural heritage.",
@@ -1331,7 +1333,7 @@
         reserve_again_title: "Book again",
         reserve_again_sub: "Send yourself the details",
         lost_found_title: "Lost & Found",
-        lost_found_sub: "Tourist messages (DEMO)"
+        lost_found_sub: "Tourist messages"
       },
       de: {
         welcome: "Willkommen",
@@ -1367,6 +1369,7 @@
         rule3: "Müll im Behälter im Flur entsorgen",
         rule4: "Türen beim Verlassen der Wohnung abschließen",
         rule5: "Check-out um 11:00 Uhr. Schlüssel im Sicherheitskasten lassen",
+        rules_private_section: "Zusätzliche Wohnungsregeln",
         parking_location: "Standort:",
         parking_spot: "Parkplatz:",
         parking_number: "Markiert Nr. 15",
@@ -1932,7 +1935,7 @@
         feedback_role_host: "Ich bin Gastgeber / Eigentümer",
         feedback_submit: "Senden",
         feedback_cancel: "Abbrechen",
-        feedback_success: "Danke! Ihr Feedback wurde gespeichert (Demo).",
+        feedback_success: "Danke! Ihr Feedback wurde gespeichert.",
         feedback_error: "Bitte schreiben Sie mindestens einen Vorschlag.",
         trip_ideas_tolmin_title: "Tolmin",
         trip_ideas_tolmin_overview: "Tolmin ist die größte Stadt im Soča-Tal, ein ausgezeichneter Ausgangspunkt für die Erkundung natürlicher Attraktionen. Die Stadt bietet ruhige Spaziergänge entlang der Flüsse, Zugang zu den Tolminer Klammen und schöne Aussichtspunkte. Ideal für Besucher, die eine Kombination aus Natur und kulturellem Erbe suchen.",
@@ -1997,7 +2000,7 @@
         reserve_again_title: "Erneut buchen",
         reserve_again_sub: "Daten an sich senden",
         lost_found_title: "Verloren / Gefunden",
-        lost_found_sub: "Touristen-Nachrichten (DEMO)"
+        lost_found_sub: "Touristen-Nachrichten"
       },
       it: {
         welcome: "Benvenuto",
@@ -2032,6 +2035,7 @@
         rule3: "Smaltire i rifiuti nel contenitore del corridoio",
         rule4: "Chiudere a chiave le porte quando si esce dall'appartamento",
         rule5: "Check-out alle 11:00. Lasciare le chiavi nella cassetta di sicurezza",
+        rules_private_section: "Regole aggiuntive dell'appartamento",
         parking_location: "Posizione:",
         parking_spot: "Posto auto:",
         parking_number: "Contrassegnato #15",
@@ -2598,7 +2602,7 @@
         feedback_role_host: "Sono un host / proprietario",
         feedback_submit: "Invia",
         feedback_cancel: "Annulla",
-        feedback_success: "Grazie! Il tuo feedback è stato salvato (demo).",
+        feedback_success: "Grazie! Il tuo feedback è stato salvato.",
         feedback_error: "Per favore, scrivi almeno un suggerimento.",
         trip_ideas_tolmin_title: "Tolmin",
         trip_ideas_tolmin_overview: "Tolmin è la città più grande della valle dell'Isonzo, un'ottima base per esplorare le attrazioni naturali. La città offre passeggiate tranquille lungo i fiumi, accesso alle Gole di Tolmin e bei punti panoramici. Ideale per i visitatori che cercano una combinazione di natura e patrimonio culturale.",
@@ -2663,7 +2667,7 @@
         reserve_again_title: "Prenota di nuovo",
         reserve_again_sub: "Invia a te i dati",
         lost_found_title: "Perso / Trovato",
-        lost_found_sub: "Messaggi turisti (DEMO)"
+        lost_found_sub: "Messaggi turisti"
       },
       pl: {
         welcome: "Witamy",
@@ -2696,6 +2700,7 @@
         rule3: "Śmieci wyrzucać do pojemnika na korytarzu",
         rule4: "Zamykać drzwi przy wyjściu z apartamentu",
         rule5: "Wymeldowanie o 11:00. Klucze zostawić w sejfie",
+        rules_private_section: "Dodatkowe zasady apartamentu",
         parking_location: "Lokalizacja:",
         parking_spot: "Miejsce parkingowe:",
         parking_number: "Oznaczone nr 15",
@@ -3253,7 +3258,7 @@
         reserve_again_title: "Zarezerwuj ponownie",
         reserve_again_sub: "Wyślij sobie dane",
         lost_found_title: "Zgubione / Znalezione",
-        lost_found_sub: "Wiadomości turystów (DEMO)",
+        lost_found_sub: "Wiadomości turystów",
         adrenalin: "Adrenalin/Aktywności",
         adrenalin_sub: "Aktywności",
         activity_bovec_title: "Aktywności – Gmina Bovec",
@@ -3318,7 +3323,7 @@
         feedback_role_host: "Jestem gospodarzem / właścicielem",
         feedback_submit: "Wyślij",
         feedback_cancel: "Anuluj",
-        feedback_success: "Dziękujemy! Twoja sugestia została zapisana (demo).",
+        feedback_success: "Dziękujemy! Twoja sugestia została zapisana.",
         feedback_error: "Prosimy, napisz przynajmniej jedną sugestię.",
         trip_ideas: "Pomysły na wycieczki",
         trip_ideas_sub: "Wycieczki",
@@ -3366,6 +3371,7 @@
         rule3: "Odpadky vhazujte do kontejneru na chodbě",
         rule4: "Zamykejte dveře při odchodu z apartmánu",
         rule5: "Odhlášení v 11:00. Klíče nechte v trezoru",
+        rules_private_section: "Další pravidla apartmánu",
         parking_location: "Umístění:",
         parking_spot: "Parkovací místo:",
         parking_number: "Označeno č. 15",
@@ -3924,7 +3930,7 @@
         feedback_role_host: "Jsem hostitel / majitel",
         feedback_submit: "Odeslat",
         feedback_cancel: "Zrušit",
-        feedback_success: "Děkujeme! Váš návrh byl uložen (demo).",
+        feedback_success: "Děkujeme! Váš návrh byl uložen.",
         feedback_error: "Prosím, napište alespoň jeden návrh.",
         trip_ideas: "Nápady na výlety",
         trip_ideas_sub: "Výlety",
@@ -4000,7 +4006,7 @@
         reserve_again_title: "Rezervovat znovu",
         reserve_again_sub: "Pošlete si údaje",
         lost_found_title: "Ztraceno / Nalezeno",
-        lost_found_sub: "Zprávy turistů (DEMO)",
+        lost_found_sub: "Zprávy turistů",
         brand_subtitle: "BOVEC",
         footer_attribution: "Vytvořeno s ❤️ od V.N. · Demo verze · Dar místní komunitě pro lepší zážitek turistů",
         brand_title: "ÚDOLÍ SOČE"
