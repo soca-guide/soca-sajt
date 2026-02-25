@@ -112,6 +112,7 @@
                   parkingRecommended: merged['parking/parking_recommended']      || null,
                   houseRulesPrivate:  merged['house_rules/house_rules_private']  || null,
                   maintConfig:        merged['maintenance/maintenance_config']   || null,
+                  ownerBiznisConfig:  merged['biznis/owner_config']              || null,
                   __health: {
                     ok:         true,
                     reason:     itemsCount > 0 ? 'OK' : 'ITEMS_EMPTY',

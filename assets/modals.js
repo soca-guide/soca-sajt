@@ -100,6 +100,11 @@
   window.__MODALS.openTaxi = function() {
     openModal('SOČA • Taxi & Bus', './taxi/index.html');
   };
+  window.__MODALS.openOwnerBiznis = function() {
+    var slug = window._ownerBiznisSlug || '';
+    var url = './owner-biznis/index.html' + (slug ? '?t=' + encodeURIComponent(slug) : '');
+    openModal('SOČA • Biznis', url);
+  };
 
   overlay?.addEventListener('click', closeModal);
 

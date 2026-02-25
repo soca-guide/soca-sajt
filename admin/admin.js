@@ -55,10 +55,12 @@
   var ownerDirectionsLinkInput = document.getElementById('owner-directions-link');
   var ownerRulesUrlInput       = document.getElementById('owner-rules-url');
   var ownerRulesTextArea       = document.getElementById('owner-rules-text');
-  var ownerParkingTitleInput   = document.getElementById('owner-parking-title');
-  var ownerParkingAddressInput = document.getElementById('owner-parking-address');
-  var ownerParkingMapsInput    = document.getElementById('owner-parking-maps');
-  var ownerParkingNotesArea    = document.getElementById('owner-parking-notes');
+  var ownerParkingTitleSlInput  = document.getElementById('owner-parking-title-sl');
+  var ownerParkingTitleEnInput  = document.getElementById('owner-parking-title-en');
+  var ownerParkingAddressInput  = document.getElementById('owner-parking-address');
+  var ownerParkingMapsInput     = document.getElementById('owner-parking-maps');
+  var ownerParkingNotesSlArea   = document.getElementById('owner-parking-notes-sl');
+  var ownerParkingNotesEnArea   = document.getElementById('owner-parking-notes-en');
   var ownerSaveStatus          = document.getElementById('owner-save-status');
   var btnOwnerSave             = document.getElementById('btn-owner-save');
 
@@ -88,10 +90,12 @@
   var masterDirectionsLinkInput    = document.getElementById('master-directions-link');
   var masterRulesUrlInput          = document.getElementById('master-rules-url');
   var masterRulesTextArea          = document.getElementById('master-rules-text');
-  var masterParkingTitleInput      = document.getElementById('master-parking-title');
+  var masterParkingTitleSlInput    = document.getElementById('master-parking-title-sl');
+  var masterParkingTitleEnInput    = document.getElementById('master-parking-title-en');
   var masterParkingAddressInput    = document.getElementById('master-parking-address');
   var masterParkingMapsInput       = document.getElementById('master-parking-maps');
-  var masterParkingNotesArea       = document.getElementById('master-parking-notes');
+  var masterParkingNotesSlArea     = document.getElementById('master-parking-notes-sl');
+  var masterParkingNotesEnArea     = document.getElementById('master-parking-notes-en');
   var masterRebookNameInput        = document.getElementById('master-rebook-name');
   var masterRebookPhoneInput       = document.getElementById('master-rebook-phone');
   var masterRebookEmailInput       = document.getElementById('master-rebook-email');
@@ -100,6 +104,26 @@
   var masterMaintVisibleChk        = document.getElementById('master-maint-visible');
   var masterMaintEmailInput        = document.getElementById('master-maint-email');
   var masterMaintW3fInput          = document.getElementById('master-maint-w3f');
+  var masterBiznisEnabled          = document.getElementById('master-biznis-enabled');
+  var masterBiznisName             = document.getElementById('master-biznis-name');
+  var masterBiznisType             = document.getElementById('master-biznis-type');
+  var masterBiznisDesc             = document.getElementById('master-biznis-desc');
+  var masterBiznisPhone            = document.getElementById('master-biznis-phone');
+  var masterBiznisWebsite          = document.getElementById('master-biznis-website');
+  var masterBiznisBooking          = document.getElementById('master-biznis-booking');
+  var masterBiznisImage            = document.getElementById('master-biznis-image');
+  var masterBiznisLogo             = document.getElementById('master-biznis-logo');
+  var mbLogoFile                   = document.getElementById('mb-logo-file');
+  var mbLogoFilename               = document.getElementById('mb-logo-filename');
+  var mbLogoPreview                = document.getElementById('mb-logo-preview');
+  var mbLogoPreviewWrap            = document.getElementById('mb-logo-preview-wrap');
+  var btnMbLogoClear               = document.getElementById('btn-mb-logo-clear');
+  var mbImageFile                  = document.getElementById('mb-image-file');
+  var mbImageFilename              = document.getElementById('mb-image-filename');
+  var mbImagePreview               = document.getElementById('mb-image-preview');
+  var mbImagePreviewWrap           = document.getElementById('mb-image-preview-wrap');
+  var btnMbImageClear              = document.getElementById('btn-mb-image-clear');
+  var mbUploadStatus               = document.getElementById('mb-upload-status');
   var btnMasterSave                = document.getElementById('btn-master-save');
 
   // Quick-add refs
@@ -107,6 +131,17 @@
   var quickOwnerEmailInput = document.getElementById('quick-owner-email');
   var quickLocationInput  = document.getElementById('quick-location');
   var btnQuickInvite      = document.getElementById('btn-quick-invite');
+
+  // Owner welcome modal refs
+  var ownerWelcomeModal = document.getElementById('owner-welcome-modal');
+  var owmTitle          = document.getElementById('owm-title');
+  var owmSubtitle       = document.getElementById('owm-subtitle');
+  var owmGuestUrl       = document.getElementById('owm-guest-url');
+  var owmAdminUrl       = document.getElementById('owm-admin-url');
+  var owmCopyGuest      = document.getElementById('owm-copy-guest');
+  var owmCopyAdmin      = document.getElementById('owm-copy-admin');
+  var owmCopyAll        = document.getElementById('owm-copy-all');
+  var owmClose          = document.getElementById('owner-welcome-close');
 
   // Table search + filter refs
   var tenantsSearch       = document.getElementById('tenants-search');
@@ -188,29 +223,35 @@
 
         var tenantIds = rows.map(function (t) { return t.tenant_id; });
 
-        // Try to get owner identity from user_profiles (email column may or may not exist — guard)
-        sb.from('user_profiles')
-          .select('*')
-          .in('tenant_id', tenantIds)
-          .eq('role', 'OWNER')
-          .then(function (r2) {
-            var emailMap = {};
+        // Paralelno: user_profiles (potvrdeni vlasnici) + pending_owner_invites (jos nisu kliknuli link)
+        Promise.all([
+          sb.from('user_profiles').select('tenant_id,email,user_email').in('tenant_id', tenantIds).eq('role', 'OWNER'),
+          sb.from('pending_owner_invites').select('tenant_id,email').in('tenant_id', tenantIds)
+        ]).then(function (results) {
+            var emailMap    = {};  // tenant_id → { email, pending }
             try {
-              (r2.data || []).forEach(function (p) {
-                if (p.tenant_id) {
-                  emailMap[p.tenant_id] = p.email || p.user_email || '—';
+              // Potvrdeni vlasnici (user_profiles)
+              (results[0].data || []).forEach(function (p) {
+                if (p.tenant_id) emailMap[p.tenant_id] = { email: p.email || p.user_email || '—', pending: false };
+              });
+              // Cekanje (pending_owner_invites) — samo ako nema potvrdenog
+              (results[1].data || []).forEach(function (p) {
+                if (p.tenant_id && !emailMap[p.tenant_id]) {
+                  emailMap[p.tenant_id] = { email: p.email, pending: true };
                 }
               });
             } catch (e) {}
 
             _allTenants = rows.map(function (t) {
+              var info = emailMap[t.tenant_id];
               return {
-                tenant_id:  t.tenant_id,
-                external_id: t.external_id || '',
-                name:       t.name,
-                slug:       t.slug,
-                status:     t.status || '',
-                ownerEmail: emailMap[t.tenant_id] || '—'
+                tenant_id:    t.tenant_id,
+                external_id:  t.external_id || '',
+                name:         t.name,
+                slug:         t.slug,
+                status:       t.status || '',
+                ownerEmail:   info ? info.email : '—',
+                ownerPending: info ? info.pending : false
               };
             });
             renderTenantsTable();
@@ -218,12 +259,13 @@
           .catch(function () {
             _allTenants = rows.map(function (t) {
               return {
-                tenant_id:  t.tenant_id,
-                external_id: t.external_id || '',
-                name:       t.name,
-                slug:       t.slug,
-                status:     t.status || '',
-                ownerEmail: '—'
+                tenant_id:    t.tenant_id,
+                external_id:  t.external_id || '',
+                name:         t.name,
+                slug:         t.slug,
+                status:       t.status || '',
+                ownerEmail:   '—',
+                ownerPending: false
               };
             });
             renderTenantsTable();
@@ -266,7 +308,9 @@
         '<td>'               + esc(t.name)                + '</td>' +
         '<td>'               + esc(t.slug)                + '</td>' +
         '<td style="color:' + statusClr + ';font-weight:600">' + esc(t.status) + '</td>' +
-        '<td>'               + esc(t.ownerEmail)          + '</td>' +
+        '<td>' + (t.ownerPending
+            ? '<span title="Pozivnica poslata, čeka potvrdu" style="color:#fbbf24">⏳ ' + esc(t.ownerEmail) + '</span>'
+            : esc(t.ownerEmail)) + '</td>' +
         '<td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">' +
           '<a href="' + esc(guestUrl) + '" target="_blank" rel="noopener" ' +
              'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
@@ -293,11 +337,14 @@
                 ' data-email="' + esc(t.ownerEmail) + '"' +
                 ' data-tid="'   + esc(t.tenant_id)  + '"' +
                 ' data-slug="'  + esc(t.slug)        + '"' +
-                '>Login link</button>' +
-              '<button class="btn-sm btn-detach-owner"' +
-                ' data-tid="'  + esc(t.tenant_id)  + '"' +
-                ' style="color:#f87171"' +
-                '>Ukloni vlasnika</button>'
+                ' title="' + (t.ownerPending ? 'Pošalji ponovo (čeka klik na link)' : 'Pošalji novi login link') + '"' +
+                '>' + (t.ownerPending ? '⏳ Pošalji ponovo' : 'Login link') + '</button>' +
+              (!t.ownerPending
+                ? '<button class="btn-sm btn-detach-owner"' +
+                    ' data-tid="'  + esc(t.tenant_id)  + '"' +
+                    ' style="color:#f87171"' +
+                    '>Ukloni vlasnika</button>'
+                : '')
             : '') +
           '<button class="btn-sm btn-delete-tenant"' +
             ' data-tid="'  + esc(t.tenant_id) + '"' +
@@ -309,52 +356,202 @@
     }).join('');
   }
 
-  // ── MASTER: Toggle tenant status (via edge function so owner disable is reliable) ──
+  // ── MASTER: Fallback — set_status direktno u DB ──────────────────────────────
+  function _setStatusFallback(tenantId, newStatus, onSuccess, onError) {
+    sb.from('tenants').update({ status: newStatus }).eq('tenant_id', tenantId)
+      .then(function (r) {
+        if (r.error) { onError(r.error.message); return; }
+        // Mirror disabled na user_profiles (best-effort)
+        sb.from('user_profiles')
+          .update({ disabled: newStatus !== 'active' })
+          .eq('tenant_id', tenantId).eq('role', 'OWNER')
+          .then(function () { onSuccess(); })
+          .catch(function () { onSuccess(); });
+      })
+      .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+  }
+
+  // ── MASTER: Toggle tenant status ──────────────────────────────────────────────
   function toggleTenantStatus(tenantId, newStatus, btn) {
     btn.disabled = true;
-    sb.functions.invoke('master_admin', {
-      body: { action: 'set_status', tenant_id: tenantId, status: newStatus }
-    }).then(function (r) {
+
+    function _done() {
       btn.disabled = false;
-      if (r.error) {
-        setStatus(tenantsStatus,
-          'Greška pri promeni statusa: ' + (r.error.message || JSON.stringify(r.error)), 'error');
-        return;
-      }
-      // Update local cache and re-render (no full reload)
       _allTenants.forEach(function (t) {
         if (t.tenant_id === tenantId) t.status = newStatus;
       });
       renderTenantsTable();
-    }).catch(function (err) {
+    }
+    function _fail(msg) {
       btn.disabled = false;
-      setStatus(tenantsStatus, 'Greška: ' + (err && err.message || '?'), 'error');
+      setStatus(tenantsStatus, 'Greška pri promeni statusa: ' + msg, 'error');
+    }
+
+    sb.functions.invoke('master_admin', {
+      body: { action: 'set_status', tenant_id: tenantId, status: newStatus }
+    }).then(function (r) {
+      if (!r.error) { _done(); return; }
+      _setStatusFallback(tenantId, newStatus, _done, _fail);
+    }).catch(function () {
+      _setStatusFallback(tenantId, newStatus, _done, _fail);
     });
+  }
+
+  // ── MASTER: Owner welcome modal ───────────────────────────────────────────────
+  function showOwnerWelcomeModal(tenantName, tenantSlug, ownerEmail, emailSent) {
+    if (!ownerWelcomeModal) return;
+    var base      = window.location.origin + window.location.pathname.replace(/\/admin\/[^/]*$/, '');
+    var guestUrl  = base + '/index.html?t=' + encodeURIComponent(tenantSlug);
+    var adminUrl  = window.location.origin + '/admin/';
+
+    if (owmTitle)    owmTitle.textContent    = '🎉 Apartman "' + tenantName + '" kreiran!';
+    if (owmSubtitle) owmSubtitle.textContent = emailSent
+      ? '✅ Pozivnica poslata na ' + ownerEmail + '. Proslijedi i ove podatke vlasniku:'
+      : '⚠️ Email nije poslan automatski. Proslijedi vlasniku (' + ownerEmail + ') ove podatke:';
+
+    if (owmGuestUrl)  owmGuestUrl.textContent  = guestUrl;
+    if (owmAdminUrl)  owmAdminUrl.textContent  = adminUrl;
+
+    function _copy(text, btn) {
+      var orig = btn.textContent;
+      (navigator.clipboard
+        ? navigator.clipboard.writeText(text)
+        : Promise.reject()
+      ).catch(function () {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+      }).finally(function () {
+        btn.textContent = 'Kopirano! ✓';
+        setTimeout(function () { btn.textContent = orig; }, 2000);
+      });
+    }
+
+    if (owmCopyGuest) owmCopyGuest.onclick = function () { _copy(guestUrl, owmCopyGuest); };
+    if (owmCopyAdmin) owmCopyAdmin.onclick = function () { _copy(adminUrl, owmCopyAdmin); };
+    if (owmCopyAll) owmCopyAll.onclick = function () {
+      var txt = 'Apartman: ' + tenantName + '\n\n' +
+        '🔗 Link za goste (dijeli gostima):\n' + guestUrl + '\n\n' +
+        '⚙️ Admin panel (upravljanje apartmanom):\n' + adminUrl + '\n\n' +
+        '📋 Kako se prijaviti:\n' +
+        '1. Otvori admin panel link\n' +
+        '2. Unesi email → klikni "Pošalji magic link"\n' +
+        '3. Provjeri inbox → klikni link za prijavu\n' +
+        '4. Popuni podatke o apartmanu\n' +
+        '5. Dijeli link za goste pri svakom check-in';
+      _copy(txt, owmCopyAll);
+    };
+
+    ownerWelcomeModal.style.display = 'block';
+  }
+
+  if (owmClose) owmClose.onclick = function () {
+    if (ownerWelcomeModal) ownerWelcomeModal.style.display = 'none';
+  };
+  if (ownerWelcomeModal) ownerWelcomeModal.addEventListener('click', function (e) {
+    if (e.target === ownerWelcomeModal) ownerWelcomeModal.style.display = 'none';
+  });
+
+  // ── MASTER: Send welcome email via send-email Edge Function ───────────────────
+  function sendOwnerWelcomeEmail(ownerEmail, tenantName, tenantSlug) {
+    var base     = window.location.origin + window.location.pathname.replace(/\/admin\/[^/]*$/, '');
+    var guestUrl = base + '/index.html?t=' + encodeURIComponent(tenantSlug);
+    var adminUrl = window.location.origin + '/admin/';
+    sb.functions.invoke('send-email', {
+      body: {
+        action:       'owner_invite',
+        owner_email:  ownerEmail,
+        tenant_name:  tenantName,
+        tenant_slug:  tenantSlug,
+        guest_url:    guestUrl,
+        admin_url:    adminUrl
+      }
+    }).catch(function () {}); // best-effort, greška ne blokira UI
+  }
+
+  // ── MASTER: Fallback invite (bez Edge Function) ──────────────────────────────
+  // 1) pending_owner_invites + 2) signInWithOtp → trigger auto-kreira profile
+  function _inviteFallback(ownerEmail, tenantId, onSuccess, onError) {
+    var adminRedirect = window.location.origin + '/admin/';
+    // Korak 1: upsert pending invite (ignoruje duplikat)
+    sb.from('pending_owner_invites')
+      .upsert({ email: ownerEmail.toLowerCase(), tenant_id: tenantId },
+               { onConflict: 'email' })
+      .then(function () {
+        // Korak 2: pošalji magic link (radi sa anon key, bez Edge Function)
+        return sb.auth.signInWithOtp({
+          email: ownerEmail,
+          options: { shouldCreateUser: true, emailRedirectTo: adminRedirect }
+        });
+      })
+      .then(function (r) {
+        if (r && r.error) { onError(r.error.message); return; }
+        onSuccess();
+      })
+      .catch(function (err) { onError(err && err.message ? err.message : String(err)); });
   }
 
   // ── MASTER: Send magic login link to owner ────────────────────────────────────
   function sendMagicLink(tenantId, tenantSlug, ownerEmail, btn) {
     btn.disabled    = true;
     btn.textContent = 'Šaljem…';
+
+    function _done(label) {
+      btn.disabled    = false;
+      btn.textContent = label;
+      if (label !== 'Greška!') setTimeout(function () { btn.textContent = 'Login link'; }, 3000);
+    }
+
     sb.functions.invoke('master_admin', {
       body: { action: 'invite_owner', owner_email: ownerEmail, tenant_id: tenantId, tenant_slug: tenantSlug }
     }).then(function (r) {
-      btn.disabled = false;
-      if (r.error) {
-        btn.textContent = 'Greška!';
-        setStatus(tenantsStatus,
-          'Greška pri slanju login linka: ' +
-          (r.error.message || JSON.stringify(r.error)), 'error');
-      } else {
-        btn.textContent = 'Poslato! ✓';
-        setTimeout(function () { btn.textContent = 'Login link'; }, 3000);
-      }
-    }).catch(function (err) {
-      btn.disabled    = false;
-      btn.textContent = 'Greška!';
-      setStatus(tenantsStatus,
-        'Greška: ' + (err && err.message || '?'), 'error');
+      if (!r.error) { _done('Poslato! ✓'); return; }
+      // Edge Function nije deployovana → fallback
+      _inviteFallback(ownerEmail, tenantId,
+        function () { _done('Poslato ✓'); },
+        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); }
+      );
+    }).catch(function () {
+      // Edge Function nedostupna → fallback
+      _inviteFallback(ownerEmail, tenantId,
+        function () { _done('Poslato ✓'); },
+        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); }
+      );
     });
+  }
+
+  // ── MASTER: Fallback — detach_owner direktno u DB ────────────────────────────
+  function _detachOwnerFallback(tenantId, onSuccess, onError) {
+    // permissions (best-effort)
+    sb.from('permissions').delete().eq('tenant_id', tenantId).eq('role', 'OWNER')
+      .then(function () {
+        // pending_owner_invites (best-effort)
+        sb.from('pending_owner_invites').delete().eq('tenant_id', tenantId)
+          .then(function () {
+            sb.from('user_profiles').delete().eq('tenant_id', tenantId).eq('role', 'OWNER')
+              .then(function (r) {
+                if (r.error) { onError(r.error.message); return; }
+                onSuccess();
+              })
+              .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+          })
+          .catch(function () {
+            sb.from('user_profiles').delete().eq('tenant_id', tenantId).eq('role', 'OWNER')
+              .then(function (r) {
+                if (r.error) { onError(r.error.message); return; }
+                onSuccess();
+              })
+              .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+          });
+      })
+      .catch(function () {
+        sb.from('user_profiles').delete().eq('tenant_id', tenantId).eq('role', 'OWNER')
+          .then(function (r) {
+            if (r.error) { onError(r.error.message); return; }
+            onSuccess();
+          })
+          .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+      });
   }
 
   // ── MASTER: Detach (remove) owner from a tenant ──────────────────────────────
@@ -362,26 +559,77 @@
     if (!confirm('Ukloniti vlasnika iz ovog apartmana?\n(user_profiles i dozvole za ovaj tenant biće obrisani.)')) return;
     btn.disabled    = true;
     btn.textContent = 'Uklanijam…';
-    sb.functions.invoke('master_admin', {
-      body: { action: 'detach_owner', tenant_id: tenantId }
-    }).then(function (r) {
+
+    function _done() {
       btn.disabled    = false;
       btn.textContent = 'Ukloni vlasnika';
-      if (r.error) {
-        setStatus(tenantsStatus,
-          'Greška pri uklanjanju vlasnika: ' + (r.error.message || JSON.stringify(r.error)), 'error');
-        return;
-      }
-      // Clear owner email from local cache and re-render
       _allTenants.forEach(function (t) {
         if (t.tenant_id === tenantId) t.ownerEmail = '—';
       });
       renderTenantsTable();
-    }).catch(function (err) {
+    }
+    function _fail(msg) {
       btn.disabled    = false;
       btn.textContent = 'Ukloni vlasnika';
-      setStatus(tenantsStatus, 'Greška: ' + (err && err.message || '?'), 'error');
+      setStatus(tenantsStatus, 'Greška pri uklanjanju vlasnika: ' + msg, 'error');
+    }
+
+    sb.functions.invoke('master_admin', {
+      body: { action: 'detach_owner', tenant_id: tenantId }
+    }).then(function (r) {
+      if (!r.error) { _done(); return; }
+      _detachOwnerFallback(tenantId, _done, _fail);
+    }).catch(function () {
+      _detachOwnerFallback(tenantId, _done, _fail);
     });
+  }
+
+  // ── MASTER: Fallback — delete_tenant direktno u DB ───────────────────────────
+  function _deleteTenantFallback(tenantId, onSuccess, onError) {
+    // Kaskadni delete: items → permissions → pending_owner_invites → user_profiles → tenants
+    sb.from('items').delete().eq('tenant_id', tenantId)
+      .then(function (r1) {
+        if (r1.error) { onError('Brisanje items: ' + r1.error.message); return; }
+        sb.from('permissions').delete().eq('tenant_id', tenantId)
+          .then(function () {
+            sb.from('pending_owner_invites').delete().eq('tenant_id', tenantId)
+              .then(function () {
+                sb.from('user_profiles').delete().eq('tenant_id', tenantId)
+                  .then(function (r2) {
+                    if (r2.error) { onError('Brisanje user_profiles: ' + r2.error.message); return; }
+                    sb.from('tenants').delete().eq('tenant_id', tenantId)
+                      .then(function (r3) {
+                        if (r3.error) { onError('Brisanje tenant: ' + r3.error.message); return; }
+                        onSuccess();
+                      })
+                      .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+                  })
+                  .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+              })
+              .catch(function () {
+                sb.from('user_profiles').delete().eq('tenant_id', tenantId)
+                  .then(function (r2) {
+                    if (r2.error) { onError('Brisanje user_profiles: ' + r2.error.message); return; }
+                    sb.from('tenants').delete().eq('tenant_id', tenantId)
+                      .then(function (r3) {
+                        if (r3.error) { onError('Brisanje tenant: ' + r3.error.message); return; }
+                        onSuccess();
+                      })
+                      .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+                  })
+                  .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+              });
+          })
+          .catch(function () {
+            sb.from('tenants').delete().eq('tenant_id', tenantId)
+              .then(function (r3) {
+                if (r3.error) { onError('Brisanje tenant: ' + r3.error.message); return; }
+                onSuccess();
+              })
+              .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
+          });
+      })
+      .catch(function (e) { onError(e && e.message ? e.message : String(e)); });
   }
 
   // ── MASTER: Delete tenant + all its data ──────────────────────────────────────
@@ -389,24 +637,27 @@
     if (!confirm('OBRIŠI tenant "' + tenantName + '" + sve podatke?\n\nOva akcija je nepovratna!')) return;
     btn.disabled    = true;
     btn.textContent = 'Brišem…';
-    sb.functions.invoke('master_admin', {
-      body: { action: 'delete_tenant', tenant_id: tenantId }
-    }).then(function (r) {
+
+    function _done() {
       btn.disabled    = false;
       btn.textContent = 'Obriši';
-      if (r.error) {
-        setStatus(tenantsStatus,
-          'Greška pri brisanju tenanta: ' + (r.error.message || JSON.stringify(r.error)), 'error');
-        return;
-      }
-      // Remove from local cache and re-render
       _allTenants = _allTenants.filter(function (t) { return t.tenant_id !== tenantId; });
       renderTenantsTable();
       setStatus(tenantsStatus, 'Tenant "' + tenantName + '" obrisan. ✓', 'info');
-    }).catch(function (err) {
+    }
+    function _fail(msg) {
       btn.disabled    = false;
       btn.textContent = 'Obriši';
-      setStatus(tenantsStatus, 'Greška: ' + (err && err.message || '?'), 'error');
+      setStatus(tenantsStatus, 'Greška pri brisanju tenanta: ' + msg, 'error');
+    }
+
+    sb.functions.invoke('master_admin', {
+      body: { action: 'delete_tenant', tenant_id: tenantId }
+    }).then(function (r) {
+      if (!r.error) { _done(); return; }
+      _deleteTenantFallback(tenantId, _done, _fail);
+    }).catch(function () {
+      _deleteTenantFallback(tenantId, _done, _fail);
     });
   }
 
@@ -492,7 +743,7 @@
     sb.from('items')
       .select('section_key, item_key, data_json')
       .eq('tenant_id', tenantId)
-      .in('item_key', ['default_config', 'house_rules_private', 'parking_recommended', 'rebook'])
+      .in('item_key', ['default_config', 'house_rules_private', 'parking_recommended', 'rebook', 'owner_config'])
       .then(function (result) {
         if (result.error) {
           setStatus(masterSaveStatus, 'Greška: ' + result.error.message, 'error');
@@ -512,10 +763,15 @@
         masterRulesTextArea.value = rules.text || '';
 
         var park = byKey['parking_recommended'] || {};
-        masterParkingTitleInput.value   = park.title    || '';
+        // Support both old string format and new {sl,en} object format
+        var _pTitle = park.title  || {};
+        var _pNotes = park.notes  || {};
+        if (masterParkingTitleSlInput) masterParkingTitleSlInput.value = (typeof _pTitle === 'object' ? _pTitle.sl : _pTitle) || '';
+        if (masterParkingTitleEnInput) masterParkingTitleEnInput.value = (typeof _pTitle === 'object' ? _pTitle.en : _pTitle) || '';
         masterParkingAddressInput.value = park.address  || '';
         masterParkingMapsInput.value    = park.mapsLink || '';
-        masterParkingNotesArea.value    = park.notes    || '';
+        if (masterParkingNotesSlArea) masterParkingNotesSlArea.value = (typeof _pNotes === 'object' ? _pNotes.sl : _pNotes) || '';
+        if (masterParkingNotesEnArea) masterParkingNotesEnArea.value = (typeof _pNotes === 'object' ? _pNotes.en : _pNotes) || '';
 
         var rebook = byKey['rebook'] || {};
         masterRebookNameInput.value        = rebook.apartment_name || '';
@@ -529,8 +785,27 @@
         if (masterMaintEmailInput) masterMaintEmailInput.value   = maint.email   || '';
         if (masterMaintW3fInput)   masterMaintW3fInput.value     = maint.w3f_key || '';
 
+        var biz = byKey['owner_config'] || {};
+        if (masterBiznisEnabled)  masterBiznisEnabled.checked   = biz.enabled === true;
+        if (masterBiznisName)     masterBiznisName.value        = biz.name        || '';
+        if (masterBiznisType)     masterBiznisType.value        = biz.type        || 'other';
+        if (masterBiznisDesc)     masterBiznisDesc.value        = biz.short_desc  || '';
+        if (masterBiznisPhone)    masterBiznisPhone.value       = biz.phone       || '';
+        if (masterBiznisWebsite)  masterBiznisWebsite.value     = biz.website     || '';
+        if (masterBiznisBooking)  masterBiznisBooking.value     = biz.booking_url || '';
+        if (masterBiznisImage)    masterBiznisImage.value       = biz.image_url   || '';
+        if (masterBiznisLogo)     masterBiznisLogo.value        = biz.logo_url    || '';
+        // Load existing image previews
+        _loadExistingPreview(biz.logo_url,   mbLogoPreview,  mbLogoPreviewWrap,  mbLogoFilename,  true);
+        _loadExistingPreview(biz.image_url,  mbImagePreview, mbImagePreviewWrap, mbImageFilename, false);
+        if (mbUploadStatus) mbUploadStatus.style.display = 'none';
+
         masterTenantFields.classList.remove('hidden');
         clearStatus(masterSaveStatus);
+
+        // Otvori parent <details> ako je zatvoren
+        var detailsEl = masterTenantFields.closest('details');
+        if (detailsEl) detailsEl.open = true;
 
         // Scroll to editor
         masterTenantFields.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -629,31 +904,37 @@
           return;
         }
 
-        // Call unified Edge Function to invite owner
+        // Pozovi Edge Function (ako je deployovana) ili koristi fallback
         setStatus(createTenantStatus, 'Šaljem pozivnicu ' + email + '…', 'info');
+
+        function _afterInvite(sent) {
+          unlockButtons();
+          setStatus(createTenantStatus, 'Apartman "' + name + '" kreiran! ✓', 'info');
+          loadTenants();
+          clearForm();
+          sendOwnerWelcomeEmail(email, name, slug); // best-effort custom email via Resend
+          showOwnerWelcomeModal(name, slug, email, sent);
+        }
+
+        function _inviteFallbackFlow() {
+          _inviteFallback(email, newId,
+            function ()    { _afterInvite(true); },
+            function (msg) {
+              unlockButtons(); clearForm(); loadTenants();
+              setStatus(createTenantStatus, 'Apartman kreiran ✓, magic link nije poslan: ' + msg, 'warning');
+              sendOwnerWelcomeEmail(email, name, slug);
+              showOwnerWelcomeModal(name, slug, email, false);
+            }
+          );
+        }
+
         sb.functions.invoke('master_admin', {
           body: { action: 'invite_owner', owner_email: email, tenant_id: newId, tenant_slug: slug }
         }).then(function (fnResult) {
-          unlockButtons();
-          clearForm();
-          if (fnResult.error) {
-            setStatus(createTenantStatus,
-              'Apartman kreiran ✓, ali pozivnica nije poslata: ' +
-              (fnResult.error.message || JSON.stringify(fnResult.error)), 'warning');
-          } else {
-            var d = fnResult.data || {};
-            var note = d.invited
-              ? 'Pozivnica poslata! ✓'
-              : 'Korisnik već postoji — link i profil su ažurirani.';
-            setStatus(createTenantStatus, 'Apartman "' + name + '" kreiran! ' + note, 'info');
-          }
-          loadTenants();
-        }).catch(function (err) {
-          unlockButtons();
-          clearForm();
-          setStatus(createTenantStatus,
-            'Apartman kreiran ✓, greška Edge Function: ' + (err && err.message || '?'), 'warning');
-          loadTenants();
+          if (!fnResult.error) { _afterInvite(true); return; }
+          _inviteFallbackFlow();
+        }).catch(function () {
+          _inviteFallbackFlow();
         });
       });
   }
@@ -1162,12 +1443,11 @@
   var PARTNER_TIER_COLORS = { premium:'rgba(251,191,36,0.15)', featured:'rgba(249,115,22,0.1)', standard:'rgba(255,255,255,0.04)' };
 
   // ── Image upload helpers ──────────────────────────────────────────────────
-  function _setupFileInput(fileInput, hiddenInput, previewImg, previewWrap, filenameSpan, folder) {
+  function _setupFileInput(fileInput, hiddenInput, previewImg, previewWrap, filenameSpan, folder, statusEl) {
     if (!fileInput) return;
     fileInput.addEventListener('change', function() {
       var file = fileInput.files && fileInput.files[0];
       if (!file) return;
-      // Show local preview immediately
       var reader = new FileReader();
       reader.onload = function(e) {
         if (previewImg)   previewImg.src = e.target.result;
@@ -1175,28 +1455,28 @@
         if (filenameSpan) filenameSpan.textContent = file.name;
       };
       reader.readAsDataURL(file);
-      // Upload to Supabase Storage
-      _uploadImageToStorage(file, folder, hiddenInput);
+      _uploadImageToStorage(file, folder, hiddenInput, statusEl);
     });
   }
 
-  function _uploadImageToStorage(file, folder, hiddenInput) {
-    if (pfUploadStatus) { pfUploadStatus.textContent = '⏳ Uploadujem…'; pfUploadStatus.style.display = 'block'; }
+  function _uploadImageToStorage(file, folder, hiddenInput, statusEl) {
+    var sEl = statusEl || pfUploadStatus;
+    if (sEl) { sEl.textContent = '⏳ Uploadujem…'; sEl.style.display = 'block'; sEl.style.color = '#22d3ee'; }
     var ext  = file.name.split('.').pop().toLowerCase();
     var name = folder + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
     Promise.resolve(
       sb.storage.from('partner-images').upload(name, file, { upsert: true, contentType: file.type })
     ).then(function(r) {
       if (r.error) {
-        if (pfUploadStatus) { pfUploadStatus.textContent = '❌ Upload greška: ' + r.error.message; pfUploadStatus.style.color = '#f87171'; }
+        if (sEl) { sEl.textContent = '❌ Upload greška: ' + r.error.message; sEl.style.color = '#f87171'; }
         return;
       }
       var pub = sb.storage.from('partner-images').getPublicUrl(name);
       var url = pub && pub.data && pub.data.publicUrl ? pub.data.publicUrl : '';
       if (hiddenInput) hiddenInput.value = url;
-      if (pfUploadStatus) { pfUploadStatus.textContent = '✅ Slika uploadovana'; pfUploadStatus.style.color = '#4ade80'; setTimeout(function(){ pfUploadStatus.style.display='none'; }, 3000); }
+      if (sEl) { sEl.textContent = '✅ Slika uploadovana'; sEl.style.color = '#4ade80'; setTimeout(function(){ sEl.style.display='none'; }, 3000); }
     }).catch(function(err) {
-      if (pfUploadStatus) { pfUploadStatus.textContent = '❌ ' + (err && err.message ? err.message : 'Upload error'); pfUploadStatus.style.color = '#f87171'; }
+      if (sEl) { sEl.textContent = '❌ ' + (err && err.message ? err.message : 'Upload error'); sEl.style.color = '#f87171'; }
     });
   }
 
@@ -1228,6 +1508,12 @@
   var btnImageClr = document.getElementById('btn-pf-image-clear');
   if (btnLogoClr)  btnLogoClr.addEventListener('click',  function() { _clearImageField(pfLogo,  pfLogoPreview,  pfLogoPreviewWrap,  pfLogoFilename,  pfLogoFile); });
   if (btnImageClr) btnImageClr.addEventListener('click', function() { _clearImageField(pfImage, pfImagePreview, pfImagePreviewWrap, pfImageFilename, pfImageFile); });
+
+  // ── Biznis image upload wire-up ───────────────────────────────────────────
+  _setupFileInput(mbLogoFile,  masterBiznisLogo,  mbLogoPreview,  mbLogoPreviewWrap,  mbLogoFilename,  'biznis-logos',  mbUploadStatus);
+  _setupFileInput(mbImageFile, masterBiznisImage, mbImagePreview, mbImagePreviewWrap, mbImageFilename, 'biznis-heroes', mbUploadStatus);
+  if (btnMbLogoClear)  btnMbLogoClear.addEventListener('click',  function() { _clearImageField(masterBiznisLogo,  mbLogoPreview,  mbLogoPreviewWrap,  mbLogoFilename,  mbLogoFile); });
+  if (btnMbImageClear) btnMbImageClear.addEventListener('click', function() { _clearImageField(masterBiznisImage, mbImagePreview, mbImagePreviewWrap, mbImageFilename, mbImageFile); });
 
   // ── Build municipality checkboxes in partner form ─────────────────────────
   function _buildPartnerMunHtml(selected) {
@@ -1284,12 +1570,17 @@
     d.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;flex-wrap:wrap">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">' + logoHtml +
-      '<span style="font-weight:600">' + _esc(p.name) + '</span></div>' +
+      '<div style="min-width:0">' +
+      '<span style="font-weight:600">' + _esc(p.name) + '</span>' +
+      '<span style="margin-left:6px;font-size:0.7rem;background:rgba(34,211,238,0.12);color:#22d3ee;border-radius:4px;padding:1px 5px;font-weight:700" title="Redosled (order_index)">#' + (p.order_index || 100) + '</span>' +
+      '</div></div>' +
       '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center">' +
       '<span style="font-size:0.72rem;opacity:0.6;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px">' + (PARTNER_TIER_LABELS[p.tier] || p.tier) + '</span>' +
       '<span style="font-size:0.72rem;opacity:0.6;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px">' + (PARTNER_TYPE_LABELS[p.type] || p.type) + '</span>' +
       '<span style="font-size:0.72rem;opacity:0.6">' + (PARTNER_CAT_LABELS[p.category] || p.category) + '</span>' +
       (!p.is_active ? '<span style="font-size:0.72rem;color:#f87171">● Neaktivan</span>' : '') +
+      '<button class="btn-secondary btn-sm btn-p-up" data-pid="' + p.id + '" title="Pomeri gore (manji redosled)">▲</button>' +
+      '<button class="btn-secondary btn-sm btn-p-down" data-pid="' + p.id + '" title="Pomeri dole (veći redosled)">▼</button>' +
       '<button class="btn-secondary btn-sm btn-p-edit" data-pid="' + p.id + '">✏️ Uredi</button>' +
       '<button class="btn-secondary btn-sm btn-p-del" data-pid="' + p.id + '" style="color:#f87171;border-color:#f87171">🗑</button>' +
       '</div></div>' +
@@ -1301,6 +1592,8 @@
       '</div>';
     d.querySelector('.btn-p-edit').addEventListener('click', function() { _openPartnerForm(p); });
     d.querySelector('.btn-p-del').addEventListener('click', function() { _deletePartner(p.id); });
+    d.querySelector('.btn-p-up').addEventListener('click', function() { _reorderPartner(p, -10); });
+    d.querySelector('.btn-p-down').addEventListener('click', function() { _reorderPartner(p, +10); });
     partnersListEl.appendChild(d);
   }
 
@@ -1436,6 +1729,14 @@
     if (!confirm('Obriši partnera?')) return;
     sb.from('partners').delete().eq('id', id).then(function(r) {
       if (r.error) { if (partnersStatus) { partnersStatus.textContent = 'Greška: ' + r.error.message; partnersStatus.className = 'msg msg--error'; } return; }
+      loadPartners();
+    });
+  }
+
+  function _reorderPartner(p, delta) {
+    var newIndex = Math.max(1, (p.order_index || 100) + delta);
+    sb.from('partners').update({ order_index: newIndex }).eq('id', p.id).then(function(r) {
+      if (r.error) { alert('Greška pri promeni redosleda: ' + r.error.message); return; }
       loadPartners();
     });
   }
@@ -1832,6 +2133,83 @@
   }
 
   if (btnGlobalSettingsSave) btnGlobalSettingsSave.addEventListener('click', saveGlobalSettings);
+
+  // ── MASTER: Legal pages ───────────────────────────────────────────────────
+  var legalSaveStatus   = document.getElementById('legal-save-status');
+  var btnLegalSave      = document.getElementById('btn-legal-save');
+  var LEGAL_KEYS = ['impressum', 'privacy', 'cookies', 'terms'];
+
+  function loadLegalPages() {
+    LEGAL_KEYS.forEach(function(k) {
+      sb.from('items').select('data_json')
+        .eq('section_key', 'ui').eq('item_key', 'legal_' + k).is('tenant_id', null)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .then(function(r) {
+          if (!r || !r.data || !r.data.length) return;
+          var bh = r.data[0].data_json && r.data[0].data_json.body_html || {};
+          var sl = document.getElementById('legal-' + k + '-sl');
+          var en = document.getElementById('legal-' + k + '-en');
+          if (sl) sl.value = bh.sl || '';
+          if (en) en.value = bh.en || '';
+        });
+    });
+  }
+
+  function saveLegalPages() {
+    if (btnLegalSave) btnLegalSave.disabled = true;
+    setStatus(legalSaveStatus, 'Čuvam…', '');
+    var TITLES = {
+      impressum: { sl: 'Impressum',          en: 'Imprint' },
+      privacy:   { sl: 'Politika zasebnosti', en: 'Privacy Policy' },
+      cookies:   { sl: 'Piškotki',            en: 'Cookies' },
+      terms:     { sl: 'Pogoji uporabe',       en: 'Terms of Use' }
+    };
+
+    // NULL tenant_id breaks standard upsert onConflict (NULL != NULL in PG).
+    // Safe approach: DELETE existing global rows, then INSERT fresh ones.
+    var deleteAll = sb.from('items')
+      .delete()
+      .is('tenant_id', null)
+      .eq('section_key', 'ui')
+      .in('item_key', LEGAL_KEYS.map(function(k){ return 'legal_' + k; }));
+
+    deleteAll.then(function(delRes) {
+      if (delRes && delRes.error) {
+        if (btnLegalSave) btnLegalSave.disabled = false;
+        setStatus(legalSaveStatus, 'Greška pri brisanju: ' + delRes.error.message, 'error');
+        return;
+      }
+      var rows = LEGAL_KEYS.map(function(k, i) {
+        var slEl = document.getElementById('legal-' + k + '-sl');
+        var enEl = document.getElementById('legal-' + k + '-en');
+        return {
+          tenant_id: null, section_key: 'ui', item_key: 'legal_' + k,
+          type: 'config', order: 20 + i, visible: true,
+          data_json: {
+            title:     TITLES[k],
+            body_html: { sl: slEl ? slEl.value : '', en: enEl ? enEl.value : '' }
+          },
+          municipality_slugs: null,
+          updated_at: new Date().toISOString()
+        };
+      });
+      sb.from('items').insert(rows).then(function(insRes) {
+        if (btnLegalSave) btnLegalSave.disabled = false;
+        if (insRes && insRes.error) { setStatus(legalSaveStatus, 'Greška: ' + insRes.error.message, 'error'); return; }
+        setStatus(legalSaveStatus, 'Sačuvano ✓', 'success');
+        loadLegalPages();
+      }).catch(function(err) {
+        if (btnLegalSave) btnLegalSave.disabled = false;
+        setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+      });
+    }).catch(function(err) {
+      if (btnLegalSave) btnLegalSave.disabled = false;
+      setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+    });
+  }
+
+  if (btnLegalSave) btnLegalSave.addEventListener('click', saveLegalPages);
 
   // ── MASTER: Analytics ─────────────────────────────────────────────────────
   function loadAnalytics() {
@@ -2682,8 +3060,10 @@
       upsertItem(_masterTenantId, 'info',        'default_config',      'config',  0, true, configData),
       upsertItem(_masterTenantId, 'house_rules', 'house_rules_private', 'rules',   0, true, { text: masterRulesTextArea.value }),
       upsertItem(_masterTenantId, 'parking',     'parking_recommended', 'parking', 0, true, {
-        title: masterParkingTitleInput.value.trim(), address: masterParkingAddressInput.value.trim(),
-        mapsLink: parkMaps, notes: masterParkingNotesArea.value.trim()
+        title:   { sl: (masterParkingTitleSlInput ? masterParkingTitleSlInput.value.trim() : ''), en: (masterParkingTitleEnInput ? masterParkingTitleEnInput.value.trim() : '') },
+        address: masterParkingAddressInput.value.trim(),
+        mapsLink: parkMaps,
+        notes:   { sl: (masterParkingNotesSlArea ? masterParkingNotesSlArea.value.trim() : ''), en: (masterParkingNotesEnArea ? masterParkingNotesEnArea.value.trim() : '') }
       }),
       upsertItem(_masterTenantId, 'booking',     'rebook',              'config',  0, true, {
         apartment_name: masterRebookNameInput.value.trim(), owner_phone: masterRebookPhoneInput.value.trim(),
@@ -2693,7 +3073,21 @@
       upsertItem(_masterTenantId, 'maintenance', 'maintenance_config',  'config',  0, true, {
         visible: masterMaintVisibleChk ? masterMaintVisibleChk.checked : true,
         email:   masterMaintEmailInput ? masterMaintEmailInput.value.trim() : ''
-      })
+      }),
+      upsertItem(_masterTenantId, 'biznis', 'owner_config', 'config', 0,
+        masterBiznisEnabled ? masterBiznisEnabled.checked : false,
+        {
+          enabled:     masterBiznisEnabled  ? masterBiznisEnabled.checked          : false,
+          name:        masterBiznisName     ? masterBiznisName.value.trim()        : '',
+          type:        masterBiznisType     ? masterBiznisType.value               : 'other',
+          short_desc:  masterBiznisDesc     ? masterBiznisDesc.value.trim()        : '',
+          phone:       masterBiznisPhone    ? masterBiznisPhone.value.trim()       : '',
+          website:     masterBiznisWebsite  ? masterBiznisWebsite.value.trim()     : '',
+          booking_url: masterBiznisBooking  ? masterBiznisBooking.value.trim()     : '',
+          image_url:   masterBiznisImage    ? masterBiznisImage.value.trim()       : '',
+          logo_url:    masterBiznisLogo     ? masterBiznisLogo.value.trim()        : ''
+        }
+      )
     ]).then(function (results) {
       btnMasterSave.disabled = false;
       var errors = results.filter(function (r) { return r && r.error; }).map(function (r) { return r.error.message; });
@@ -2739,10 +3133,14 @@
         // parking_recommended
         var park = byKey['parking_recommended'] || {};
         _ownerData.parkingRecommended = park;
-        ownerParkingTitleInput.value   = park.title    || '';
+        var _opTitle = park.title || {};
+        var _opNotes = park.notes || {};
+        if (ownerParkingTitleSlInput) ownerParkingTitleSlInput.value = (typeof _opTitle === 'object' ? _opTitle.sl : _opTitle) || '';
+        if (ownerParkingTitleEnInput) ownerParkingTitleEnInput.value = (typeof _opTitle === 'object' ? _opTitle.en : _opTitle) || '';
         ownerParkingAddressInput.value = park.address  || '';
         ownerParkingMapsInput.value    = park.mapsLink || '';
-        ownerParkingNotesArea.value    = park.notes    || '';
+        if (ownerParkingNotesSlArea) ownerParkingNotesSlArea.value = (typeof _opNotes === 'object' ? _opNotes.sl : _opNotes) || '';
+        if (ownerParkingNotesEnArea) ownerParkingNotesEnArea.value = (typeof _opNotes === 'object' ? _opNotes.en : _opNotes) || '';
 
         // rebook
         var rebook = byKey['rebook'] || {};
@@ -2770,10 +3168,12 @@
     var dirLink  = ownerDirectionsLinkInput.value.trim();
     var rulesUrl = ownerRulesUrlInput.value.trim();
     var rulesText     = ownerRulesTextArea.value;
-    var parkTitle     = ownerParkingTitleInput.value.trim();
+    var parkTitleSl   = ownerParkingTitleSlInput ? ownerParkingTitleSlInput.value.trim() : '';
+    var parkTitleEn   = ownerParkingTitleEnInput ? ownerParkingTitleEnInput.value.trim() : '';
     var parkAddr      = ownerParkingAddressInput.value.trim();
     var parkMaps      = ownerParkingMapsInput.value.trim();
-    var parkNotes     = ownerParkingNotesArea.value.trim();
+    var parkNotesSl   = ownerParkingNotesSlArea ? ownerParkingNotesSlArea.value.trim() : '';
+    var parkNotesEn   = ownerParkingNotesEnArea ? ownerParkingNotesEnArea.value.trim() : '';
     var rebookName    = ownerRebookNameInput.value.trim();
     var rebookPhone   = ownerRebookPhoneInput.value.trim();
     var rebookEmail   = ownerRebookEmailInput.value.trim();
@@ -2836,7 +3236,7 @@
     configData.quick_rules_url       = rulesUrl || './pravila/index.html';
 
     var houseRulesData = { text: rulesText };
-    var parkingData    = { title: parkTitle, address: parkAddr, mapsLink: parkMaps, notes: parkNotes };
+    var parkingData    = { title: { sl: parkTitleSl, en: parkTitleEn }, address: parkAddr, mapsLink: parkMaps, notes: { sl: parkNotesSl, en: parkNotesEn } };
     var rebookData     = { apartment_name: rebookName, owner_phone: rebookPhone, owner_email: rebookEmail, rebook_link: rebookLink, instructions: rebookInstr };
     var maintData      = { visible: maintVisible, email: maintEmail };
 
@@ -2937,6 +3337,8 @@
           loadLostFound();
           loadSuggestions();
           loadGlobalSettings();
+          loadLegalPages();
+          loadCardLabels();
         } else if (data.role === 'OWNER') {
           if (data.disabled) {
             showDashStatus(
@@ -2991,6 +3393,40 @@
   inputPassword.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') btnLogin.click();
   });
+
+  // ── Magic link login (za vlasnike bez lozinke ili kao fallback) ───────────────
+  var btnMagicLogin  = document.getElementById('btn-magic-login');
+  var magicLoginMsg  = document.getElementById('magic-login-msg');
+
+  if (btnMagicLogin) {
+    btnMagicLogin.addEventListener('click', function () {
+      var email = inputEmail.value.trim();
+      if (!email || email.indexOf('@') < 0) {
+        if (magicLoginMsg) { magicLoginMsg.className = 'msg error'; magicLoginMsg.textContent = 'Unesite e-mail adresu.'; }
+        return;
+      }
+      btnMagicLogin.disabled    = true;
+      btnMagicLogin.textContent = 'Šaljem…';
+      if (magicLoginMsg) magicLoginMsg.className = 'msg hidden';
+
+      sb.auth.signInWithOtp({
+        email: email,
+        options: { shouldCreateUser: false, emailRedirectTo: window.location.origin + '/admin/' }
+      }).then(function (r) {
+        btnMagicLogin.disabled    = false;
+        btnMagicLogin.textContent = '🔗 Pošalji magic link na email';
+        if (r.error) {
+          if (magicLoginMsg) { magicLoginMsg.className = 'msg error'; magicLoginMsg.textContent = r.error.message; }
+        } else {
+          if (magicLoginMsg) { magicLoginMsg.className = 'msg'; magicLoginMsg.style.color = '#4ade80'; magicLoginMsg.textContent = 'Link poslan! Provjeri email i klikni link za prijavu.'; }
+        }
+      }).catch(function (err) {
+        btnMagicLogin.disabled    = false;
+        btnMagicLogin.textContent = '🔗 Pošalji magic link na email';
+        if (magicLoginMsg) { magicLoginMsg.className = 'msg error'; magicLoginMsg.textContent = err && err.message ? err.message : 'Greška'; }
+      });
+    });
+  }
 
   // ── Master panel events ───────────────────────────────────────────────────────
   btnRefreshTenants.addEventListener('click', loadTenants);
@@ -3085,6 +3521,82 @@
 
   btnLinkOwner.addEventListener('click', linkOwnerToTenant);
 
+  // ── Owner welcome modal ───────────────────────────────────────────────────────
+  var _owmModal     = document.getElementById('owner-welcome-modal');
+  var _owmGuestUrl  = document.getElementById('owm-guest-url');
+  var _owmAdminUrl  = document.getElementById('owm-admin-url');
+  var _owmMsg       = document.getElementById('owm-copy-msg');
+  var _owmNote      = document.getElementById('owm-invite-note');
+
+  function showOwnerWelcomeModal(tenantName, tenantSlug, ownerEmail, inviteSent) {
+    if (!_owmModal) return;
+    var base      = window.location.origin + window.location.pathname.replace(/\/admin\/[^/]*$/, '');
+    var guestUrl  = base + '/index.html?t=' + encodeURIComponent(tenantSlug);
+    var adminUrl  = window.location.origin + '/admin/';
+
+    if (_owmNote) {
+      _owmNote.textContent = inviteSent && ownerEmail
+        ? '✅ Magic link poslan na ' + ownerEmail + '. Prosledi vlasniku i guest link ispod.'
+        : '⚠️ Email nije poslan — pošalji vlasniku ove podatke ručno.';
+      _owmNote.style.color = inviteSent ? '#4ade80' : '#fbbf24';
+    }
+    if (_owmGuestUrl) _owmGuestUrl.textContent = guestUrl;
+    if (_owmAdminUrl) _owmAdminUrl.textContent = adminUrl;
+    if (_owmMsg) {
+      _owmMsg.value = [
+        'Zdravo!',
+        '',
+        'Kreiran je tvoj apartman "' + tenantName + '" na Soča Guide platformi.',
+        '',
+        '🔑 Admin panel (upravljaj apartmanom):',
+        adminUrl,
+        '',
+        '🔗 Link za goste (daj gostima da otvore vodič):',
+        guestUrl,
+        '',
+        (inviteSent && ownerEmail
+          ? 'Na tvoj email (' + ownerEmail + ') smo poslali magic link za prijavu.\nKlikni na link u emailu da se prijaviš u admin panel.'
+          : 'Otvori admin panel i prijavi se sa svojim emailom koristeći "Pošalji magic link" opciju.'),
+        '',
+        'Pozdrav!'
+      ].join('\n');
+    }
+
+    _owmModal.style.display = 'block';
+
+    function _copyText(text, btn, label) {
+      navigator.clipboard ? navigator.clipboard.writeText(text).then(function () {
+        var orig = btn.textContent; btn.textContent = 'Kopirano ✓';
+        setTimeout(function () { btn.textContent = orig; }, 2000);
+      }) : (function () {
+        var ta = document.createElement('textarea'); ta.value = text;
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        btn.textContent = 'Kopirano ✓'; setTimeout(function () { btn.textContent = label; }, 2000);
+      })();
+    }
+
+    var cg = document.getElementById('owm-copy-guest');
+    var ca = document.getElementById('owm-copy-admin');
+    var cm = document.getElementById('owm-copy-msg-btn');
+    if (cg) cg.onclick = function () { _copyText(guestUrl, cg, 'Kopiraj'); };
+    if (ca) ca.onclick = function () { _copyText(adminUrl, ca, 'Kopiraj'); };
+    if (cm) cm.onclick = function () { _copyText(_owmMsg ? _owmMsg.value : '', cm, 'Kopiraj poruku'); };
+  }
+
+  function closeOwnerWelcomeModal() { if (_owmModal) _owmModal.style.display = 'none'; }
+  var _owmClose1 = document.getElementById('owner-welcome-close');
+  var _owmClose2 = document.getElementById('owner-welcome-close2');
+  if (_owmClose1) _owmClose1.addEventListener('click', closeOwnerWelcomeModal);
+  if (_owmClose2) _owmClose2.addEventListener('click', closeOwnerWelcomeModal);
+  if (_owmModal)  _owmModal.addEventListener('click', function (e) {
+    if (e.target === _owmModal) closeOwnerWelcomeModal();
+  });
+
+  // Expose so quickAddTenant can call it
+  window._showOwnerWelcomeModal = showOwnerWelcomeModal;
+
   // ── Master global + tenant editor events ─────────────────────────────────────
   btnGlobalSave.addEventListener('click', saveGlobalData);
   if (btnRefreshAnalytics) btnRefreshAnalytics.addEventListener('click', loadAnalytics);
@@ -3156,6 +3668,143 @@
       showView('login');
     });
   });
+
+  // ── Card Labels (main page card names) ───────────────────────────────────────
+  var CARD_LABEL_DEFS = [
+    { key: 'emergency',         label: 'Nujno / Emergency',          icon: '🚨' },
+    { key: 'parking',           label: 'Parkiranje / Parking',        icon: '🅿️' },
+    { key: 'restavracije_title',label: 'Restavracije / Restaurants',  icon: '🍽️' },
+    { key: 'adrenalin',         label: 'Adrenalin / Activities',      icon: '🎯' },
+    { key: 'attractions',       label: 'Znamenitosti / Attractions',  icon: '⭐' },
+    { key: 'daily_essentials',  label: 'Daily Essentials',            icon: '🛒' },
+    { key: 'taxi_bus',          label: 'Taxi/Bus',                    icon: '🚌' },
+    { key: 'soca_live_title',   label: 'Soča Live',                   icon: '🌊' },
+    { key: 'lost_found_title',  label: 'Izgubljeno / Lost & Found',   icon: '🔍' },
+    { key: 'maint_card_title',  label: 'Prijava okvare / Maintenance',icon: '🔧' },
+  ];
+  var CARD_LABEL_LANGS = [
+    { code: 'sl', flag: '🇸🇮' },
+    { code: 'en', flag: '🇬🇧' },
+    { code: 'de', flag: '🇩🇪' },
+    { code: 'it', flag: '🇮🇹' },
+    { code: 'pl', flag: '🇵🇱' },
+    { code: 'cs', flag: '🇨🇿' },
+  ];
+  var _clActiveLang = 'sl';
+  var _clData = {}; // { sl: { emergency: '...', emergency_sub: '...' }, en: {...}, ... }
+
+  function _buildCardLabelPanels() {
+    var wrap = document.getElementById('cl-panels');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    CARD_LABEL_LANGS.forEach(function(lng) {
+      var panel = document.createElement('div');
+      panel.id = 'cl-panel-' + lng.code;
+      panel.style.display = lng.code === _clActiveLang ? 'block' : 'none';
+      var html = '<div style="display:grid;grid-template-columns:1fr;gap:0.5rem">';
+      CARD_LABEL_DEFS.forEach(function(def) {
+        var titleVal = (_clData[lng.code] && _clData[lng.code][def.key]) || '';
+        var subKey   = def.key.replace(/_title$/, '') + '_sub';
+        var subVal   = (_clData[lng.code] && _clData[lng.code][subKey]) || '';
+        html +=
+          '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.6rem 0.75rem">' +
+          '<div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;opacity:0.8">' + def.icon + ' ' + _esc(def.label) + '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
+          '<div>' +
+          '<label style="font-size:0.72rem;opacity:0.55">Naslov</label>' +
+          '<input type="text" id="cl-' + lng.code + '-' + def.key + '" placeholder="(podrazumevani prevod)" style="width:100%;box-sizing:border-box;font-size:0.82rem" value="' + _esc(titleVal) + '">' +
+          '</div>' +
+          '<div>' +
+          '<label style="font-size:0.72rem;opacity:0.55">Podnaslov</label>' +
+          '<input type="text" id="cl-' + lng.code + '-' + subKey + '" placeholder="(podrazumevani prevod)" style="width:100%;box-sizing:border-box;font-size:0.82rem" value="' + _esc(subVal) + '">' +
+          '</div>' +
+          '</div></div>';
+      });
+      html += '</div>';
+      panel.innerHTML = html;
+      wrap.appendChild(panel);
+    });
+  }
+
+  function loadCardLabels() {
+    sb.from('items')
+      .select('data_json')
+      .eq('item_key', 'card_labels')
+      .is('tenant_id', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(function(r) {
+        if (r.error) { console.warn('[loadCardLabels]', r.error); }
+        _clData = (r.data && r.data.data_json) || {};
+        _buildCardLabelPanels();
+        _initCardLabelTabs();
+      });
+  }
+
+  function _initCardLabelTabs() {
+    var tabs = document.querySelectorAll('.cl-lang-btn');
+    tabs.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        _clActiveLang = this.getAttribute('data-lang');
+        tabs.forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        CARD_LABEL_LANGS.forEach(function(lng) {
+          var p = document.getElementById('cl-panel-' + lng.code);
+          if (p) p.style.display = lng.code === _clActiveLang ? 'block' : 'none';
+        });
+      });
+    });
+  }
+
+  var btnCardLabelsSave = document.getElementById('btn-card-labels-save');
+  var cardLabelsStatus  = document.getElementById('card-labels-status');
+
+  if (btnCardLabelsSave) {
+    btnCardLabelsSave.addEventListener('click', function() {
+      // Collect all values from inputs
+      var payload = {};
+      CARD_LABEL_LANGS.forEach(function(lng) {
+        payload[lng.code] = {};
+        CARD_LABEL_DEFS.forEach(function(def) {
+          var titleEl = document.getElementById('cl-' + lng.code + '-' + def.key);
+          var subKey  = def.key.replace(/_title$/, '') + '_sub';
+          var subEl   = document.getElementById('cl-' + lng.code + '-' + subKey);
+          var tv = titleEl ? titleEl.value.trim() : '';
+          var sv = subEl   ? subEl.value.trim()   : '';
+          if (tv) payload[lng.code][def.key] = tv;
+          if (sv) payload[lng.code][subKey]  = sv;
+        });
+      });
+
+      btnCardLabelsSave.disabled = true;
+      if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Čuvam…'; cardLabelsStatus.className = 'msg'; cardLabelsStatus.classList.remove('hidden'); }
+
+      // Delete existing, then insert fresh (same as legal pages)
+      sb.from('items').delete().eq('item_key', 'card_labels').is('tenant_id', null)
+        .then(function(dr) {
+          if (dr.error) {
+            btnCardLabelsSave.disabled = false;
+            if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + dr.error.message; cardLabelsStatus.className = 'msg msg--error'; }
+            return;
+          }
+          sb.from('items').insert({
+            item_key:   'card_labels',
+            section_key:'global',
+            tenant_id:  null,
+            data_json:  payload,
+          }).then(function(ir) {
+            btnCardLabelsSave.disabled = false;
+            if (ir.error) {
+              if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + ir.error.message; cardLabelsStatus.className = 'msg msg--error'; }
+              return;
+            }
+            _clData = payload;
+            if (cardLabelsStatus) { cardLabelsStatus.textContent = '✓ Nazivi kartica sačuvani!'; cardLabelsStatus.className = 'msg msg--ok'; }
+          });
+        });
+    });
+  }
 
   // ── Boot: check existing session ─────────────────────────────────────────────
   sb.auth.getSession().then(function (result) {

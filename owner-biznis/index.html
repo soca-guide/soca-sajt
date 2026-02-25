@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Naš biznis</title>
+  <link rel="stylesheet" href="../assets/directory.css?v=20260219-1">
+  <style>
+    .ob-wrap { max-width: 540px; margin: 0 auto; padding: 1rem; }
+    .ob-hero {
+      width: 100%; height: 200px; object-fit: cover;
+      border-radius: 14px; display: block; margin-bottom: 1rem;
+      background: rgba(34,211,238,0.08);
+    }
+    .ob-hero-placeholder {
+      width: 100%; height: 200px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(6,182,212,0.05));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; margin-bottom: 1rem;
+    }
+    .ob-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .ob-logo { width: 56px; height: 56px; border-radius: 10px; object-fit: cover;
+               border: 1px solid rgba(34,211,238,0.25); flex-shrink: 0; }
+    .ob-logo-placeholder {
+      width: 56px; height: 56px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.2);
+      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    }
+    .ob-name { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+    .ob-type { font-size: 0.78rem; opacity: 0.55; margin-top: 0.15rem; }
+    .ob-desc { font-size: 0.9rem; opacity: 0.8; line-height: 1.6; margin-bottom: 1rem; }
+    .ob-btns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .ob-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1rem; border-radius: 999px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .ob-btn:active { opacity: 0.75; }
+    .ob-btn-call    { background: rgba(34,211,238,0.15); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
+    .ob-btn-web     { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .ob-btn-book    { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .ob-btn-wa      { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .ob-loading { text-align: center; padding: 3rem 1rem; opacity: 0.5; font-size: 1.5rem; }
+    .ob-empty   { text-align: center; padding: 3rem 1rem; opacity: 0.5; font-size: 0.9rem; }
+    .ob-extra-cards { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; }
+    .ob-extra-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 0.85rem 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .ob-extra-logo { width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
+                     border: 1px solid rgba(34,211,238,0.2); flex-shrink: 0; }
+    .ob-extra-placeholder { width:40px;height:40px;border-radius:8px;background:rgba(34,211,238,0.1);
+                             border:1px solid rgba(34,211,238,0.15);display:flex;align-items:center;
+                             justify-content:center;font-size:1rem;flex-shrink:0; }
+    .ob-extra-info { flex: 1; min-width: 0; }
+    .ob-extra-name { font-weight: 600; font-size: 0.88rem; }
+    .ob-extra-desc { font-size: 0.75rem; opacity: 0.55; margin-top: 0.1rem;
+                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ob-extra-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .ob-extra-btn { font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 999px;
+                    text-decoration: none; font-weight: 600; border: none; cursor: pointer; }
+    .ob-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 1.25rem 0; }
+  </style>
+</head>
+<body>
+  <header class="dir-header">
+    <button id="dir-back" class="dir-back" type="button" aria-label="Nazaj" onclick="try{window.parent.document.getElementById('vtOverlay').click()}catch(e){history.back()}">←</button>
+    <div class="dir-title-text" id="ob-title">Naš biznis</div>
+  </header>
+
+  <div class="ob-wrap">
+    <div id="ob-loading" class="ob-loading">⏳</div>
+    <div id="ob-content" style="display:none"></div>
+    <div id="ob-empty" class="ob-empty" style="display:none">Ni podatkov.</div>
+  </div>
+
+  <script src="../assets/supabase-client.js?v=20260219-1"></script>
+  <script>
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var slug   = params.get('t') || '';
+    var lang   = (params.get('lang') || localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
+    var sb     = null;
+
+    var TYPE_LABELS = {
+      food:       { sl:'Restavracija / Gostilna', en:'Restaurant / Inn',   de:'Restaurant', it:'Ristorante', pl:'Restauracja', cs:'Restaurace' },
+      activities: { sl:'Adrenalin / Aktivnosti',  en:'Activities',         de:'Aktivitäten',it:'Attività',   pl:'Aktywności',  cs:'Aktivity' },
+      taxi:       { sl:'Taxi / Prevoz',            en:'Taxi / Transport',   de:'Taxi',       it:'Taxi',       pl:'Taxi',        cs:'Taxi' },
+      other:      { sl:'Biznis',                   en:'Business',           de:'Unternehmen',it:'Attività',   pl:'Biznes',      cs:'Podnikání' }
+    };
+
+    var TITLE_I18N = { sl:'Naš biznis', en:'Our business', de:'Unser Betrieb', it:'La nostra attività', pl:'Nasz biznes', cs:'Náš podnik' };
+    var BTN_I18N   = {
+      call:    { sl:'Pokliči',     en:'Call',    de:'Anrufen',  it:'Chiama',  pl:'Zadzwoń',      cs:'Zavolat' },
+      web:     { sl:'Spletna str.',en:'Website', de:'Webseite', it:'Sito web',pl:'Strona',        cs:'Web' },
+      book:    { sl:'Rezerviraj',  en:'Book',    de:'Buchen',   it:'Prenota', pl:'Zarezerwuj',    cs:'Rezervovat' },
+      whatsapp:{ sl:'WhatsApp',    en:'WhatsApp',de:'WhatsApp', it:'WhatsApp',pl:'WhatsApp',      cs:'WhatsApp' }
+    };
+
+    function t(obj) { return obj[lang] || obj.sl || obj.en || ''; }
+
+    function typeLabel(type) {
+      var m = TYPE_LABELS[type] || TYPE_LABELS.other;
+      return t(m);
+    }
+
+    function btnLabel(key) { return t(BTN_I18N[key] || {}); }
+
+    function renderBtns(cfg, small) {
+      var cls  = small ? 'ob-extra-btn' : 'ob-btn';
+      var html = '';
+      if (cfg.phone)
+        html += '<a href="tel:' + cfg.phone.replace(/\s+/g,'') + '" class="' + cls + (small ? ' ob-btn-call' : ' ob-btn-call') + '">📞 ' + btnLabel('call') + '</a>';
+      if (cfg.whatsapp)
+        html += '<a href="https://wa.me/' + cfg.whatsapp.replace(/[^0-9]/g,'') + '" target="_blank" class="' + cls + ' ob-btn-wa">💬 ' + btnLabel('whatsapp') + '</a>';
+      if (cfg.website)
+        html += '<a href="' + cfg.website + '" target="_blank" rel="noopener" class="' + cls + ' ob-btn-web">🌐 ' + btnLabel('web') + '</a>';
+      if (cfg.booking_url)
+        html += '<a href="' + cfg.booking_url + '" target="_blank" rel="noopener" class="' + cls + ' ob-btn-book">📅 ' + btnLabel('book') + '</a>';
+      return html;
+    }
+
+    function renderBusiness(cfg) {
+      var content = document.getElementById('ob-content');
+      if (!content) return;
+
+      // Hero image
+      var heroHtml = cfg.image_url
+        ? '<img src="' + cfg.image_url + '" class="ob-hero" alt="">'
+        : '<div class="ob-hero-placeholder">🏪</div>';
+
+      // Logo
+      var logoHtml = cfg.logo_url
+        ? '<img src="' + cfg.logo_url + '" class="ob-logo" alt="">'
+        : '<div class="ob-logo-placeholder">🏢</div>';
+
+      // Header
+      var headerHtml = '<div class="ob-header">' + logoHtml +
+        '<div><div class="ob-name">' + (cfg.name || '') + '</div>' +
+        '<div class="ob-type">' + typeLabel(cfg.type || 'other') + '</div></div></div>';
+
+      // Description
+      var descHtml = cfg.short_desc ? '<p class="ob-desc">' + cfg.short_desc + '</p>' : '';
+
+      // Buttons
+      var btnsHtml = '<div class="ob-btns">' + renderBtns(cfg, false) + '</div>';
+
+      // Extra businesses
+      var extraHtml = '';
+      var extras = cfg.extra_businesses;
+      if (extras && extras.length) {
+        extraHtml += '<div class="ob-divider"></div><div class="ob-extra-cards">';
+        extras.forEach(function(ex) {
+          var exLogo = ex.logo_url
+            ? '<img src="' + ex.logo_url + '" class="ob-extra-logo" alt="">'
+            : '<div class="ob-extra-placeholder">🏢</div>';
+          extraHtml += '<div class="ob-extra-card">' + exLogo +
+            '<div class="ob-extra-info"><div class="ob-extra-name">' + (ex.name||'') + '</div>' +
+            '<div class="ob-extra-desc">' + (ex.short_desc||typeLabel(ex.type||'other')) + '</div>' +
+            '<div class="ob-extra-btns">' + renderBtns(ex, true) + '</div></div></div>';
+        });
+        extraHtml += '</div>';
+      }
+
+      content.innerHTML = heroHtml + headerHtml + descHtml + btnsHtml + extraHtml;
+      document.getElementById('ob-loading').style.display = 'none';
+      content.style.display = 'block';
+
+      // Update title
+      var titleEl = document.getElementById('ob-title');
+      if (titleEl) {
+        var label = cfg.button_label && (cfg.button_label[lang] || cfg.button_label.sl || cfg.button_label.en);
+        titleEl.textContent = label || t(TITLE_I18N);
+      }
+    }
+
+    function showEmpty() {
+      document.getElementById('ob-loading').style.display = 'none';
+      document.getElementById('ob-empty').style.display   = 'block';
+    }
+
+    function loadBiznis() {
+      if (!slug) { showEmpty(); return; }
+      // Step 1: resolve tenant_id
+      sb.from('tenants')
+        .select('tenant_id')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle()
+        .then(function(r1) {
+          if (r1.error || !r1.data) { showEmpty(); return; }
+          var tenantId = r1.data.tenant_id;
+          // Step 2: fetch biznis config from items
+          sb.from('items')
+            .select('data_json')
+            .eq('tenant_id', tenantId)
+            .eq('section_key', 'biznis')
+            .eq('item_key', 'owner_config')
+            .eq('visible', true)
+            .limit(1)
+            .maybeSingle()
+            .then(function(r2) {
+              if (r2.error || !r2.data || !r2.data.data_json) { showEmpty(); return; }
+              renderBusiness(r2.data.data_json);
+            });
+        });
+    }
+
+    // Wait for Supabase client
+    var _w = 0;
+    function waitAndLoad() {
+      sb = window.supabaseClient || window.SB;
+      if (sb) { loadBiznis(); return; }
+      _w += 150;
+      if (_w < 8000) setTimeout(waitAndLoad, 150);
+      else showEmpty();
+    }
+    waitAndLoad();
+  })();
+  </script>
+  <div id="footer-legal" style="text-align:center;padding:0.75rem 1rem 1.5rem;font-size:0.72rem;color:#a0b0a8;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 0.9rem"></div>
+  <script>
+  (function(){
+    var el=document.getElementById('footer-legal');if(!el)return;
+    var lang=(localStorage.getItem('preferredLanguage')||'sl').toLowerCase().split('-')[0];
+    if(lang!=='sl'&&lang!=='en')lang='sl';
+    var fb={copyright:{sl:'© 2026 Soča Guide',en:'© 2026 Soča Guide'},links:[
+      {label:{sl:'Impressum',en:'Imprint'},url:'../legal/?doc=impressum',enabled:true},
+      {label:{sl:'Zasebnost',en:'Privacy'},url:'../legal/?doc=privacy',enabled:true},
+      {label:{sl:'Piškotki',en:'Cookies'},url:'../legal/?doc=cookies',enabled:true}
+    ]};
+    function render(cfg){
+      var links=(cfg.links||[]).filter(function(l){return l.enabled;});
+      if(!links.length)return;
+      var copy=cfg.copyright&&(cfg.copyright[lang]||cfg.copyright.sl);
+      var h=copy?'<span>'+copy+'</span>':'';
+      links.forEach(function(l){var lbl=l.label&&(l.label[lang]||l.label.sl);h+='<a href="'+l.url+'" style="color:inherit;text-decoration:none;opacity:0.7">'+lbl+'</a>';});
+      el.innerHTML=h;
+    }
+    render(fb);
+    var _w=0;function tryLoad(){var sb=window.supabaseClient||window.SB;if(!sb){_w+=200;if(_w<8000)setTimeout(tryLoad,200);return;}
+      sb.from('items').select('data_json').eq('section_key','ui').eq('item_key','footer_config').is('tenant_id',null).maybeSingle()
+      .then(function(r){if(r&&r.data&&r.data.data_json){var cfg=JSON.parse(JSON.stringify(r.data.data_json));
+        if(cfg.links)cfg.links=cfg.links.map(function(l){var u=(l.url||'').replace(/^(\.\/|\/)/,'../');if(!u.startsWith('../'))u='../'+u;return Object.assign({},l,{url:u});});
+        render(cfg);}}).catch(function(){});}tryLoad();
+  })();
+  </script>
+</body>
+</html>

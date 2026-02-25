@@ -18,6 +18,10 @@
       <label for="input-password">Lozinka</label>
       <input id="input-password" type="password" autocomplete="current-password" placeholder="••••••••" />
       <button id="btn-login">Prijava</button>
+      <hr style="margin:1rem 0;border-color:rgba(255,255,255,0.1)">
+      <p style="text-align:center;font-size:0.8rem;opacity:0.6;margin:0 0 0.5rem">ili prvi put / zaboravljena lozinka</p>
+      <button id="btn-magic-login" style="width:100%;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:#22d3ee">🔗 Pošalji magic link na email</button>
+      <p id="magic-login-msg" class="msg hidden" style="text-align:center;margin-top:0.5rem"></p>
     </div>
   </div>
 
@@ -461,97 +465,113 @@
           </div>
         </details>
 
-        <!-- 6) Statistika poseta -->
+        <!-- 6a) Pravne strani -->
         <details class="admin-section">
-          <summary class="admin-section-title">📊 Statistika poseta</summary>
+          <summary class="admin-section-title">📄 Pravne strani</summary>
           <div class="admin-section-body">
-            <p id="analytics-status" class="msg hidden"></p>
-            <div id="analytics-output" style="font-size:0.85rem;line-height:1.8;opacity:0.85">Učitavam...</div>
-            <button id="btn-refresh-analytics" class="btn-secondary btn-sm">Osveži statistiku</button>
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Globalni tekstovi vidljivi svim gostima. Edituj direktno u textarea — HTML tagovi su dozvoljeni (<code>&lt;h2&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>).</p>
+
+            <!-- Impressum -->
+            <details class="admin-section admin-section--inner">
+              <summary class="admin-section-title">📋 Impressum</summary>
+              <div class="admin-section-body">
+                <label>🇸🇮 Slovenian</label>
+                <textarea id="legal-impressum-sl" rows="7" placeholder="HTML tekst…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+                <label>🇬🇧 English</label>
+                <textarea id="legal-impressum-en" rows="7" placeholder="HTML text…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+              </div>
+            </details>
+
+            <!-- Privacy -->
+            <details class="admin-section admin-section--inner">
+              <summary class="admin-section-title">🔒 Zasebnost / Privacy</summary>
+              <div class="admin-section-body">
+                <label>🇸🇮 Slovenian</label>
+                <textarea id="legal-privacy-sl" rows="7" placeholder="HTML tekst…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+                <label>🇬🇧 English</label>
+                <textarea id="legal-privacy-en" rows="7" placeholder="HTML text…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+              </div>
+            </details>
+
+            <!-- Cookies -->
+            <details class="admin-section admin-section--inner">
+              <summary class="admin-section-title">🍪 Piškotki / Cookies</summary>
+              <div class="admin-section-body">
+                <label>🇸🇮 Slovenian</label>
+                <textarea id="legal-cookies-sl" rows="7" placeholder="HTML tekst…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+                <label>🇬🇧 English</label>
+                <textarea id="legal-cookies-en" rows="7" placeholder="HTML text…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+              </div>
+            </details>
+
+            <!-- Terms -->
+            <details class="admin-section admin-section--inner">
+              <summary class="admin-section-title">📜 Pogoji / Terms</summary>
+              <div class="admin-section-body">
+                <label>🇸🇮 Slovenian</label>
+                <textarea id="legal-terms-sl" rows="7" placeholder="HTML tekst…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+                <label>🇬🇧 English</label>
+                <textarea id="legal-terms-en" rows="7" placeholder="HTML text…" style="width:100%;box-sizing:border-box;font-size:0.78rem;font-family:monospace"></textarea>
+              </div>
+            </details>
+
+            <p id="legal-save-status" class="msg hidden"></p>
+            <button id="btn-legal-save" class="btn-sm">💾 Sačuvaj pravne strani</button>
           </div>
         </details>
 
-        <!-- Partner Analytics -->
-        <details class="admin-section">
-          <summary class="admin-section-title">📈 Partner Analytics <span id="panalytics-badge" style="display:none;background:rgba(34,211,238,0.2);color:#22d3ee;border-radius:999px;font-size:0.7rem;padding:0 7px;margin-left:6px;vertical-align:middle"></span></summary>
+        <!-- 6b) Nazivi kartica na glavnoj stranici -->
+        <details class="admin-section" id="card-labels-section">
+          <summary class="admin-section-title">🏠 Nazivi kartica (glavna stranica)</summary>
           <div class="admin-section-body">
-            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Impressions, klikovi i CTR po partneru. Podaci iz <code>partner_events</code> tabele.</p>
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Prepiši nazive i opise kartica na glavnoj stranici za svaki jezik. Prazno polje = koristi se podrazumevani prevod iz sistema.</p>
 
-            <!-- Filters -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.75rem">
-              <div>
-                <label style="font-size:0.75rem;opacity:0.6">Od datuma</label>
-                <input type="date" id="pa-from" style="width:100%;font-size:0.82rem;box-sizing:border-box">
-              </div>
-              <div>
-                <label style="font-size:0.75rem;opacity:0.6">Do datuma</label>
-                <input type="date" id="pa-to" style="width:100%;font-size:0.82rem;box-sizing:border-box">
-              </div>
-              <div>
-                <label style="font-size:0.75rem;opacity:0.6">Tip kartice</label>
-                <select id="pa-type" style="width:100%;font-size:0.82rem">
-                  <option value="">Sve</option>
-                  <option value="activities">🎯 Adrenalin</option>
-                  <option value="food">🍽️ Restorani</option>
-                  <option value="taxi">🚌 Taxi</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:0.75rem;opacity:0.6">Tier</label>
-                <select id="pa-tier" style="width:100%;font-size:0.82rem">
-                  <option value="">Sve</option>
-                  <option value="premium">⭐ Premium</option>
-                  <option value="featured">🔥 Featured</option>
-                  <option value="standard">📍 Standard</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:0.75rem;opacity:0.6">Opština</label>
-                <select id="pa-mun" style="width:100%;font-size:0.82rem">
-                  <option value="">Sve</option>
-                </select>
-              </div>
-              <div style="display:flex;align-items:flex-end;gap:0.4rem">
-                <button id="btn-pa-load" class="btn-sm" style="flex:1">🔍 Učitaj</button>
-                <button id="btn-pa-export-grouped" class="btn-secondary btn-sm" style="flex:1" title="CSV po partneru">📥 CSV</button>
-              </div>
+            <!-- Language tabs -->
+            <div id="cl-lang-tabs" style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:1rem">
+              <button class="btn-secondary btn-sm cl-lang-btn active" data-lang="sl">🇸🇮 SL</button>
+              <button class="btn-secondary btn-sm cl-lang-btn" data-lang="en">🇬🇧 EN</button>
+              <button class="btn-secondary btn-sm cl-lang-btn" data-lang="de">🇩🇪 DE</button>
+              <button class="btn-secondary btn-sm cl-lang-btn" data-lang="it">🇮🇹 IT</button>
+              <button class="btn-secondary btn-sm cl-lang-btn" data-lang="pl">🇵🇱 PL</button>
+              <button class="btn-secondary btn-sm cl-lang-btn" data-lang="cs">🇨🇿 CS</button>
             </div>
 
-            <!-- Summary metrics -->
-            <div id="pa-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;display:none">
-              <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:8px;padding:0.5rem;text-align:center">
-                <div style="font-size:1.3rem;font-weight:700;color:#22d3ee" id="pa-sum-imp">0</div>
-                <div style="font-size:0.7rem;opacity:0.6">Impressions</div>
-              </div>
-              <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:0.5rem;text-align:center">
-                <div style="font-size:1.3rem;font-weight:700;color:#fb923c" id="pa-sum-clicks">0</div>
-                <div style="font-size:0.7rem;opacity:0.6">Total klikovi</div>
-              </div>
-              <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:0.5rem;text-align:center">
-                <div style="font-size:1.3rem;font-weight:700;color:#c084fc" id="pa-sum-ctr">0%</div>
-                <div style="font-size:0.7rem;opacity:0.6">CTR</div>
-              </div>
+            <!-- Card inputs — one panel per language -->
+            <div id="cl-panels">
+              <!-- generated by JS -->
             </div>
 
-            <!-- Table -->
-            <div style="overflow-x:auto">
-              <table id="pa-table" style="width:100%;border-collapse:collapse;font-size:0.78rem;display:none">
-                <thead>
-                  <tr style="border-bottom:1px solid rgba(255,255,255,0.12);text-align:left">
-                    <th style="padding:0.4rem 0.5rem;opacity:0.6;cursor:pointer" data-sort="name">Partner ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="tier">Tier ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="impressions">Imp ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="opens">Opens ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="calls">Calls ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="whatsapp">WA ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="bookings">Book ↕</th>
-                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="ctr">CTR ↕</th>
-                  </tr>
-                </thead>
-                <tbody id="pa-tbody"></tbody>
-              </table>
+            <p id="card-labels-status" class="msg hidden"></p>
+            <button id="btn-card-labels-save" class="btn-sm">💾 Sačuvaj nazive kartica</button>
+          </div>
+        </details>
+
+        <!-- 6) Statistika — Google Analytics -->
+        <details class="admin-section">
+          <summary class="admin-section-title">📊 Statistika poseta</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.7;margin:0 0 0.75rem">Sve statistike (posete, klikovi na kartice, partner impressions i klikovi) se prate kroz <strong>Google Analytics 4</strong>.</p>
+            <div style="display:flex;flex-direction:column;gap:0.5rem">
+              <a href="https://analytics.google.com/analytics/web/#/p{GA4_PROPERTY_ID}/reports/reportinghub" target="_blank" rel="noopener"
+                style="display:flex;align-items:center;gap:0.75rem;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:0.75rem 1rem;text-decoration:none;color:inherit">
+                <span style="font-size:1.5rem">📈</span>
+                <div>
+                  <div style="font-weight:700;color:#22d3ee;font-size:0.9rem">Otvori Google Analytics</div>
+                  <div style="font-size:0.75rem;opacity:0.6">Posete, klikovi, bounce rate, trajanje sesije…</div>
+                </div>
+                <span style="margin-left:auto;opacity:0.5;font-size:0.8rem">→</span>
+              </a>
+              <a href="https://analytics.google.com/analytics/web/#/p{GA4_PROPERTY_ID}/reports/explorer?params=_u..nav%3Dmaui&r=all-events" target="_blank" rel="noopener"
+                style="display:flex;align-items:center;gap:0.75rem;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:0.75rem 1rem;text-decoration:none;color:inherit">
+                <span style="font-size:1.5rem">🎯</span>
+                <div>
+                  <div style="font-weight:700;color:#fbbf24;font-size:0.9rem">Događaji (card_click, partner eventi)</div>
+                  <div style="font-size:0.75rem;opacity:0.6">card_click, partner_impression, click_call, click_booking…</div>
+                </div>
+                <span style="margin-left:auto;opacity:0.5;font-size:0.8rem">→</span>
+              </a>
             </div>
-            <p id="pa-status" class="msg hidden" style="margin-top:0.5rem"></p>
+            <p style="font-size:0.72rem;opacity:0.45;margin:0.75rem 0 0">GA4 ID: <code>G-8B48GQC9F3</code></p>
           </div>
         </details>
 
@@ -599,14 +619,26 @@
               <details class="admin-section admin-section--inner">
                 <summary class="admin-section-title">🅿️ Parking — preporučeno</summary>
                 <div class="admin-section-body">
-                  <label for="master-parking-title">Naziv</label>
-                  <input id="master-parking-title" type="text" placeholder="Parking Bovec centar" />
-                  <label for="master-parking-address">Adresa</label>
+                  <label>Naziv parkirišta</label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+                    <div>
+                      <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+                      <input id="master-parking-title-sl" type="text" placeholder="Parkirišče Bovec" style="width:100%;box-sizing:border-box" />
+                    </div>
+                    <div>
+                      <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+                      <input id="master-parking-title-en" type="text" placeholder="Bovec Parking" style="width:100%;box-sizing:border-box" />
+                    </div>
+                  </div>
+                  <label for="master-parking-address">Adresa (ista za sve jezike)</label>
                   <input id="master-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8" />
                   <label for="master-parking-maps">Maps link</label>
                   <input id="master-parking-maps" type="text" placeholder="https://maps.google.com/..." />
-                  <label for="master-parking-notes">Napomena</label>
-                  <textarea id="master-parking-notes" rows="3" placeholder="Besplatno do 2h…"></textarea>
+                  <label>Napomena</label>
+                  <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+                  <textarea id="master-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
+                  <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+                  <textarea id="master-parking-notes-en" rows="2" placeholder="Free up to 2h…" style="width:100%;box-sizing:border-box"></textarea>
                 </div>
               </details>
 
@@ -636,6 +668,82 @@
                   <label for="master-maint-email">Email vlasnika za prijave okvara</label>
                   <input id="master-maint-email" type="email" placeholder="owner@example.com" />
                   <p style="font-size:0.78rem;opacity:0.5;margin:0.2rem 0 0">Email šalje sistem automatski — vlasnik ne treba ništa dodatno da podešava.</p>
+                </div>
+              </details>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">🏪 Biznis vlasnika</summary>
+                <div class="admin-section-body">
+                  <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin-bottom:0.75rem">
+                    <input type="checkbox" id="master-biznis-enabled">
+                    Prikaži dugme "Naš biznis" pored "Rezerviraj znova"
+                  </label>
+                  <label for="master-biznis-name">Naziv biznisa</label>
+                  <input id="master-biznis-name" type="text" placeholder="Primer: Soča Rafting Centar" style="width:100%;box-sizing:border-box">
+                  <label for="master-biznis-type">Tip biznisa</label>
+                  <select id="master-biznis-type" style="width:100%;box-sizing:border-box">
+                    <option value="other">Ostalo / Biznis</option>
+                    <option value="activities">Adrenalin / Aktivnosti</option>
+                    <option value="food">Restoran / Gostilna</option>
+                    <option value="taxi">Taxi / Prevoz</option>
+                  </select>
+                  <label for="master-biznis-desc">Kratak opis (za goste)</label>
+                  <textarea id="master-biznis-desc" rows="3" placeholder="Kratki opis biznisa koji vide gosti…" style="width:100%;box-sizing:border-box"></textarea>
+                  <label for="master-biznis-phone">Telefon</label>
+                  <input id="master-biznis-phone" type="tel" placeholder="+386 31 123 456" style="width:100%;box-sizing:border-box">
+                  <label for="master-biznis-website">Web stranica (URL)</label>
+                  <input id="master-biznis-website" type="url" placeholder="https://www.primer.si" style="width:100%;box-sizing:border-box">
+                  <label for="master-biznis-booking">Booking / Rezervacija (URL)</label>
+                  <input id="master-biznis-booking" type="url" placeholder="https://booking.com/..." style="width:100%;box-sizing:border-box">
+                  <!-- ── Slike ─────────────────────────────────────────── -->
+                  <div style="background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.15);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;gap:0.75rem">
+                    <div style="font-size:0.78rem;font-weight:700;color:#22d3ee;margin-bottom:0.1rem">🖼️ Slike biznisa</div>
+
+                    <!-- Logo -->
+                    <div>
+                      <label style="font-size:0.78rem;opacity:0.8;font-weight:600">Logo biznisa</label>
+                      <div style="font-size:0.72rem;opacity:0.5;margin:0.15rem 0 0.4rem;line-height:1.5">
+                        📐 <strong>Preporučeno:</strong> 200 × 200 px · kvadrat (1:1) · PNG/WebP · max 150 KB
+                      </div>
+                      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                        <label style="cursor:pointer;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:7px;padding:0.3rem 0.75rem;font-size:0.78rem;font-weight:600">
+                          📁 Odaberi logo
+                          <input type="file" id="mb-logo-file" accept="image/png,image/webp,image/jpeg" style="display:none">
+                        </label>
+                        <span id="mb-logo-filename" style="font-size:0.75rem;opacity:0.5">Nema odabrane slike</span>
+                      </div>
+                      <div id="mb-logo-preview-wrap" style="margin-top:0.5rem;display:none">
+                        <img id="mb-logo-preview" src="" alt="Logo preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(34,211,238,0.2)">
+                        <button type="button" id="btn-mb-logo-clear" style="display:block;margin-top:0.25rem;font-size:0.7rem;color:#f87171;background:none;border:none;cursor:pointer;padding:0">✕ Ukloni</button>
+                      </div>
+                      <input type="hidden" id="master-biznis-logo">
+                    </div>
+
+                    <!-- Baner slika -->
+                    <div>
+                      <label style="font-size:0.78rem;opacity:0.8;font-weight:600">Baner slika (cover)</label>
+                      <div style="font-size:0.72rem;opacity:0.5;margin:0.15rem 0 0.4rem;line-height:1.5">
+                        📐 <strong>Preporučeno:</strong> 1200 × 400 px · omjer 3:1 · JPG/WebP · max 500 KB
+                      </div>
+                      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                        <label style="cursor:pointer;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:7px;padding:0.3rem 0.75rem;font-size:0.78rem;font-weight:600">
+                          📁 Odaberi baner
+                          <input type="file" id="mb-image-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+                        </label>
+                        <span id="mb-image-filename" style="font-size:0.75rem;opacity:0.5">Nema odabrane slike</span>
+                      </div>
+                      <div id="mb-image-preview-wrap" style="margin-top:0.5rem;display:none">
+                        <img id="mb-image-preview" src="" alt="Baner preview" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(34,211,238,0.2)">
+                        <button type="button" id="btn-mb-image-clear" style="display:block;margin-top:0.25rem;font-size:0.7rem;color:#f87171;background:none;border:none;cursor:pointer;padding:0">✕ Ukloni</button>
+                      </div>
+                      <input type="hidden" id="master-biznis-image">
+                    </div>
+
+                    <p id="mb-upload-status" style="font-size:0.78rem;color:#22d3ee;display:none;margin:0"></p>
+                  </div>
+                  <p style="font-size:0.78rem;opacity:0.5;margin:0.5rem 0 0">
+                    Dugme je vidljivo <strong>samo</strong> gostima ovog apartmana — ne pojavljuje se u globalnim karticama Aktivnosti/Restorani/Taxi.
+                  </p>
                 </div>
               </details>
 
@@ -672,14 +780,26 @@
         <details class="admin-section">
           <summary class="admin-section-title">🅿️ Parking — preporučeno</summary>
           <div class="admin-section-body">
-            <label for="owner-parking-title">Naziv</label>
-            <input id="owner-parking-title" type="text" placeholder="Parking Bovec centar" />
-            <label for="owner-parking-address">Adresa</label>
+            <label>Naziv parkirišta</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+              <div>
+                <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+                <input id="owner-parking-title-sl" type="text" placeholder="Parkirišče Bovec" style="width:100%;box-sizing:border-box" />
+              </div>
+              <div>
+                <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+                <input id="owner-parking-title-en" type="text" placeholder="Bovec Parking" style="width:100%;box-sizing:border-box" />
+              </div>
+            </div>
+            <label for="owner-parking-address">Adresa (ista za sve jezike)</label>
             <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
             <label for="owner-parking-maps">Maps link</label>
             <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
-            <label for="owner-parking-notes">Napomena</label>
-            <textarea id="owner-parking-notes" rows="3" placeholder="Besplatno do 2h, zatim 1 €/h…"></textarea>
+            <label>Napomena</label>
+            <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+            <textarea id="owner-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
+            <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+            <textarea id="owner-parking-notes-en" rows="2" placeholder="Free up to 2h…" style="width:100%;box-sizing:border-box"></textarea>
           </div>
         </details>
 
@@ -721,10 +841,86 @@
     </div>
   </div>
 
+  <!-- ── OWNER WELCOME INFO MODAL ── -->
+  <div id="owner-welcome-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);overflow-y:auto;padding:1.5rem 1rem">
+    <div style="max-width:520px;margin:auto;background:#0d1f1a;border:1px solid rgba(34,211,238,0.25);border-radius:20px;padding:1.75rem;position:relative">
+      <button id="owner-welcome-close" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+      <div style="font-size:2rem;margin-bottom:0.5rem">🎉</div>
+      <h2 style="margin:0 0 0.25rem;font-size:1.15rem;font-weight:700;color:#fff">Apartman kreiran!</h2>
+      <p id="owm-invite-note" style="margin:0 0 1.25rem;font-size:0.83rem;color:#4ade80"></p>
+
+      <div style="background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:12px;padding:1rem;margin-bottom:1rem">
+        <div style="font-size:0.72rem;color:#22d3ee;font-weight:600;margin-bottom:0.5rem;letter-spacing:0.05em">🔗 LINK ZA GOSTE — daj gostima da otvore vodič</div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <code id="owm-guest-url" style="flex:1;font-size:0.78rem;background:#0a1612;padding:0.5rem 0.75rem;border-radius:8px;color:#a7f3d0;word-break:break-all"></code>
+          <button id="owm-copy-guest" style="flex-shrink:0;padding:0.4rem 0.75rem;background:#064e3b;border:1px solid #059669;border-radius:8px;color:#4ade80;font-size:0.78rem;cursor:pointer">Kopiraj</button>
+        </div>
+      </div>
+
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:1rem;margin-bottom:1rem">
+        <div style="font-size:0.72rem;color:#a5b4fc;font-weight:600;margin-bottom:0.5rem;letter-spacing:0.05em">🔑 ADMIN LINK — vlasnik upravlja apartmanom</div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <code id="owm-admin-url" style="flex:1;font-size:0.78rem;background:#0a1612;padding:0.5rem 0.75rem;border-radius:8px;color:#c7d2fe;word-break:break-all"></code>
+          <button id="owm-copy-admin" style="flex-shrink:0;padding:0.4rem 0.75rem;background:#1e1b4b;border:1px solid #4338ca;border-radius:8px;color:#a5b4fc;font-size:0.78rem;cursor:pointer">Kopiraj</button>
+        </div>
+      </div>
+
+      <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:0.72rem;color:#fbbf24;font-weight:600;margin-bottom:0.6rem;letter-spacing:0.05em">📋 POŠALJI VLASNIKU — kopiraj ovu poruku</div>
+        <div id="owm-message-wrap" style="position:relative">
+          <textarea id="owm-copy-msg" rows="8" readonly
+            style="width:100%;box-sizing:border-box;background:#0a1612;border:none;border-radius:8px;padding:0.75rem;color:#e5e7eb;font-size:0.78rem;line-height:1.6;resize:none;font-family:inherit"></textarea>
+          <button id="owm-copy-msg-btn" style="position:absolute;bottom:0.5rem;right:0.5rem;padding:0.3rem 0.65rem;background:#451a03;border:1px solid #b45309;border-radius:6px;color:#fbbf24;font-size:0.72rem;cursor:pointer">Kopiraj poruku</button>
+        </div>
+      </div>
+
+      <button id="owner-welcome-close2" style="width:100%;padding:0.75rem;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:12px;color:#22d3ee;font-size:0.9rem;cursor:pointer">Zatvori</button>
+    </div>
+  </div>
+
+  <!-- Owner welcome modal — prikazuje se nakon kreiranja tenanta sa vlasnikom -->
+  <div id="owner-welcome-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);overflow-y:auto;padding:1.5rem 1rem">
+    <div style="max-width:520px;margin:2rem auto;background:#0f1923;border:1px solid rgba(34,211,238,0.3);border-radius:20px;padding:1.75rem;position:relative">
+      <button id="owner-welcome-close" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#9ca3af;font-size:1.5rem;cursor:pointer;line-height:1">×</button>
+      <div style="font-size:2rem;margin-bottom:0.5rem">🎉</div>
+      <h2 style="margin:0 0 0.25rem;font-size:1.15rem;font-weight:700;color:#22d3ee" id="owm-title">Apartman kreiran!</h2>
+      <p style="margin:0 0 1.25rem;font-size:0.82rem;color:#9ca3af" id="owm-subtitle">Pozivnica je poslata vlasniku. Proslijedi mu i ove podatke:</p>
+
+      <!-- Blok 1: Link za goste -->
+      <div style="background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:12px;padding:1rem;margin-bottom:0.75rem">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#22d3ee;margin-bottom:0.4rem">🔗 Link za goste (dijeli gostima pri check-in)</div>
+        <code id="owm-guest-url" style="font-size:0.78rem;color:#f0fdf4;word-break:break-all;display:block;margin-bottom:0.5rem"></code>
+        <button id="owm-copy-guest" style="font-size:0.75rem;padding:4px 12px;background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:6px;cursor:pointer">Kopiraj</button>
+      </div>
+
+      <!-- Blok 2: Admin panel link -->
+      <div style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:1rem;margin-bottom:0.75rem">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#818cf8;margin-bottom:0.4rem">⚙️ Admin panel (za upravljanje apartmanom)</div>
+        <code id="owm-admin-url" style="font-size:0.78rem;color:#f0fdf4;word-break:break-all;display:block;margin-bottom:0.5rem"></code>
+        <button id="owm-copy-admin" style="font-size:0.75rem;padding:4px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;border-radius:6px;cursor:pointer">Kopiraj</button>
+      </div>
+
+      <!-- Blok 3: Upustvo -->
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:0.85rem;font-size:0.78rem;color:#9ca3af;line-height:1.6;margin-bottom:1rem">
+        <strong style="color:#f0fdf4;display:block;margin-bottom:0.3rem">📋 Upustvo za vlasnika:</strong>
+        1. Otvori admin panel link<br>
+        2. Unesi email → klikni <em>Pošalji magic link</em><br>
+        3. Provjeri inbox → klikni link za prijavu<br>
+        4. Popuni podatke o apartmanu (parking, hišni red…)<br>
+        5. Dijeli <strong>Link za goste</strong> pri svakom check-in
+      </div>
+
+      <!-- Copy all -->
+      <button id="owm-copy-all" style="width:100%;padding:0.6rem;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:10px;cursor:pointer;font-size:0.82rem">
+        📋 Kopiraj sve (za slanje emailom vlasniku)
+      </button>
+    </div>
+  </div>
+
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="../assets/supabase-client.js?v=20260225-1"></script>
-  <script src="./admin.js?v=20260225-1"></script>
+  <script src="../assets/supabase-client.js?v=20260219-1"></script>
+  <script src="./admin.js?v=20260219-1"></script>
 </body>
 </html>

@@ -57,3 +57,10 @@ Trenutno ti je u kodu podešeno da mejlovi stižu sa onboarding@resend.dev. To j
 
 Supabase URL i Anon Key:
 Isto kao i za Resend, proveri da li si na serveru podesio NEXT_PUBLIC_SUPABASE_URL i NEXT_PUBLIC_SUPABASE_ANON_KEY, inače forma neće moći čak ni da upiše poruku u bazu.
+
+Fajl supabase/PRODUCTION_CHECKLIST.md kreiran — uvijek tu, ne može se zaboraviti.
+Kad dođe taj dan, samo otvori taj fajl i idi korak po korak. Ključne stvari su:
+Resend → Domains → dodaj domen → postavi DNS → verify
+Supabase Secrets → FROM_EMAIL + ENV=production
+Redeploy send-email funkcije
+Sve ostalo je već urađeno.

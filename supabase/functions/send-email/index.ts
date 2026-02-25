@@ -16,6 +16,52 @@ const CORS = {
 
 // ── Email templates ───────────────────────────────────────────────────────────
 
+function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; html: string; to: string } {
+  const ownerEmail  = String(row.email        || '');
+  const tenantName  = String(row.tenant_name  || 'apartma');
+  const tenantSlug  = String(row.tenant_slug  || '');
+  const siteUrl     = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
+  // Prefer directly-passed URLs (direct call), fall back to SITE_URL + slug (webhook)
+  const guestUrl    = String(row.guest_url || '') ||
+    (siteUrl ? `${siteUrl}/index.html?t=${encodeURIComponent(tenantSlug)}` : `?t=${tenantSlug}`);
+  const adminUrl    = String(row.admin_url || '') ||
+    (siteUrl ? `${siteUrl}/admin/` : '/admin/');
+  return {
+    to: ownerEmail,
+    subject: `🏡 Dobrodošli v Soča Guide — "${tenantName}"`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1f1a;border-radius:16px;color:#e5e7eb">
+        <h2 style="color:#22d3ee;margin-top:0">🏡 Vaš apartma je pripravljen!</h2>
+        <p style="color:#a7f3d0">Pozdravljeni!<br><br>Ustvarjen je bil vaš apartma <strong style="color:#fff">»${tenantName}«</strong> na platformi Soča Guide.</p>
+
+        <div style="background:#0a2e1f;border:1px solid #059669;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 6px;font-size:13px;color:#4ade80;font-weight:600">🔑 Skrbniška plošča — upravljajte z apartmajem:</p>
+          <a href="${adminUrl}" style="color:#22d3ee;word-break:break-all">${adminUrl}</a>
+          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Odprite skrbniško ploščo in se prijavite z e-poštnim naslovom prek možnosti <strong style="color:#e5e7eb">»Pošlji čarobno povezavo«</strong>. Na vaš e-naslov boste prejeli neposredno prijavno povezavo.</p>
+        </div>
+
+        <div style="background:#0a1e2e;border:1px solid #0369a1;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 6px;font-size:13px;color:#38bdf8;font-weight:600">🔗 Povezava za goste — delite z gosti:</p>
+          <a href="${guestUrl}" style="color:#7dd3fc;word-break:break-all">${guestUrl}</a>
+          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Gostje odprejo to povezavo in vidijo vodič za vaš apartma.</p>
+        </div>
+
+        <div style="background:#1a1a0f;border:1px solid #a16207;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 8px;font-size:13px;color:#fbbf24;font-weight:600">📋 Kaj lahko nastavite na skrbniški plošči:</p>
+          <ul style="margin:0;padding-left:18px;color:#d1d5db;font-size:13px;line-height:1.8">
+            <li>Ime apartmaja in kontaktne informacije</li>
+            <li>Hišni red z ikonami</li>
+            <li>Priporočeno parkirišče z navodili</li>
+            <li>Vaše podjetje (neobvezno — prikazano gostom)</li>
+            <li>Povezava za ponovne rezervacije</li>
+          </ul>
+        </div>
+
+        <p style="font-size:12px;color:#4b5563;margin-top:24px">Soča Guide — digitalni vodič za turiste v dolini Soče</p>
+      </div>`,
+  };
+}
+
 function templateSuggestion(row: Record<string, unknown>): { subject: string; html: string } {
   return {
     subject: `💡 Nova predlog za poboljšanje — Soča Sajt`,
@@ -98,6 +144,24 @@ function templateLostFound(row: Record<string, unknown>): { subject: string; htm
   };
 }
 
+// ── Resend helper ─────────────────────────────────────────────────────────────
+async function sendViaResend(
+  resendKey: string,
+  to: string,
+  subject: string,
+  html: string,
+  from: string,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to: [to], subject, html }),
+  });
+  if (!res.ok) { const err = await res.text(); return { ok: false, error: err }; }
+  const data = await res.json();
+  return { ok: true, id: data.id };
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
@@ -106,38 +170,105 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Verify webhook secret to prevent unauthorized calls
+    const resendKey   = Deno.env.get('RESEND_API_KEY')    ?? '';
+    const notifyEmail = Deno.env.get('NOTIFY_EMAIL')      ?? '';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')      ?? '';
+    const anonKey     = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    // ── FROM address — use verified domain in prod, fallback in dev ──────────
+    const env         = (Deno.env.get('ENV') ?? Deno.env.get('NODE_ENV') ?? 'dev').toLowerCase();
+    const fromEmail   = Deno.env.get('FROM_EMAIL') ?? '';
+    const fallbackFrom = 'Soča Guide <onboarding@resend.dev>';
+    const finalFrom   = fromEmail || (env === 'production' ? '' : fallbackFrom);
+
+    if (env === 'production' && !finalFrom) {
+      console.error('send-email: FROM_EMAIL secret is required in production');
+      return new Response(JSON.stringify({ error: 'Missing FROM_EMAIL secret' }), {
+        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!resendKey) {
+      return new Response(JSON.stringify({ error: 'Missing RESEND_API_KEY' }), {
+        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const payload = await req.json();
+
+    // ── Direct call: action=owner_invite (MASTER JWT required) ────────────────
+    if (payload.action === 'owner_invite') {
+      // Verify caller is MASTER via JWT → user_id → user_profiles
+      const authHeader = req.headers.get('authorization') ?? '';
+      if (supabaseUrl && anonKey && authHeader) {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const caller = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        // Get user_id from JWT first, then filter profile by user_id
+        const { data: userData } = await caller.auth.getUser();
+        const userId = userData?.user?.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
+          });
+        }
+        const { data: prof } = await caller
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (!prof || prof.role !== 'MASTER') {
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403, headers: { ...CORS, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+      const ownerEmail  = String(payload.owner_email  || '');
+      const tenantName  = String(payload.tenant_name  || 'vaš apartman');
+      const guestUrl    = String(payload.guest_url    || '');
+      const adminUrl    = String(payload.admin_url    || '');
+      if (!ownerEmail || !ownerEmail.includes('@')) {
+        return new Response(JSON.stringify({ error: 'Missing owner_email' }), {
+          status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+      const tpl = templateOwnerWelcome({ email: ownerEmail, tenant_name: tenantName,
+                                         guest_url: guestUrl, admin_url: adminUrl });
+      const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom);
+      return new Response(JSON.stringify(result), {
+        status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── Webhook path: verify secret ────────────────────────────────────────────
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     if (webhookSecret) {
       const incoming = req.headers.get('x-webhook-secret');
       if (incoming !== webhookSecret) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
+          status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
         });
       }
     }
 
-    const resendKey = Deno.env.get('RESEND_API_KEY');
-    const notifyEmail = Deno.env.get('NOTIFY_EMAIL');
-
-    if (!resendKey || !notifyEmail) {
-      console.error('Missing RESEND_API_KEY or NOTIFY_EMAIL env vars');
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
+    if (!notifyEmail) {
+      return new Response(JSON.stringify({ error: 'Missing NOTIFY_EMAIL' }), {
+        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
     // Webhook payload from Supabase Database Webhook
-    const payload = await req.json();
     const table: string = payload.table || '';
     const row: Record<string, unknown> = payload.record || {};
 
     // Build email based on table
-    let template: { subject: string; html: string } | null = null;
+    let template: { subject: string; html: string; to?: string } | null = null;
 
-    if (table === 'suggestions') {
+    if (table === 'pending_owner_invites') {
+      // Welcome email direktno vlasniku (ne NOTIFY_EMAIL)
+      template = templateOwnerWelcome(row);
+    } else if (table === 'suggestions') {
       template = templateSuggestion(row);
     } else if (table === 'maintenance_reports') {
       template = templateMaintenance(row);
@@ -151,35 +282,25 @@ serve(async (req: Request) => {
       });
     }
 
-    // Send via Resend REST API (no SDK needed — native fetch works in Deno)
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Soča Sajt <onboarding@resend.dev>',
-        to: [notifyEmail],
-        subject: template.subject,
-        html: template.html,
-      }),
-    });
-
-    if (!resendRes.ok) {
-      const errBody = await resendRes.text();
-      console.error('Resend error:', resendRes.status, errBody);
-      // Return 200 anyway so Supabase doesn't retry the webhook infinitely
-      return new Response(JSON.stringify({ ok: false, email_error: errBody }), {
-        status: 200,
+    // owner welcome ide na owner email; sve ostalo ide na notifyEmail
+    const sendTo = (template as { to?: string }).to || notifyEmail;
+    if (!sendTo || !sendTo.includes('@')) {
+      console.log('send-email: no valid recipient, skipping');
+      return new Response(JSON.stringify({ ok: true, skipped: true }), {
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
-    const resendData = await resendRes.json();
-    console.log('Email sent:', resendData.id);
+    const result = await sendViaResend(resendKey, sendTo, template.subject, template.html, finalFrom);
+    if (!result.ok) {
+      console.error('Resend error:', result.error);
+      return new Response(JSON.stringify({ ok: false, email_error: result.error }), {
+        status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
 
-    return new Response(JSON.stringify({ ok: true, email_id: resendData.id }), {
+    console.log('Email sent:', result.id);
+    return new Response(JSON.stringify({ ok: true, email_id: result.id }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
 

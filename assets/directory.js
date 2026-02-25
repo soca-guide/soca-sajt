@@ -78,12 +78,9 @@
   var LANG        = (params.get('lang') || localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
   if (!SUPPORTED_LANGS.includes(LANG)) LANG = 'sl';
   var MUN         = params.get('mun') || window._appMunicipality || 'bovec';
-  var SESSION_ID  = _getOrCreateSession();
   var PAGE_PATH   = window.location.pathname;
   var ALL_PARTNERS = [];
   var currentFilter = 'all';
-  var _trackQueue   = [];
-  var _trackTimer   = null;
   var _impressionsSent = {}; // de-dup cache: key -> true
 
   function t(key) {
@@ -106,74 +103,42 @@
     return m[LANG] || m.en || TYPE;
   }
 
-  // ── Session ID ────────────────────────────────────────────────────────────
-  function _getOrCreateSession() {
-    var key = 'dir_session_id';
-    var s = localStorage.getItem(key);
-    if (!s) {
-      s = 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem(key, s);
-    }
-    return s;
+  // ── Tracking — sve ide kroz GA4 ──────────────────────────────────────────
+  function _ga4(eventName, params) {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', eventName, params);
   }
 
-  // ── Tracking ──────────────────────────────────────────────────────────────
   function _impressionKey(partnerId) {
-    return SESSION_ID + '|' + partnerId + '|' + PAGE_PATH + '|' + currentFilter;
+    return partnerId + '|' + PAGE_PATH + '|' + currentFilter;
   }
 
   function trackImpression(partner) {
     var key = _impressionKey(partner.id);
     if (_impressionsSent[key]) return; // de-dup
     _impressionsSent[key] = true;
-    _enqueue({
-      partner_id:        partner.id,
-      municipality_slug: MUN,
-      type:              partner.type,
-      category:          partner.category,
-      tier:              partner.tier,
-      event_name:        'impression',
-      session_id:        SESSION_ID,
-      page_path:         PAGE_PATH,
-      user_agent:        navigator.userAgent.substring(0, 200)
+    _ga4('partner_impression', {
+      partner_name:      partner.name,
+      partner_type:      partner.type,
+      partner_category:  partner.category,
+      partner_tier:      partner.tier,
+      municipality:      MUN,
+      page_path:         PAGE_PATH
     });
   }
 
   function trackClick(partner, eventName, filterValue) {
-    _enqueue({
-      partner_id:        partner.id,
-      municipality_slug: MUN,
-      type:              partner.type,
-      category:          partner.category,
-      tier:              partner.tier,
-      event_name:        eventName,
-      filter_value:      filterValue || null,
-      session_id:        SESSION_ID,
-      page_path:         PAGE_PATH,
-      referrer:          document.referrer.substring(0, 200)
-    });
-    _flushNow(); // clicks flush immediately
+    var params = {
+      partner_name:     partner.name || 'filter',
+      partner_type:     partner.type || TYPE,
+      partner_category: partner.category || '',
+      partner_tier:     partner.tier || '',
+      municipality:     MUN,
+      page_path:        PAGE_PATH
+    };
+    if (filterValue) params.filter_value = filterValue;
+    _ga4(eventName, params);
   }
-
-  function _enqueue(event) {
-    _trackQueue.push(event);
-    clearTimeout(_trackTimer);
-    _trackTimer = setTimeout(_flushNow, 2000); // batch within 2s
-  }
-
-  function _flushNow() {
-    if (!_trackQueue.length) return;
-    var batch = _trackQueue.splice(0);
-    var sb = window.supabaseClient || window.SB;
-    if (!sb) return;
-    Promise.resolve(sb.rpc('track_partner_events', { events: batch })).catch(function () {});
-  }
-
-  // Flush on page hide
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'hidden') _flushNow();
-  });
-  window.addEventListener('pagehide', _flushNow);
 
   // ── Supabase load ─────────────────────────────────────────────────────────
   function loadPartners() {

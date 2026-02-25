@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTO CACHE — Soča Sajt
+# Browser uvek pita server za HTML, JS i CSS.
+# Ako se fajl NIJE promenio → koristi keš (brzo, 304 Not Modified).
+# Ako se fajl PROMENIO → automatski skida novu verziju.
+# Nema manuelnog menjanja ?v= stringova.
+# ─────────────────────────────────────────────────────────────────────────────
+
+<IfModule mod_headers.c>
+
+  # HTML, JS, CSS — uvek validirati sa serverom
+  <FilesMatch "\.(html?|js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+    Header unset Pragma
+    Header unset Expires
+  </FilesMatch>
+
+  # Slike i fontovi — cache 30 dana (menjaju se retko)
+  <FilesMatch "\.(png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+</IfModule>
+
+# Kompresija — brže učitavanje
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json
+</IfModule>
+
+# Sprečava listanje foldera
+Options -Indexes

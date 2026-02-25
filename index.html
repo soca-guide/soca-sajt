@@ -13,15 +13,15 @@
   <link rel="manifest" href="./manifest.json">
   <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
   <!-- Bump ?v= on deploy for cache-bust (e.g. 20260220-1 = YYYYMMDD-N) -->
-  <link rel="stylesheet" href="./assets/app.css?v=20260225-1">
+  <link rel="stylesheet" href="./assets/app.css?v=20260219-1">
   <script>window.dataSdk=window.dataSdk||{};</script>
   <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8B48GQC9F3"></script>
   <script>
   window.dataLayer=window.dataLayer||[];
   function gtag(){dataLayer.push(arguments);}
   gtag('js',new Date());
-  gtag('config','G-XXXXXXXXXX');
+  gtag('config','G-8B48GQC9F3');
   </script>
  </head>
  <body class="h-full"><!--
@@ -44,7 +44,7 @@
   </div><!-- Main App -->
   <div id="app-container"><!-- Glass Header -->
    <header class="glass-header">
-    <iframe class="weather-bg" src="weather-animations.html?v=20260225-1" title="Weather background"></iframe>
+    <iframe class="weather-bg" src="weather-animations.html?v=20260219-1" title="Weather background"></iframe>
     <div id="header-weather-scene" class="header-weather-scene" aria-hidden="true"></div>
     <div id="header-moon" class="header-moon" aria-hidden="true"></div>
     <div class="header-content">
@@ -87,6 +87,7 @@
     </div>
     <div class="reserve-again-wrap">
      <button type="button" id="openRezervisiPonovo" class="reserve-again-btn"> <span class="reserve-again-icon">🔄</span> <span class="reserve-again-label" data-i18n="reserve_again_title">Rezerviraj znova</span> </button>
+     <button type="button" id="owner-biznis-btn" class="reserve-again-btn" style="display:none" onclick="if(window.__MODALS&&window.__MODALS.openOwnerBiznis)window.__MODALS.openOwnerBiznis()"> <span class="reserve-again-icon">🏪</span> <span class="reserve-again-label" data-i18n="owner_biznis_btn">Naš biznis</span> </button>
     </div><!-- Emergency Panel (gore - odmah vidljiv kad se otvori) -->
     <div class="accordion-panel" id="emergency-panel">
      <div class="panel-content">
@@ -344,7 +345,6 @@
      <div class="screen-title" data-i18n="attractions_page_title">Znamenitosti</div>
     </div>
     <div class="screen-body" id="attractions-body"></div>
-    <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
    </div><!-- Trip Ideas Screen -->
    <div id="trip-ideas-screen" class="screen">
     <div class="screen-header">
@@ -352,7 +352,6 @@
      <div class="screen-title" data-i18n="trip_ideas">Ideje za izlete</div>
     </div>
     <div class="screen-body" id="trip-ideas-body"></div>
-    <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
   </div><!-- Daily Essentials Screen -->
   <div id="daily-essentials-screen" class="screen">
    <div class="screen-header">
@@ -360,7 +359,6 @@
     <div class="screen-title" data-i18n="daily_essentials">Daily essentials</div>
    </div>
    <div class="screen-body" id="daily-essentials-body"></div>
-   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
   </div><!-- Taxi/Bus Screen -->
   <div id="taxi-bus-screen" class="screen">
    <div class="screen-header">
@@ -368,7 +366,6 @@
     <div class="screen-title" data-i18n="taxi_bus">Taxi/Bus</div>
    </div>
    <div class="screen-body" id="taxi-bus-body"></div>
-   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
   </div><!-- Adrenalin/Aktivnosti Screen -->
   <div id="adrenalin-screen" class="screen">
    <div class="screen-header">
@@ -376,7 +373,6 @@
     <div class="screen-title" data-i18n="adrenalin">Adrenalin/Aktivnosti</div>
    </div>
    <div class="screen-body" id="adrenalin-body"></div>
-   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
   </div><!-- Parking Screen (kao Hišni red – stranica sa Nazaj) -->
   <div id="parking-screen" class="screen">
    <div class="screen-header">
@@ -384,7 +380,6 @@
     <div class="screen-title" data-i18n="parking">Parkiranje</div>
    </div>
    <div class="screen-body" id="parking-body"></div>
-   <footer class="app-footer attractions-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
   </div><!-- Toast -->
   <div class="toast" id="toast"><span class="toast-icon">✓</span> <span class="toast-text" id="toast-text" data-i18n="copied">Kopirano!</span>
   </div><!-- Floating Feedback Button -->
@@ -430,20 +425,21 @@
     </form>
    </div>
   </div><!-- Footer Attribution -->
-  <footer class="app-footer" id="app-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
- <script src="./assets/config.js?v=20260225-1"></script>
- <script src="./assets/i18n.js?v=20260225-1"></script>
- <script src="./assets/utils.js?v=20260225-1"></script>
- <script src="./assets/data/content/emergency.js?v=20260225-1"></script>
- <script src="./assets/data/content/daily_essentials.js?v=20260225-1"></script>
- <script src="./assets/data/content/adrenalin_providers.js?v=20260225-1"></script>
- <script src="./assets/data/content/trip_ideas.js?v=20260225-1"></script>
- <script src="./assets/data/content/attractions.js?v=20260225-1"></script>
- <script src="./assets/data/content/taxi_bus.js?v=20260225-1"></script>
- <script src="./assets/content-loader.js?v=20260225-1"></script>
- <script src="./assets/supabase-client.js?v=20260225-1"></script>
- <script src="./assets/tenant-loader.js?v=20260225-1"></script>
- <script src="./assets/app.js?v=20260225-1"></script>
+  <footer class="app-footer" id="app-footer" style="display:none"></footer>
+  <div id="footer-legal" style="text-align:center;padding:0.5rem 1rem 1.25rem;font-size:0.72rem;opacity:0.5;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 0.9rem"></div>
+ <script src="./assets/config.js?v=20260219-1"></script>
+ <script src="./assets/i18n.js?v=20260219-1"></script>
+ <script src="./assets/utils.js?v=20260219-1"></script>
+ <script src="./assets/data/content/emergency.js?v=20260219-1"></script>
+ <script src="./assets/data/content/daily_essentials.js?v=20260219-1"></script>
+ <script src="./assets/data/content/adrenalin_providers.js?v=20260219-1"></script>
+ <script src="./assets/data/content/trip_ideas.js?v=20260219-1"></script>
+ <script src="./assets/data/content/attractions.js?v=20260219-1"></script>
+ <script src="./assets/data/content/taxi_bus.js?v=20260219-1"></script>
+ <script src="./assets/content-loader.js?v=20260219-1"></script>
+ <script src="./assets/supabase-client.js?v=20260219-1"></script>
+ <script src="./assets/tenant-loader.js?v=20260219-1"></script>
+ <script src="./assets/app.js?v=20260219-1"></script>
  <!-- Modal System -->
  <div id="iframeModal" class="vt-modal" aria-hidden="true">
   <div class="vt-overlay" id="vtOverlay"></div>
@@ -456,7 +452,7 @@
  </div>
  <script>
  (function(){
-   var __BUILD_ID='20260225-1'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
+   var __BUILD_ID='20260219-1'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
    document.write('<link rel="stylesheet" href="./assets/modals.css?v='+__BUILD_ID+'">');
    document.write('<script src="./assets/modals.js?v='+__BUILD_ID+'"><\/script>');
  })();
@@ -483,67 +479,56 @@
    window.addEventListener('pageshow',panicUnlockScroll);
  })();
  </script>
- <!-- GA4 card-click events + Supabase analytics (fire-and-forget, never blocks guest UX) -->
- <script>
- (function(){
-  'use strict';
+<!-- GA4 tracking — sve statistike idu kroz Google Analytics -->
+<script>
+(function(){
+ 'use strict';
 
-  /* ── Slug from URL (?t=<slug>) ─────────────────────────────────────────── */
-  var urlParams   = new URLSearchParams(window.location.search);
-  var currentSlug = urlParams.get('t') || null;
+ var urlParams   = new URLSearchParams(window.location.search);
+ var currentSlug = urlParams.get('t') || null;
 
-  /* ── GA4 card-click events ─────────────────────────────────────────────── */
-  var grid = document.querySelector('.menu-grid');
-  if (grid) {
-    grid.addEventListener('click', function (e) {
-      var card = e.target.closest('[data-section],.menu-card');
-      if (!card) return;
-      var titleEl = card.querySelector('.menu-title,.card-title');
-      var cardId  = card.id || card.getAttribute('data-section') || 'unknown';
-      var label   = titleEl ? titleEl.textContent.trim() : cardId;
-      /* GA4 event */
-      if (typeof gtag === 'function') {
-        gtag('event', 'card_click', {
-          event_category: 'engagement',
-          event_label:    label,
-          card_id:        cardId,
-          tenant_slug:    currentSlug || ''
-        });
-      }
-      /* Supabase analytics INSERT — fire-and-forget, never throws */
-      var _sb = window.supabaseClient || window.SB;
-      if (_sb && typeof _sb.from === 'function') {
-        _sb.from('analytics')
-          .insert({ event_type: 'card_click', tenant_slug: currentSlug, card_id: cardId })
-          .then(function (r) {
-            if (r && r.error) console.warn('[Analytics] card_click insert:', r.error.message);
-          })
-          .catch(function (err) { console.warn('[Analytics] card_click catch:', err); });
-      }
-    });
-  }
+ /* ── GA4: page_view sa tenant slug-om ──────────────────────────────────── */
+ if (typeof gtag === 'function') {
+   gtag('event', 'page_view', {
+     tenant_slug: currentSlug || 'direct',
+     page_title:  document.title
+   });
+ }
 
-  /* ── Page-view tracking — poll until Supabase client is ready ─────────── */
-  /* NOTE: does NOT query items directly (anon has no SELECT on that table). */
-  /* Card ordering from DB is handled by the tenant-loader once it resolves. */
-  var _waited = 0;
-  function pollForSB() {
-    var _sb = window.supabaseClient || window.SB;
-    if (_sb && typeof _sb.from === 'function') {
-      _sb.from('analytics')
-        .insert({ event_type: 'page_view', tenant_slug: currentSlug })
-        .then(function (r) {
-          if (r && r.error) console.warn('[Analytics] page_view insert:', r.error.message);
-        })
-        .catch(function (err) { console.warn('[Analytics] page_view catch:', err); });
-      return;
-    }
-    _waited += 250;
-    if (_waited < 12000) setTimeout(pollForSB, 250);
-  }
-  pollForSB();
- })();
- </script>
+ /* ── GA4: card_click eventi ─────────────────────────────────────────────── */
+ var grid = document.querySelector('.menu-grid');
+ if (grid) {
+   grid.addEventListener('click', function (e) {
+     var card = e.target.closest('[data-section],.menu-card');
+     if (!card) return;
+     var titleEl = card.querySelector('.menu-title,.card-title');
+     var cardId  = card.id || card.getAttribute('data-section') || 'unknown';
+     var label   = titleEl ? titleEl.textContent.trim() : cardId;
+     if (typeof gtag === 'function') {
+       gtag('event', 'card_click', {
+         event_category: 'engagement',
+         event_label:    label,
+         card_id:        cardId,
+         tenant_slug:    currentSlug || 'direct'
+       });
+     }
+   });
+ }
+
+ /* ── GA4: scroll depth tracking ─────────────────────────────────────────── */
+ var _scrolled50 = false;
+ window.addEventListener('scroll', function() {
+   if (_scrolled50) return;
+   var scrollPct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+   if (scrollPct >= 50) {
+     _scrolled50 = true;
+     if (typeof gtag === 'function') {
+       gtag('event', 'scroll_depth', { depth: '50%', tenant_slug: currentSlug || 'direct' });
+     }
+   }
+ }, { passive: true });
+})();
+</script>
  <script>
 (function(){
   if (!('serviceWorker' in navigator)) return;
@@ -552,6 +537,52 @@
      if (reg.waiting) reg.waiting.postMessage('skipWaiting');
    }).catch(function(){});
    navigator.serviceWorker.addEventListener('controllerchange',function(){ window.location.reload(); });
+ })();
+ </script>
+ <script>
+ (function(){
+   var el = document.getElementById('footer-legal');
+   if (!el) return;
+  var lang = (localStorage.getItem('preferredLanguage') || 'sl').toLowerCase().split('-')[0];
+  if (lang !== 'sl' && lang !== 'en') lang = 'sl';
+
+   // Hardcoded fallback — radi odmah, bez Supabase
+   var _fallback = {
+     copyright: { sl: '© 2026 Soča Guide', en: '© 2026 Soča Guide' },
+     links: [
+       { label: { sl: 'Impressum', en: 'Imprint' },  url: './legal/?doc=impressum', enabled: true },
+       { label: { sl: 'Zasebnost', en: 'Privacy' },  url: './legal/?doc=privacy',   enabled: true },
+       { label: { sl: 'Piškotki', en: 'Cookies' },   url: './legal/?doc=cookies',   enabled: true }
+     ]
+   };
+
+   function renderFooter(cfg) {
+     var links = (cfg.links || []).filter(function(l){ return l.enabled; });
+     if (!links.length) return;
+     var copy = cfg.copyright && (cfg.copyright[lang] || cfg.copyright.sl);
+     var html = copy ? '<span>' + copy + '</span>' : '';
+     links.forEach(function(l){
+       var label = l.label && (l.label[lang] || l.label.sl);
+       html += '<a href="' + l.url + '" style="color:inherit;text-decoration:none;opacity:0.7">' + label + '</a>';
+     });
+     el.innerHTML = html;
+   }
+
+   renderFooter(_fallback); // Prikaži odmah iz fallbacka
+
+   // Pokušaj učitati iz Supabase i prebriši fallback ako uspe
+   var _w = 0;
+   function tryLoad() {
+     var sb = window.supabaseClient || window.SB;
+     if (!sb) { _w += 200; if (_w < 8000) setTimeout(tryLoad, 200); return; }
+     sb.from('items').select('data_json')
+       .eq('section_key','ui').eq('item_key','footer_config').is('tenant_id',null)
+       .maybeSingle()
+       .then(function(r){
+         if (r && r.data && r.data.data_json) renderFooter(r.data.data_json);
+       }).catch(function(){});
+   }
+   tryLoad();
  })();
  </script>
  </body>  

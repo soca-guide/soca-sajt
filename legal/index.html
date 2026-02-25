@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Soča Guide</title>
+  <link rel="stylesheet" href="../assets/app.css?v=20260219-1">
+  <style>
+    .legal-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+      font-size: 0.92rem;
+      line-height: 1.75;
+    }
+    .legal-wrap h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 1.5rem 0 0.4rem;
+      color: #22d3ee;
+    }
+    .legal-wrap p { margin: 0 0 0.75rem; opacity: 0.85; }
+    .legal-wrap strong { color: inherit; }
+    .legal-back {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.82rem; opacity: 0.6; margin-bottom: 1.25rem;
+      background: none; border: none; cursor: pointer; color: inherit;
+      padding: 0; text-decoration: none;
+    }
+    .legal-back:hover { opacity: 1; }
+    .legal-title {
+      font-size: 1.4rem; font-weight: 800; margin-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem;
+    }
+    .legal-loading { text-align: center; padding: 3rem 1rem; opacity: 0.4; }
+    .legal-error   { text-align: center; padding: 3rem 1rem; opacity: 0.5; font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+  <div class="legal-wrap">
+    <a href="javascript:history.back()" class="legal-back">← Nazaj</a>
+    <div id="legal-loading" class="legal-loading">⏳</div>
+    <div id="legal-content" style="display:none">
+      <div id="legal-title" class="legal-title"></div>
+      <div id="legal-body"></div>
+    </div>
+    <div id="legal-error" class="legal-error" style="display:none">Dokument ni na voljo.</div>
+  </div>
+
+  <script src="../assets/supabase-client.js?v=20260219-1"></script>
+  <script>
+  (function () {
+    var DOC_MAP = {
+      impressum: 'legal_impressum',
+      privacy:   'legal_privacy',
+      cookies:   'legal_cookies',
+      terms:     'legal_terms'
+    };
+
+    var params  = new URLSearchParams(window.location.search);
+    var doc     = (params.get('doc') || '').toLowerCase();
+    var itemKey = DOC_MAP[doc];
+
+    // Language: only sl / en, fallback sl
+    var rawLang = (params.get('lang') || localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
+    var lang    = (rawLang === 'en') ? 'en' : 'sl';
+
+    function showError() {
+      document.getElementById('legal-loading').style.display = 'none';
+      document.getElementById('legal-error').style.display   = 'block';
+    }
+
+    function render(dj) {
+      var title = (dj.title && (dj.title[lang] || dj.title.sl)) || '';
+      var body  = (dj.body_html && (dj.body_html[lang] || dj.body_html.sl)) || '';
+      document.getElementById('legal-title').textContent = title;
+      document.getElementById('legal-body').innerHTML    = body;
+      document.title = title || 'Soča Guide';
+      document.getElementById('legal-loading').style.display  = 'none';
+      document.getElementById('legal-content').style.display  = 'block';
+    }
+
+    function load(sb) {
+      if (!itemKey) { showError(); return; }
+      sb.from('items')
+        .select('data_json')
+        .eq('section_key', 'ui')
+        .eq('item_key', itemKey)
+        .is('tenant_id', null)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.length) { showError(); return; }
+          render(r.data[0].data_json);
+        }).catch(showError);
+    }
+
+    var _w = 0;
+    function waitAndLoad() {
+      var sb = window.supabaseClient || window.SB;
+      if (sb) { load(sb); return; }
+      _w += 150;
+      if (_w < 8000) setTimeout(waitAndLoad, 150);
+      else showError();
+    }
+    waitAndLoad();
+  })();
+  </script>
+</body>
+</html>

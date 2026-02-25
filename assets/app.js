@@ -127,7 +127,8 @@
       injectWeatherWidgetStacking();
       loadParkingFromFolder();
       // Pre-fetch global DB data (~300 ms so supabaseClient is ready)
-      setTimeout(loadGlobalSiteName,  200);
+      setTimeout(loadGlobalSiteName,       200);
+      setTimeout(loadCardLabelOverrides,   250);
       setTimeout(loadEmergencyFromDb,       300);
       setTimeout(loadAdrenalinFromDb,       400);
       setTimeout(loadTaxiFromDb,            500);
@@ -478,6 +479,39 @@
         .catch(function () {});
     }
 
+    function loadCardLabelOverrides() {
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      window.supabaseClient
+        .from('items')
+        .select('data_json')
+        .eq('item_key', 'card_labels')
+        .is('tenant_id', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.data_json) return;
+          var overrides = r.data.data_json; // { sl: {key:val,...}, en: {...}, ... }
+          // Merge overrides into APP.translations — only non-empty values
+          var trans = window.APP && window.APP.translations;
+          if (!trans) return;
+          Object.keys(overrides).forEach(function (lang) {
+            if (!trans[lang]) return;
+            var langOverrides = overrides[lang] || {};
+            Object.keys(langOverrides).forEach(function (key) {
+              if (langOverrides[key] && langOverrides[key].trim()) {
+                trans[lang][key] = langOverrides[key].trim();
+              }
+            });
+          });
+          // Re-apply current language so cards get updated text immediately
+          if (typeof updateLanguage === 'function') {
+            updateLanguage(currentLang || 'sl');
+          }
+        })
+        .catch(function () {});
+    }
+
     function loadEmergencyFromDb() {
       if (_emergencyDbCache !== null) return; // already fetched
       if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
@@ -755,6 +789,19 @@
       if (maintCard) {
         var show = !maintCfg || maintCfg.visible !== false;
         maintCard.style.display = show ? '' : 'none';
+      }
+
+      // 5) Owner biznis button — show only if this tenant has owner_config
+      var bizCfg = ov.ownerBiznisConfig || null;
+      var biznisBtn = document.getElementById('owner-biznis-btn');
+      if (biznisBtn) {
+        if (bizCfg && bizCfg.enabled !== false && bizCfg.name) {
+          biznisBtn.style.display = '';
+          window.__OWNER_BIZNIS_CFG = bizCfg;
+          window._ownerBiznisSlug = ov.slug || null;
+        } else {
+          biznisBtn.style.display = 'none';
+        }
       }
     }
 
@@ -1273,7 +1320,10 @@
       // Tenant override: replace first recommended card only
       var _tpo = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.parkingRecommended;
       if (_tpo && _tpo.title) {
-        var _tpoC = { type: 'apartment', title: { sl: _tpo.title, en: _tpo.title }, address: _tpo.address || '', mapsLink: _tpo.mapsLink || '', notes: _tpo.notes ? { sl: _tpo.notes, en: _tpo.notes } : null, paid: null, hours: null };
+        // Handle both old plain-string format and new {sl,en} object format
+        var _tpoTitle = (typeof _tpo.title === 'object') ? _tpo.title : { sl: _tpo.title, en: _tpo.title };
+        var _tpoNotes = _tpo.notes ? ((typeof _tpo.notes === 'object') ? _tpo.notes : { sl: _tpo.notes, en: _tpo.notes }) : null;
+        var _tpoC = { type: 'apartment', title: _tpoTitle, address: _tpo.address || '', mapsLink: _tpo.mapsLink || '', notes: _tpoNotes, paid: null, hours: null };
         recommended = [_tpoC].concat(recommended.slice(1));
       }
 
@@ -2771,12 +2821,12 @@
       return { icon: '🌤️', text: langMap[0]?.text || 'Clear' };
     }
     
-    // Mesec: uvek vidljiv kad je vedro/oblačno (za test); true = samo noću 18:00–09:00
-    var HEADER_MOON_NIGHT_ONLY = false;
+    // Mesec vidljiv samo noću (21:00–07:00 CET) — sunce danju
+    var HEADER_MOON_NIGHT_ONLY = true;
     function isLocalNight() {
       if (!HEADER_MOON_NIGHT_ONLY) return true;
       const hour = new Date().getHours();
-      return hour >= 18 || hour < 9;
+      return hour >= 21 || hour < 7;
     }
     // Faze meseca: API (0–1) → CSS klasa; fallback iz datuma
     function moonPhaseToClass(phase) {
