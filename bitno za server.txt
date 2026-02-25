@@ -1,0 +1,57 @@
+Razumem — previše detalja da bi se pamtilo ručno. Postoje dva načina da se ovo reši:
+
+---
+
+**Opcija 1: Automatski (preporučeno za produkciju)**
+
+Kada kupiš hosting, možeš da koristiš **build skriptu** koja automatski zameni version string sa trenutnim datumom/vremenom pri svakom deploy-u. Ali to zahteva Node.js ili sličan alat.
+
+---
+
+**Opcija 2: Jednostavno — samo kada deployuješ**
+
+Napravi sebi **podsetnik u Notepadu** ili Google Docs:
+
+```
+DEPLOY CHECKLIST:
+1. Promeni ?v=20260225-1 → ?v=YYYYMMDD-N u svim HTML fajlovima
+2. Upload na server
+3. Testiraj na telefonu (incognito mod)
+```
+
+I to je sve. Radi se **samo kada stavljaš novu verziju na server** — ne svaki dan.
+
+---
+
+**Opcija 3: Najjednostavnija — zaobiđi problem potpuno**
+
+Na serveru podesi **Cache-Control: no-cache** header za JS i CSS fajlove. Tada browser uvek uzima novu verziju i `?v=` uopšte nije potreban.
+
+Na Apache serveru (cPanel hosting) u `.htaccess` fajlu:
+```apache
+<FilesMatch "\.(js|css)$">
+  Header set Cache-Control "no-cache, must-revalidate"
+</FilesMatch>
+```
+
+---
+
+**Moja preporuka:** Kada kupiš hosting, reci mi koji je (GoDaddy, Hostinger, cPanel...) i ja ću podesiti `.htaccess` da se ovo rešava automatski — nikad više ne moraš da misliš o `?v=` brojevima.
+
+
+Napomene: Šta moraš da uradiš kada digneš sajt na server?
+Kada tvoj sajt postane dostupan na internetu (npr. tvojsajt.com), moraš uraditi ove 3 stvari da bi sve radilo:
+
+Environment Variables (Najvažnije):
+U kontrolnom panelu tvog servera (Vercel, Netlify, cPanel...) moraš dodati varijablu:
+
+Key: RESEND_API_KEY
+
+Value: re_SgEfq9vS_JRABgwZFDijyhszqNTfnZEqi
+Bez ovoga server neće moći da "priča" sa Resendom i mejlovi neće stizati.
+
+Verifikacija Domena (Kasnije):
+Trenutno ti je u kodu podešeno da mejlovi stižu sa onboarding@resend.dev. To je super za test, ali ako želiš da ti piše info@tvojsajt.com, moraćeš u Resend Dashboard-u da dodaš svoj domen i uneseš par DNS rekorda u tvoj hosting (Cursor će ti moći objasniti taj deo korak po korak kad za to dođe vreme).
+
+Supabase URL i Anon Key:
+Isto kao i za Resend, proveri da li si na serveru podesio NEXT_PUBLIC_SUPABASE_URL i NEXT_PUBLIC_SUPABASE_ANON_KEY, inače forma neće moći čak ni da upiše poruku u bazu.

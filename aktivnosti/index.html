@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>Restavracije & Kavarne</title>
+  <title>Adrenalin & Aktivnosti</title>
   <link rel="stylesheet" href="../assets/directory.css?v=20260225-1">
 </head>
 <body>
   <header class="dir-header">
     <button id="dir-back" class="dir-back" type="button" aria-label="Nazaj">←</button>
-    <div class="dir-title-text" id="dir-title">Restavracije & Kavarne</div>
+    <div class="dir-title-text" id="dir-title">Adrenalin & Aktivnosti</div>
   </header>
 
   <div class="dir-chips-wrap">
@@ -21,19 +21,19 @@
     <div id="dir-empty"></div>
 
     <!-- Premium section -->
-    <section style="display:contents">
+    <section id="dir-sec-premium-wrap" style="display:contents">
       <div id="dir-hdr-premium" class="dir-sec-hdr"></div>
       <div class="dir-premium-wrap" id="dir-sec-premium"></div>
     </section>
 
     <!-- Featured section -->
-    <section style="display:contents">
+    <section id="dir-sec-featured-wrap" style="display:contents">
       <div id="dir-hdr-featured" class="dir-sec-hdr"></div>
       <div class="dir-featured-scroll" id="dir-sec-featured"></div>
     </section>
 
     <!-- Standard section -->
-    <section style="display:contents">
+    <section id="dir-sec-standard-wrap" style="display:contents">
       <div id="dir-hdr-standard" class="dir-sec-hdr"></div>
       <div class="dir-standard-wrap" id="dir-sec-standard"></div>
     </section>
@@ -41,16 +41,19 @@
 
   <script src="../assets/supabase-client.js?v=20260225-1"></script>
   <script>
-    window._DIR_TYPE = 'food';
+    // Pass type + tier labels before directory.js loads
+    window._DIR_TYPE = 'activities';
     window._DIR_TIER_LABELS = {
-      premium:  { sl:'⭐ Priporočamo',  en:'⭐ Recommended',   de:'⭐ Empfohlen',    it:'⭐ Consigliato',  pl:'⭐ Polecane',      cs:'⭐ Doporučujeme' },
-      featured: { sl:'🔥 Popularno',    en:'🔥 Popular',       de:'🔥 Beliebt',      it:'🔥 Popolare',     pl:'🔥 Popularne',     cs:'🔥 Oblíbené' },
-      standard: { sl:'📍 Vsi lokali',   en:'📍 All places',    de:'📍 Alle Lokale',  it:'📍 Tutti i locali',pl:'📍 Wszystkie',    cs:'📍 Všechna místa' }
+      premium:  { sl:'⭐ Priporočamo',   en:'⭐ Recommended',   de:'⭐ Empfohlen',    it:'⭐ Consigliato',   pl:'⭐ Polecane',      cs:'⭐ Doporučujeme' },
+      featured: { sl:'🔥 Popularno',     en:'🔥 Popular',       de:'🔥 Beliebt',      it:'🔥 Popolare',      pl:'🔥 Popularne',     cs:'🔥 Oblíbené' },
+      standard: { sl:'📍 Vsi ponudniki', en:'📍 All providers', de:'📍 Alle Anbieter',it:'📍 Tutti',         pl:'📍 Wszyscy',       cs:'📍 Všichni' }
     };
+    // Inherit municipality from parent
     try { if (window.parent && window.parent._appMunicipality) window._appMunicipality = window.parent._appMunicipality; } catch(e){}
   </script>
   <script src="../assets/directory.js?v=20260225-1"></script>
   <script>
+    // Set section header labels after directory.js loaded
     document.addEventListener('DOMContentLoaded', function() {
       var lang = (localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
       var tl = window._DIR_TIER_LABELS;

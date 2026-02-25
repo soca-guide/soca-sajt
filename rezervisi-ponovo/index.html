@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Rezerviši ponovo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260220-1"></script>
+  <script src="../assets/supabase-client.js?v=20260225-1"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
@@ -108,18 +108,13 @@
   (function _fetchRebook() {
     if (!_rbSlug || !window.supabaseClient) return;
     window.supabaseClient
-      .from('tenants').select('tenant_id')
-      .eq('slug', _rbSlug).eq('status', 'active').maybeSingle()
-      .then(function(r1) {
-        if (r1.error || !r1.data) return;
-        return window.supabaseClient
-          .from('items').select('data_json')
-          .eq('tenant_id', r1.data.tenant_id)
-          .eq('section_key', 'booking').eq('item_key', 'rebook').eq('visible', true)
-          .maybeSingle()
-          .then(function(r2) {
-            if (!r2.error && r2.data && r2.data.data_json) rbData = r2.data.data_json;
-          });
+      .rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
+      .then(function(r) {
+        if (r.error || !r.data) return;
+        var rebookRow = r.data.find(function(x) {
+          return x.section_key === 'booking' && x.item_key === 'rebook';
+        });
+        if (rebookRow && rebookRow.data_json) rbData = rebookRow.data_json;
       }).catch(function(){});
   })();
 

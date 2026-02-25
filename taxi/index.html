@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>Restavracije & Kavarne</title>
+  <title>Taxi & Bus</title>
   <link rel="stylesheet" href="../assets/directory.css?v=20260225-1">
 </head>
 <body>
   <header class="dir-header">
     <button id="dir-back" class="dir-back" type="button" aria-label="Nazaj">←</button>
-    <div class="dir-title-text" id="dir-title">Restavracije & Kavarne</div>
+    <div class="dir-title-text" id="dir-title">Taxi & Bus</div>
   </header>
 
   <div class="dir-chips-wrap">
@@ -41,11 +41,11 @@
 
   <script src="../assets/supabase-client.js?v=20260225-1"></script>
   <script>
-    window._DIR_TYPE = 'food';
+    window._DIR_TYPE = 'taxi';
     window._DIR_TIER_LABELS = {
       premium:  { sl:'⭐ Priporočamo',  en:'⭐ Recommended',   de:'⭐ Empfohlen',    it:'⭐ Consigliato',  pl:'⭐ Polecane',      cs:'⭐ Doporučujeme' },
       featured: { sl:'🔥 Popularno',    en:'🔥 Popular',       de:'🔥 Beliebt',      it:'🔥 Popolare',     pl:'🔥 Popularne',     cs:'🔥 Oblíbené' },
-      standard: { sl:'📍 Vsi lokali',   en:'📍 All places',    de:'📍 Alle Lokale',  it:'📍 Tutti i locali',pl:'📍 Wszystkie',    cs:'📍 Všechna místa' }
+      standard: { sl:'📍 Vsi prevozniki',en:'📍 All providers',de:'📍 Alle Anbieter',it:'📍 Tutti',        pl:'📍 Wszyscy',       cs:'📍 Všichni' }
     };
     try { if (window.parent && window.parent._appMunicipality) window._appMunicipality = window.parent._appMunicipality; } catch(e){}
   </script>

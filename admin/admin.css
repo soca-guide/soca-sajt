@@ -210,3 +210,67 @@ td {
 }
 
 .howto-steps strong { color: #e2e8f0; }
+
+/* ── Accordion (details/summary) ────────────────────────────────────────── */
+
+details.admin-section {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.6rem;
+}
+
+details.admin-section--inner {
+  border-color: #1e293b;
+  border-radius: 6px;
+  margin-top: 0.4rem;
+}
+
+details.admin-section--muted > summary.admin-section-title {
+  opacity: 0.5;
+}
+
+details.admin-section > summary.admin-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: #0f172a;
+  list-style: none;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+details.admin-section > summary.admin-section-title:hover {
+  background: #1e293b;
+}
+
+/* Arrow indicator */
+details.admin-section > summary.admin-section-title::after {
+  content: '▶';
+  margin-left: auto;
+  font-size: 0.65rem;
+  opacity: 0.45;
+  transition: transform 0.2s ease;
+}
+
+details.admin-section[open] > summary.admin-section-title::after {
+  transform: rotate(90deg);
+}
+
+/* Hide default browser triangle */
+details.admin-section > summary::-webkit-details-marker { display: none; }
+details.admin-section > summary { marker: none; }
+
+.admin-section-body {
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border-top: 1px solid #334155;
+  background: #1e293b;
+}

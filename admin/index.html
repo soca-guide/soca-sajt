@@ -43,207 +43,675 @@
       <!-- ── MASTER-ONLY PANEL ── -->
       <div id="master-panel" class="hidden">
 
-        <hr class="section-divider" />
-
-        <!-- 1) Tenants table -->
-        <div class="section-header">
-          <h2>Tenants</h2>
-          <button id="btn-refresh-tenants" class="btn-secondary btn-sm">Osveži</button>
-          <button id="btn-export-tenant" class="btn-secondary btn-sm">Export JSON</button>
-          <button id="btn-export-all"    class="btn-secondary btn-sm">Export sve (CSV)</button>
-        </div>
-        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;align-items:center">
-          <input id="tenants-search" type="text" placeholder="Pretraži: SOCA_ID / naziv / slug / vlasnik…" style="flex:1;min-width:160px" />
-          <select id="tenants-filter-status" style="flex:0 0 auto;width:auto">
-            <option value="">Sve</option>
-            <option value="active">active</option>
-            <option value="inactive">inactive</option>
-          </select>
-        </div>
-        <p id="tenants-status" class="msg hidden"></p>
-        <div class="table-wrap">
-          <table id="tenants-table">
-            <thead>
-              <tr>
-                <th>SOCA_ID</th>
-                <th>Naziv</th>
-                <th>Slug</th>
-                <th>Status</th>
-                <th>Vlasnik</th>
-                <th>Akcije</th>
-              </tr>
-            </thead>
-            <tbody id="tenants-tbody">
-              <tr><td colspan="6" class="table-empty">—</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <hr class="section-divider" />
+        <!-- 1) Tenants -->
+        <details class="admin-section" open>
+          <summary class="admin-section-title">🏢 Tenants (apartmani)</summary>
+          <div class="admin-section-body">
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+              <button id="btn-refresh-tenants" class="btn-secondary btn-sm">Osveži</button>
+              <button id="btn-export-tenant"   class="btn-secondary btn-sm">Export JSON</button>
+              <button id="btn-export-all"      class="btn-secondary btn-sm">Export sve (CSV)</button>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+              <input id="tenants-search" type="text" placeholder="Pretraži: SOCA_ID / naziv / slug / vlasnik…" style="flex:1;min-width:160px" />
+              <select id="tenants-filter-status" style="flex:0 0 auto;width:auto">
+                <option value="">Sve</option>
+                <option value="active">active</option>
+                <option value="inactive">inactive</option>
+              </select>
+            </div>
+            <p id="tenants-status" class="msg hidden"></p>
+            <div class="table-wrap">
+              <table id="tenants-table">
+                <thead>
+                  <tr>
+                    <th>SOCA_ID</th>
+                    <th>Naziv</th>
+                    <th>Slug</th>
+                    <th>Status</th>
+                    <th>Vlasnik</th>
+                    <th>Akcije</th>
+                  </tr>
+                </thead>
+                <tbody id="tenants-tbody">
+                  <tr><td colspan="6" class="table-empty">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
 
         <!-- 2) Brzo dodavanje -->
-        <h2>⚡ Brzo dodavanje</h2>
-        <p style="font-size:0.83rem;opacity:0.65;margin:0 0 0.5rem">Kreira apartman, podrazumevane stavke i (opciono) šalje pozivnicu vlasniku putem e-maila.</p>
-        <label for="quick-soca-id">SOCA_ID <small style="opacity:0.6">(Google Sheet, kolona R)</small></label>
-        <input id="quick-soca-id" type="text" placeholder="BVC-042" />
-        <label for="tenant-name">Naziv apartmana</label>
-        <input id="tenant-name" type="text" placeholder="Apartman Soča View" />
-        <label for="tenant-slug">Slug (auto-generisan)</label>
-        <input id="tenant-slug" type="text" placeholder="apartman-soca-view" />
-        <label for="quick-owner-email">E-mail vlasnika</label>
-        <input id="quick-owner-email" type="email" placeholder="vlasnik@primer.com" />
-        <label for="quick-location">Lokacija <small style="opacity:0.6">(opciono)</small></label>
-        <input id="quick-location" type="text" placeholder="Bovec, Slovenija" />
-        <p id="create-tenant-status" class="msg hidden"></p>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.25rem">
-          <button id="btn-create-tenant">Kreiraj apartman</button>
-          <button id="btn-quick-invite" class="btn-secondary">Kreiraj + Pošalji poziv</button>
-        </div>
-
-        <hr class="section-divider" />
-
-        <!-- 3) Link OWNER -->
-        <h2>Dodeli OWNER</h2>
-        <div class="howto-box">
-          <p class="howto-note">OWNER nalog kreiraš u Supabase Authentication → Users. Ovde samo vežemo profil + dozvole.</p>
-          <ol class="howto-steps">
-            <li>Kreiraj Auth user u Supabase UI (Authentication → Users → Invite / Create user).</li>
-            <li>Kopiraj <strong>user_id</strong> (UUID) iz tog unosa.</li>
-            <li>Nalepi ga ispod i izaberi tenant.</li>
-            <li>OWNER vidi svoju ulogu pri sledećoj prijavi (OWNER UI dolazi u sledećoj fazi).</li>
-          </ol>
-        </div>
-        <label for="owner-email">OWNER e-mail</label>
-        <input id="owner-email" type="email" placeholder="evovlade91@gmail.com" />
-        <label for="owner-user-id">OWNER user_id (UUID — kopiraj iz Supabase Auth)</label>
-        <input id="owner-user-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-        <label for="owner-tenant-select">Tenant</label>
-        <select id="owner-tenant-select">
-          <option value="">— izaberi tenant —</option>
-        </select>
-        <p id="link-owner-status" class="msg hidden"></p>
-        <button id="btn-link-owner">Veži OWNER</button>
-
-        <hr class="section-divider" />
-
-        <!-- 4) Global config -->
-        <h2>🌐 GLOBAL (svi apartmani)</h2>
-        <label for="global-home-cards">Home Cards Config (JSON)</label>
-        <textarea id="global-home-cards" rows="8" placeholder='{"cards":[]}'></textarea>
-        <p id="global-save-status" class="msg hidden"></p>
-        <button id="btn-global-save">Sačuvaj globalno</button>
-
-        <hr class="section-divider" />
-
-        <!-- 5) Tenant editor (Master) -->
-        <h2>🏠 TENANT (izaberi apartman)</h2>
-        <label for="master-tenant-select">Tenant</label>
-        <select id="master-tenant-select">
-          <option value="">— izaberi tenant —</option>
-        </select>
-        <button id="btn-master-load" class="btn-secondary" style="margin-top:0.5rem">Učitaj podatke</button>
-        <p id="master-save-status" class="msg hidden"></p>
-
-        <div id="master-tenant-fields" class="hidden">
-          <div id="master-editor-header" style="background:rgba(255,255,255,0.06);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:0.4rem;font-size:0.82rem;line-height:1.7">
-            <strong>Uređuješ:</strong>
-            <span style="font-family:monospace" id="meditor-soca-id">—</span> —
-            <span id="meditor-name">—</span>
-            <span id="meditor-slug" style="opacity:0.6"></span>
-            &nbsp;|&nbsp; Vlasnik: <span id="meditor-owner">—</span>
-            &nbsp;|&nbsp; Status: <span id="meditor-status">—</span>
+        <details class="admin-section">
+          <summary class="admin-section-title">⚡ Brzo dodavanje</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.83rem;opacity:0.65;margin:0">Kreira apartman, podrazumevane stavke i (opciono) šalje pozivnicu vlasniku putem e-maila.</p>
+            <label for="quick-soca-id">SOCA_ID <small style="opacity:0.6">(Google Sheet, kolona R)</small></label>
+            <input id="quick-soca-id" type="text" placeholder="BVC-042" />
+            <label for="tenant-name">Naziv apartmana</label>
+            <input id="tenant-name" type="text" placeholder="Apartman Soča View" />
+            <label for="tenant-slug">Slug (auto-generisan)</label>
+            <input id="tenant-slug" type="text" placeholder="apartman-soca-view" />
+            <label for="quick-owner-email">E-mail vlasnika</label>
+            <input id="quick-owner-email" type="email" placeholder="vlasnik@primer.com" />
+            <label for="quick-location">Lokacija <small style="opacity:0.6">(opciono)</small></label>
+            <input id="quick-location" type="text" placeholder="Bovec, Slovenija" />
+            <p id="create-tenant-status" class="msg hidden"></p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button id="btn-create-tenant">Kreiraj apartman</button>
+              <button id="btn-quick-invite" class="btn-secondary">Kreiraj + Pošalji poziv</button>
+            </div>
           </div>
-          <hr class="section-divider" />
-          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Quick dugmad</h3>
-          <label for="master-call-phone">📞 Telefon</label>
-          <input id="master-call-phone" type="text" placeholder="+386 31 123 456" />
-          <label for="master-directions-link">🗺️ Link do apartmana</label>
-          <input id="master-directions-link" type="text" placeholder="https://maps.google.com/..." />
-          <label for="master-rules-url">📋 Hišni red (link)</label>
-          <input id="master-rules-url" type="text" placeholder="./pravila/index.html" />
+        </details>
 
-          <hr class="section-divider" />
-          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Hišni red (privatno)</h3>
-          <label for="master-rules-text">Tekst</label>
-          <textarea id="master-rules-text" rows="6" placeholder="Privatna pravila…"></textarea>
+        <!-- 3) Dodeli OWNER (legacy) -->
+        <details class="admin-section admin-section--muted">
+          <summary class="admin-section-title">🔗 Dodeli OWNER <small style="font-size:0.75rem;font-weight:400;opacity:0.5">(zastarelo)</small></summary>
+          <div class="admin-section-body" style="opacity:0.55;pointer-events:none">
+            <div class="howto-box">
+              <p class="howto-note">OWNER nalog kreiraš u Supabase Authentication → Users. Ovde samo vežemo profil + dozvole.</p>
+              <ol class="howto-steps">
+                <li>Kreiraj Auth user u Supabase UI (Authentication → Users → Invite / Create user).</li>
+                <li>Kopiraj <strong>user_id</strong> (UUID) iz tog unosa.</li>
+                <li>Nalepi ga ispod i izaberi tenant.</li>
+                <li>OWNER vidi svoju ulogu pri sledećoj prijavi.</li>
+              </ol>
+            </div>
+            <label for="owner-email">OWNER e-mail</label>
+            <input id="owner-email" type="email" placeholder="evovlade91@gmail.com" />
+            <label for="owner-user-id">OWNER user_id (UUID)</label>
+            <input id="owner-user-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+            <label for="owner-tenant-select">Tenant</label>
+            <select id="owner-tenant-select">
+              <option value="">— izaberi tenant —</option>
+            </select>
+            <p id="link-owner-status" class="msg hidden"></p>
+            <button id="btn-link-owner">Veži OWNER</button>
+          </div>
+        </details>
 
-          <hr class="section-divider" />
-          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Parking — preporučeno</h3>
-          <label for="master-parking-title">Naziv</label>
-          <input id="master-parking-title" type="text" placeholder="Parking Bovec centar" />
-          <label for="master-parking-address">Adresa</label>
-          <input id="master-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8" />
-          <label for="master-parking-maps">Maps link</label>
-          <input id="master-parking-maps" type="text" placeholder="https://maps.google.com/..." />
-          <label for="master-parking-notes">Napomena</label>
-          <textarea id="master-parking-notes" rows="3" placeholder="Besplatno do 2h…"></textarea>
+        <!-- 4) Global redosled kartica -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🌐 Global redosled kartica</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.83rem;opacity:0.65;margin:0">Redosled i vidljivost kartica na početnoj stranici za sve apartmane.</p>
+            <div id="home-cards-editor" style="display:flex;flex-direction:column;gap:0.4rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam...</p>
+            </div>
+            <p id="global-save-status" class="msg hidden"></p>
+            <button id="btn-global-save">Sačuvaj redosled</button>
+          </div>
+        </details>
 
-          <hr class="section-divider" />
-          <h3 style="font-size:1rem;font-weight:600;margin:0.5rem 0">Rezerviši ponovo</h3>
-          <label for="master-rebook-name">Naziv apartmana</label>
-          <input id="master-rebook-name" type="text" placeholder="Apartman Soča View" />
-          <label for="master-rebook-phone">Telefon vlasnika</label>
-          <input id="master-rebook-phone" type="text" placeholder="+386 31 123 456" />
-          <label for="master-rebook-email">E-mail vlasnika</label>
-          <input id="master-rebook-email" type="email" placeholder="owner@example.com" />
-          <label for="master-rebook-link">Link za rezervaciju</label>
-          <input id="master-rebook-link" type="text" placeholder="https://booking.com/..." />
-          <label for="master-rebook-instructions">Uputstvo za goste</label>
-          <textarea id="master-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
-
-          <button id="btn-master-save">Sačuvaj za ovaj tenant</button>
+        <!-- Municipality filter (applies to Emergency, Adrenalin, Taxi, Restorani) -->
+        <div id="mun-filter-bar" style="background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);border-radius:8px;padding:0.6rem 0.9rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+          <span style="font-size:0.82rem;font-weight:600">🌍 Opština:</span>
+          <select id="mun-filter-select" style="width:auto;font-size:0.85rem;padding:0.3rem 0.6rem">
+            <option value="">Sve opštine</option>
+            <option value="bovec">Bovec</option>
+            <option value="kobarid">Kobarid</option>
+            <option value="tolmin">Tolmin</option>
+          </select>
+          <span style="font-size:0.75rem;opacity:0.5">Filtrira Emergency · Adrenalin · Taxi · Restorane</span>
         </div>
+
+        <!-- 5) Emergency servisi -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🚨 Emergency servisi</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0">Servisi koji se prikazuju svim gostima u kartici "Nujno". Dodaj, uredi ili obriši.</p>
+            <div id="emergency-services-list" style="display:flex;flex-direction:column;gap:0.5rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="emergency-save-status" class="msg hidden"></p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button id="btn-emergency-add" class="btn-secondary btn-sm">+ Dodaj servis</button>
+              <button id="btn-emergency-save" class="btn-sm">💾 Sačuvaj sve</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Daily Essentials (MASTER — global, per municipality) -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🛒 Daily Essentials</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.5rem">Linkovi (prodavnica, bankomat, pumpa…) prikazani svim gostima u kartici "Daily essentials". Možeš imati različite linkove po opštini.</p>
+            <div id="de-list" style="display:flex;flex-direction:column;gap:0.5rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="de-save-status" class="msg hidden"></p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button id="btn-de-add"  class="btn-secondary btn-sm">+ Dodaj link</button>
+              <button id="btn-de-save" class="btn-sm">💾 Sačuvaj sve</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Partners: Adrenalin / Restorani / Taxi -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🤝 Partneri <span id="partners-badge" style="display:none;background:rgba(34,211,238,0.2);color:#22d3ee;border-radius:999px;font-size:0.7rem;padding:0 7px;margin-left:6px;vertical-align:middle"></span></summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Upravljaj partnerima za sve tri kartice: Adrenalin, Restorani i Taxi. Tier određuje poziciju prikaza gostima.</p>
+
+            <!-- Filter traka -->
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.5rem 0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;align-items:center">
+              <select id="pf-type" style="font-size:0.82rem;padding:0.3rem 0.5rem;min-width:130px">
+                <option value="">Sve kartice</option>
+                <option value="activities">🎯 Adrenalin</option>
+                <option value="food">🍽️ Restorani</option>
+                <option value="taxi">🚌 Taxi</option>
+              </select>
+              <select id="pf-tier" style="font-size:0.82rem;padding:0.3rem 0.5rem">
+                <option value="">Svi tierovi</option>
+                <option value="premium">⭐ Premium</option>
+                <option value="featured">🔥 Featured</option>
+                <option value="standard">📍 Standard</option>
+              </select>
+              <select id="pf-mun" style="font-size:0.82rem;padding:0.3rem 0.5rem">
+                <option value="">Sve opštine</option>
+              </select>
+              <button id="btn-partners-filter" class="btn-secondary btn-sm">🔍 Filtriraj</button>
+              <button id="btn-partner-add" class="btn-sm" style="margin-left:auto">+ Dodaj partnera</button>
+            </div>
+
+            <!-- Lista partnera -->
+            <div id="partners-list" style="display:flex;flex-direction:column;gap:0.4rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+
+            <!-- Forma za dodavanje/editovanje (skrivena) -->
+            <div id="partner-form-wrap" style="display:none;margin-top:1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(34,211,238,0.2);border-radius:10px;overflow:hidden">
+              <div style="background:rgba(34,211,238,0.1);border-bottom:1px solid rgba(34,211,238,0.2);padding:0.65rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+                <h4 id="partner-form-title" style="margin:0;font-size:0.95rem;color:#22d3ee;font-weight:700">Novi partner</h4>
+                <span id="partner-form-type-badge" style="font-size:0.72rem;background:rgba(34,211,238,0.15);color:#22d3ee;border-radius:999px;padding:0.15rem 0.65rem;white-space:nowrap"></span>
+              </div>
+              <div style="padding:1rem">
+              <input type="hidden" id="pf-id">
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+                <div style="grid-column:1/-1">
+                  <label for="pf-name" style="font-size:0.78rem;opacity:0.7">Naziv *</label>
+                  <input id="pf-name" type="text" placeholder="Naziv firme / biznisa" style="width:100%;box-sizing:border-box">
+                </div>
+                <div>
+                  <label for="pf-type-sel" style="font-size:0.78rem;opacity:0.7">Tip kartice *</label>
+                  <select id="pf-type-sel" style="width:100%">
+                    <option value="activities">🎯 Adrenalin / Aktivnosti</option>
+                    <option value="food">🍽️ Restorani & Kafići</option>
+                    <option value="taxi">🚌 Taxi & Bus</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="pf-category" style="font-size:0.78rem;opacity:0.7">Kategorija *</label>
+                  <select id="pf-category" style="width:100%">
+                    <option value="rafting">Rafting</option>
+                    <option value="paragliding">Paragliding</option>
+                    <option value="kayak">Kajak</option>
+                    <option value="canyoning">Kanjoning</option>
+                    <option value="hiking">Planinarenje</option>
+                    <option value="cycling">Biciklizam</option>
+                    <option value="climbing">Penjanje</option>
+                    <option value="zipline">Zipline</option>
+                    <option value="other_act">Ostalo</option>
+                    <option value="restaurant">Restoran</option>
+                    <option value="gostilna">Gostilna</option>
+                    <option value="cafe">Kafić</option>
+                    <option value="pizzeria">Pizzerija</option>
+                    <option value="bar">Bar</option>
+                    <option value="bistro">Bistro</option>
+                    <option value="brewery">Pivara</option>
+                    <option value="street_food">Street food</option>
+                    <option value="other_food">Ostalo</option>
+                    <option value="taxi">Taxi</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="bus">Bus</option>
+                    <option value="other_taxi">Ostalo</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="pf-tier" style="font-size:0.78rem;opacity:0.7">Tier *</label>
+                  <select id="pf-tier-sel" style="width:100%">
+                    <option value="standard">📍 Standard — lista</option>
+                    <option value="featured">🔥 Featured — istaknuto</option>
+                    <option value="premium">⭐ Premium — hero kartica</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="pf-order" style="font-size:0.78rem;opacity:0.7">Redosled (manji = viši)</label>
+                  <input id="pf-order" type="number" value="100" min="1" style="width:100%;box-sizing:border-box">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label for="pf-desc" style="font-size:0.78rem;opacity:0.7">Kratak opis</label>
+                  <textarea id="pf-desc" rows="2" placeholder="Npr. Rafting na smaragdnoj Soči za sve uzraste…" style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
+                </div>
+
+                <!-- ── Slike ───────────────────────────────────────────── -->
+                <div style="grid-column:1/-1;background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.15);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;gap:0.75rem">
+                  <div style="font-size:0.78rem;font-weight:700;color:#22d3ee;margin-bottom:0.1rem">🖼️ Slike</div>
+
+                  <!-- Logo -->
+                  <div>
+                    <label style="font-size:0.78rem;opacity:0.8;font-weight:600">Logo biznisa</label>
+                    <div style="font-size:0.72rem;opacity:0.5;margin:0.15rem 0 0.4rem;line-height:1.5">
+                      📐 <strong>Preporučeno:</strong> 200 × 200 px · kvadrat (1:1) · PNG/WebP sa prozirnom pozadinom · max 150 KB<br>
+                      🗂️ Koristi se: u listi svih ponudnika (Standard red), u kartici kao avatar
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                      <label style="cursor:pointer;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:7px;padding:0.3rem 0.75rem;font-size:0.78rem;font-weight:600">
+                        📁 Odaberi logo
+                        <input type="file" id="pf-logo-file" accept="image/png,image/webp,image/jpeg" style="display:none">
+                      </label>
+                      <span id="pf-logo-filename" style="font-size:0.75rem;opacity:0.5">Nema odabrane slike</span>
+                    </div>
+                    <div id="pf-logo-preview-wrap" style="margin-top:0.5rem;display:none">
+                      <img id="pf-logo-preview" src="" alt="Logo preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(34,211,238,0.2)">
+                      <button type="button" id="btn-pf-logo-clear" style="display:block;margin-top:0.25rem;font-size:0.7rem;color:#f87171;background:none;border:none;cursor:pointer;padding:0">✕ Ukloni</button>
+                    </div>
+                    <input type="hidden" id="pf-logo">
+                  </div>
+
+                  <!-- Hero slika -->
+                  <div>
+                    <label style="font-size:0.78rem;opacity:0.8;font-weight:600">Hero slika (banner)</label>
+                    <div style="font-size:0.72rem;opacity:0.5;margin:0.15rem 0 0.4rem;line-height:1.5">
+                      📐 <strong>Premium kartica:</strong> 800 × 400 px · omjer 2:1 · JPG/WebP · max 500 KB<br>
+                      📐 <strong>Featured kartica:</strong> 480 × 270 px · omjer 16:9 · JPG/WebP · max 300 KB<br>
+                      🗂️ Koristi se: kao velika slika u Premium i Featured sekciji
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                      <label style="cursor:pointer;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;border-radius:7px;padding:0.3rem 0.75rem;font-size:0.78rem;font-weight:600">
+                        📁 Odaberi sliku
+                        <input type="file" id="pf-image-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+                      </label>
+                      <span id="pf-image-filename" style="font-size:0.75rem;opacity:0.5">Nema odabrane slike</span>
+                    </div>
+                    <div id="pf-image-preview-wrap" style="margin-top:0.5rem;display:none">
+                      <img id="pf-image-preview" src="" alt="Hero preview" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid rgba(34,211,238,0.2)">
+                      <button type="button" id="btn-pf-image-clear" style="display:block;margin-top:0.25rem;font-size:0.7rem;color:#f87171;background:none;border:none;cursor:pointer;padding:0">✕ Ukloni</button>
+                    </div>
+                    <input type="hidden" id="pf-image">
+                  </div>
+
+                  <p id="pf-upload-status" style="font-size:0.78rem;color:#22d3ee;display:none;margin:0"></p>
+                </div>
+
+                <!-- ── Kontakt ──────────────────────────────────────────── -->
+                <div>
+                  <label for="pf-phone" style="font-size:0.78rem;opacity:0.7">📞 Telefon</label>
+                  <input id="pf-phone" type="tel" placeholder="+386 41 123 456" style="width:100%;box-sizing:border-box">
+                </div>
+                <div>
+                  <label for="pf-whatsapp" style="font-size:0.78rem;opacity:0.7">💬 WhatsApp (broj)</label>
+                  <input id="pf-whatsapp" type="tel" placeholder="+386 41 123 456" style="width:100%;box-sizing:border-box">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label for="pf-website" style="font-size:0.78rem;opacity:0.7">🌐 Website URL</label>
+                  <input id="pf-website" type="url" placeholder="https://www.biznis.si" style="width:100%;box-sizing:border-box">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label for="pf-booking" style="font-size:0.78rem;opacity:0.7">📅 Booking / rezervacija URL <span style="opacity:0.5;font-size:0.72rem">(ako se razlikuje od websitea)</span></label>
+                  <input id="pf-booking" type="url" placeholder="https://booking.biznis.si" style="width:100%;box-sizing:border-box">
+                </div>
+              </div>
+
+              <div style="margin-top:0.75rem">
+                <label style="font-size:0.78rem;opacity:0.7;display:block;margin-bottom:0.4rem">Vidljivost po opštinama</label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;margin-bottom:0.4rem">
+                  <input type="checkbox" id="pf-all-mun"> Prikaži u svim opštinama
+                </label>
+                <div id="pf-mun-wrap" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-left:1.4rem"></div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;margin-top:0.6rem">
+                <input type="checkbox" id="pf-active" checked> Partner je aktivan (vidljiv gostima)
+              </label>
+
+              <p id="partner-form-status" class="msg hidden" style="margin-top:0.5rem"></p>
+              <div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap">
+                <button id="btn-partner-save" class="btn-sm">💾 Sačuvaj partnera</button>
+                <button id="btn-partner-cancel" class="btn-secondary btn-sm">Otkaži</button>
+              </div>
+              </div><!-- /padding -->
+            </div>
+
+            <p id="partners-status" class="msg hidden" style="margin-top:0.5rem"></p>
+          </div>
+        </details>
+
+        <!-- Opštine (municipalities) -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🗺️ Opštine</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Lista opština u kojima imaš apartmane. Koristi se za filtriranje sadržaja (restorani, taxi, adrenalin...) po opštini.</p>
+            <div id="municipalities-list" style="display:flex;flex-direction:column;gap:0.4rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="municipalities-save-status" class="msg hidden"></p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+              <button id="btn-municipalities-add"  class="btn-secondary btn-sm">+ Dodaj opštinu</button>
+              <button id="btn-municipalities-save" class="btn-sm">💾 Sačuvaj listu</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Prijave okvara (MASTER) -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🔧 Prijave okvara <span id="maint-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:0.7rem;padding:0 6px;margin-left:6px;vertical-align:middle"></span></summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Prijave okvara koje su poslali gosti kroz karticu "Prijavite okvaro". Vidljive su samo za MASTER i OWNER.</p>
+            <div id="maint-list" style="display:flex;flex-direction:column;gap:0.5rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="maint-status" class="msg hidden"></p>
+            <button id="btn-maint-refresh" class="btn-secondary btn-sm" style="margin-top:0.5rem">🔄 Osveži</button>
+          </div>
+        </details>
+
+        <!-- Lost & Found poruke -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🔍 Izgubljeno &amp; Nađeno <span id="lf-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:0.7rem;padding:0 6px;margin-left:6px;vertical-align:middle"></span></summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Poruke gostiju (poslednjih 15 dana). Možeš ih ručno obrisati ili ih brisanje ide automatski.</p>
+            <div id="lf-list" style="display:flex;flex-direction:column;gap:0.5rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="lf-status" class="msg hidden"></p>
+            <button id="btn-lf-refresh" class="btn-secondary btn-sm" style="margin-top:0.5rem">🔄 Osveži</button>
+          </div>
+        </details>
+
+        <!-- Predlozi gostiju -->
+        <details class="admin-section">
+          <summary class="admin-section-title">💬 Predlozi gostiju <span id="sugg-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:0.7rem;padding:0 6px;margin-left:6px;vertical-align:middle"></span></summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Predlozi za poboljšanje koje su ostavili gosti kroz "Predlagaj izboljšave" dugme. Čuvaju se 90 dana.</p>
+            <div id="sugg-list" style="display:flex;flex-direction:column;gap:0.5rem">
+              <p style="opacity:0.45;font-size:0.82rem;margin:0">Učitavam…</p>
+            </div>
+            <p id="sugg-status" class="msg hidden"></p>
+            <button id="btn-sugg-refresh" class="btn-secondary btn-sm" style="margin-top:0.5rem">🔄 Osveži</button>
+          </div>
+        </details>
+
+        <!-- Globalne nastavke -->
+        <details class="admin-section">
+          <summary class="admin-section-title">⚙️ Globalne nastavke</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Naziv sajta i podnaslov koji se prikazuju svim gostima na splash screenu i hero kartici.</p>
+            <label for="global-site-name">Naziv sajta</label>
+            <input id="global-site-name" type="text" placeholder="DOLINA SOČE" />
+            <label for="global-site-subtitle">Podnaslov (lokacija)</label>
+            <input id="global-site-subtitle" type="text" placeholder="Slovenija" />
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:0.75rem 0">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.5rem">Email notifikacije — gosti šalju predloge i L&amp;F poruke, ti dobijaš email (koristi Web3Forms besplatni servis).</p>
+            <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:0.65rem 0.85rem;font-size:0.8rem;line-height:1.7;margin-bottom:0.5rem">
+              <strong>📧 Kako da dobijaš email notifikacije (besplatno):</strong><br>
+              1. Idi na <a href="https://web3forms.com" target="_blank" rel="noopener" style="color:#fbbf24">web3forms.com</a><br>
+              2. Unesi svoj email → klikni "Get your Access Key"<br>
+              3. Potvrdi email koji ti stignu → dobijaš <strong>Access Key</strong><br>
+              4. Nalepi ključ ispod + unesi email → klikni 💾 Sačuvaj<br>
+              <span style="opacity:0.6">Besplatno: neograničen broj poruka. Bez registracije.</span>
+            </div>
+            <label for="global-admin-email">Tvoj email (za notifikacije)</label>
+            <input id="global-admin-email" type="email" placeholder="tvojmail@gmail.com" />
+            <label for="global-w3f-key">Web3Forms Access Key <a href="https://web3forms.com" target="_blank" rel="noopener" style="font-size:0.75rem;opacity:0.6;margin-left:4px">→ web3forms.com</a></label>
+            <input id="global-w3f-key" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+            <p id="global-settings-status" class="msg hidden"></p>
+            <button id="btn-global-settings-save" class="btn-sm">💾 Sačuvaj nastavke</button>
+          </div>
+        </details>
+
+        <!-- 6) Statistika poseta -->
+        <details class="admin-section">
+          <summary class="admin-section-title">📊 Statistika poseta</summary>
+          <div class="admin-section-body">
+            <p id="analytics-status" class="msg hidden"></p>
+            <div id="analytics-output" style="font-size:0.85rem;line-height:1.8;opacity:0.85">Učitavam...</div>
+            <button id="btn-refresh-analytics" class="btn-secondary btn-sm">Osveži statistiku</button>
+          </div>
+        </details>
+
+        <!-- Partner Analytics -->
+        <details class="admin-section">
+          <summary class="admin-section-title">📈 Partner Analytics <span id="panalytics-badge" style="display:none;background:rgba(34,211,238,0.2);color:#22d3ee;border-radius:999px;font-size:0.7rem;padding:0 7px;margin-left:6px;vertical-align:middle"></span></summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Impressions, klikovi i CTR po partneru. Podaci iz <code>partner_events</code> tabele.</p>
+
+            <!-- Filters -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.75rem">
+              <div>
+                <label style="font-size:0.75rem;opacity:0.6">Od datuma</label>
+                <input type="date" id="pa-from" style="width:100%;font-size:0.82rem;box-sizing:border-box">
+              </div>
+              <div>
+                <label style="font-size:0.75rem;opacity:0.6">Do datuma</label>
+                <input type="date" id="pa-to" style="width:100%;font-size:0.82rem;box-sizing:border-box">
+              </div>
+              <div>
+                <label style="font-size:0.75rem;opacity:0.6">Tip kartice</label>
+                <select id="pa-type" style="width:100%;font-size:0.82rem">
+                  <option value="">Sve</option>
+                  <option value="activities">🎯 Adrenalin</option>
+                  <option value="food">🍽️ Restorani</option>
+                  <option value="taxi">🚌 Taxi</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem;opacity:0.6">Tier</label>
+                <select id="pa-tier" style="width:100%;font-size:0.82rem">
+                  <option value="">Sve</option>
+                  <option value="premium">⭐ Premium</option>
+                  <option value="featured">🔥 Featured</option>
+                  <option value="standard">📍 Standard</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem;opacity:0.6">Opština</label>
+                <select id="pa-mun" style="width:100%;font-size:0.82rem">
+                  <option value="">Sve</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:0.4rem">
+                <button id="btn-pa-load" class="btn-sm" style="flex:1">🔍 Učitaj</button>
+                <button id="btn-pa-export-grouped" class="btn-secondary btn-sm" style="flex:1" title="CSV po partneru">📥 CSV</button>
+              </div>
+            </div>
+
+            <!-- Summary metrics -->
+            <div id="pa-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;display:none">
+              <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+                <div style="font-size:1.3rem;font-weight:700;color:#22d3ee" id="pa-sum-imp">0</div>
+                <div style="font-size:0.7rem;opacity:0.6">Impressions</div>
+              </div>
+              <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+                <div style="font-size:1.3rem;font-weight:700;color:#fb923c" id="pa-sum-clicks">0</div>
+                <div style="font-size:0.7rem;opacity:0.6">Total klikovi</div>
+              </div>
+              <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+                <div style="font-size:1.3rem;font-weight:700;color:#c084fc" id="pa-sum-ctr">0%</div>
+                <div style="font-size:0.7rem;opacity:0.6">CTR</div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div style="overflow-x:auto">
+              <table id="pa-table" style="width:100%;border-collapse:collapse;font-size:0.78rem;display:none">
+                <thead>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.12);text-align:left">
+                    <th style="padding:0.4rem 0.5rem;opacity:0.6;cursor:pointer" data-sort="name">Partner ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="tier">Tier ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="impressions">Imp ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="opens">Opens ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="calls">Calls ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="whatsapp">WA ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="bookings">Book ↕</th>
+                    <th style="padding:0.4rem 0.3rem;opacity:0.6;cursor:pointer" data-sort="ctr">CTR ↕</th>
+                  </tr>
+                </thead>
+                <tbody id="pa-tbody"></tbody>
+              </table>
+            </div>
+            <p id="pa-status" class="msg hidden" style="margin-top:0.5rem"></p>
+          </div>
+        </details>
+
+        <!-- 7) Tenant editor -->
+        <details class="admin-section">
+          <summary class="admin-section-title">🏠 Uredi tenant (apartman)</summary>
+          <div class="admin-section-body">
+            <label for="master-tenant-select">Izaberi apartman</label>
+            <select id="master-tenant-select">
+              <option value="">— izaberi tenant —</option>
+            </select>
+            <button id="btn-master-load" class="btn-secondary">Učitaj podatke</button>
+            <p id="master-save-status" class="msg hidden"></p>
+
+            <div id="master-tenant-fields" class="hidden">
+              <div id="master-editor-header" style="background:rgba(255,255,255,0.06);border-radius:6px;padding:0.6rem 0.9rem;font-size:0.82rem;line-height:1.7">
+                <strong>Uređuješ:</strong>
+                <span style="font-family:monospace" id="meditor-soca-id">—</span> —
+                <span id="meditor-name">—</span>
+                <span id="meditor-slug" style="opacity:0.6"></span>
+                &nbsp;|&nbsp; Vlasnik: <span id="meditor-owner">—</span>
+                &nbsp;|&nbsp; Status: <span id="meditor-status">—</span>
+              </div>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">📞 Quick dugmad</summary>
+                <div class="admin-section-body">
+                  <label for="master-call-phone">Telefon</label>
+                  <input id="master-call-phone" type="text" placeholder="+386 31 123 456" />
+                  <label for="master-directions-link">🗺️ Link do apartmana</label>
+                  <input id="master-directions-link" type="text" placeholder="https://maps.google.com/..." />
+                  <label for="master-rules-url">📋 Hišni red (link)</label>
+                  <input id="master-rules-url" type="text" placeholder="./pravila/index.html" />
+                </div>
+              </details>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">📋 Hišni red (privatno)</summary>
+                <div class="admin-section-body">
+                  <label for="master-rules-text">Tekst</label>
+                  <textarea id="master-rules-text" rows="6" placeholder="Privatna pravila…"></textarea>
+                </div>
+              </details>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">🅿️ Parking — preporučeno</summary>
+                <div class="admin-section-body">
+                  <label for="master-parking-title">Naziv</label>
+                  <input id="master-parking-title" type="text" placeholder="Parking Bovec centar" />
+                  <label for="master-parking-address">Adresa</label>
+                  <input id="master-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8" />
+                  <label for="master-parking-maps">Maps link</label>
+                  <input id="master-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+                  <label for="master-parking-notes">Napomena</label>
+                  <textarea id="master-parking-notes" rows="3" placeholder="Besplatno do 2h…"></textarea>
+                </div>
+              </details>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">🔁 Rezerviši ponovo</summary>
+                <div class="admin-section-body">
+                  <label for="master-rebook-name">Naziv apartmana</label>
+                  <input id="master-rebook-name" type="text" placeholder="Apartman Soča View" />
+                  <label for="master-rebook-phone">Telefon vlasnika</label>
+                  <input id="master-rebook-phone" type="text" placeholder="+386 31 123 456" />
+                  <label for="master-rebook-email">E-mail vlasnika</label>
+                  <input id="master-rebook-email" type="email" placeholder="owner@example.com" />
+                  <label for="master-rebook-link">Link za rezervaciju</label>
+                  <input id="master-rebook-link" type="text" placeholder="https://booking.com/..." />
+                  <label for="master-rebook-instructions">Uputstvo za goste</label>
+                  <textarea id="master-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
+                </div>
+              </details>
+
+              <details class="admin-section admin-section--inner">
+                <summary class="admin-section-title">🔧 Prijava okvare</summary>
+                <div class="admin-section-body">
+                  <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin-bottom:0.75rem">
+                    <input type="checkbox" id="master-maint-visible" checked>
+                    Prikaži karticu "Prijavite okvaro" gostima
+                  </label>
+                  <label for="master-maint-email">Email vlasnika za prijave okvara</label>
+                  <input id="master-maint-email" type="email" placeholder="owner@example.com" />
+                  <p style="font-size:0.78rem;opacity:0.5;margin:0.2rem 0 0">Email šalje sistem automatski — vlasnik ne treba ništa dodatno da podešava.</p>
+                </div>
+              </details>
+
+              <button id="btn-master-save">Sačuvaj za ovaj tenant</button>
+            </div>
+          </div>
+        </details>
 
       </div><!-- /#master-panel -->
 
       <!-- ── OWNER PANEL ── -->
       <div id="owner-panel" class="hidden">
 
-        <hr class="section-divider" />
+        <details class="admin-section" open>
+          <summary class="admin-section-title">📞 Quick dugmad</summary>
+          <div class="admin-section-body">
+            <label for="owner-call-phone">Pokliči lastnika (telefon)</label>
+            <input id="owner-call-phone" type="text" placeholder="+386 31 123 456" />
+            <label for="owner-directions-link">🗺️ Do apartmana (link)</label>
+            <input id="owner-directions-link" type="text" placeholder="https://maps.google.com/..." />
+            <label for="owner-rules-url">📋 Hišni red (link)</label>
+            <input id="owner-rules-url" type="text" placeholder="./pravila/index.html" />
+          </div>
+        </details>
 
-        <!-- Section 1: Quick dugmad -->
-        <h2>Quick dugmad</h2>
-        <label for="owner-call-phone">📞 Pokliči lastnika (telefon)</label>
-        <input id="owner-call-phone" type="text" placeholder="+386 31 123 456" />
-        <label for="owner-directions-link">🗺️ Do apartmana (link)</label>
-        <input id="owner-directions-link" type="text" placeholder="https://maps.google.com/..." />
-        <label for="owner-rules-url">📋 Hišni red (link)</label>
-        <input id="owner-rules-url" type="text" placeholder="./pravila/index.html" />
+        <details class="admin-section">
+          <summary class="admin-section-title">📋 Hišni red (privatno)</summary>
+          <div class="admin-section-body">
+            <label for="owner-rules-text">Tekst / sadržaj</label>
+            <textarea id="owner-rules-text" rows="8" placeholder="Unesite privatna pravila stanara…"></textarea>
+          </div>
+        </details>
 
-        <hr class="section-divider" />
+        <details class="admin-section">
+          <summary class="admin-section-title">🅿️ Parking — preporučeno</summary>
+          <div class="admin-section-body">
+            <label for="owner-parking-title">Naziv</label>
+            <input id="owner-parking-title" type="text" placeholder="Parking Bovec centar" />
+            <label for="owner-parking-address">Adresa</label>
+            <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
+            <label for="owner-parking-maps">Maps link</label>
+            <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+            <label for="owner-parking-notes">Napomena</label>
+            <textarea id="owner-parking-notes" rows="3" placeholder="Besplatno do 2h, zatim 1 €/h…"></textarea>
+          </div>
+        </details>
 
-        <!-- Section 2: House rules private -->
-        <h2>Hišni red (privatno)</h2>
-        <label for="owner-rules-text">Tekst / sadržaj</label>
-        <textarea id="owner-rules-text" rows="8" placeholder="Unesite privatna pravila stanara…"></textarea>
+        <details class="admin-section">
+          <summary class="admin-section-title">🔧 Prijava okvare — nastavke</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Upravljaj karticom "Prijavite okvaro" — sakrij je ili dodaj email na koji stižu prijave gostiju.</p>
+            <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin-bottom:0.75rem">
+              <input type="checkbox" id="owner-maint-visible" checked>
+              Prikaži karticu "Prijavite okvaro" gostima
+            </label>
+            <label for="owner-maint-email">Tvoj email za prijave okvara</label>
+            <input id="owner-maint-email" type="email" placeholder="tvojmail@gmail.com" />
+            <p style="font-size:0.78rem;opacity:0.5;margin:0.2rem 0 0">Sistem šalje email automatski — ne trebaš ništa dodatno podešavati.</p>
+          </div>
+        </details>
 
-        <hr class="section-divider" />
-
-        <!-- Section 3: Parking recommended -->
-        <h2>Parking — preporučeno (prva kartica)</h2>
-        <label for="owner-parking-title">Naziv</label>
-        <input id="owner-parking-title" type="text" placeholder="Parking Bovec centar" />
-        <label for="owner-parking-address">Adresa</label>
-        <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
-        <label for="owner-parking-maps">Maps link</label>
-        <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
-        <label for="owner-parking-notes">Napomena</label>
-        <textarea id="owner-parking-notes" rows="3" placeholder="Besplatno do 2h, zatim 1 €/h…"></textarea>
-
-        <hr class="section-divider" />
-
-        <!-- Section 4: Rezerviši ponovo -->
-        <h2>Rezerviši ponovo</h2>
-        <label for="owner-rebook-name">Naziv apartmana</label>
-        <input id="owner-rebook-name" type="text" placeholder="Apartman Soča View" />
-        <label for="owner-rebook-phone">Telefon vlasnika</label>
-        <input id="owner-rebook-phone" type="text" placeholder="+386 31 123 456" />
-        <label for="owner-rebook-email">E-mail vlasnika (za mailto)</label>
-        <input id="owner-rebook-email" type="email" placeholder="owner@example.com" />
-        <label for="owner-rebook-link">Link za rezervaciju (opciono)</label>
-        <input id="owner-rebook-link" type="text" placeholder="https://booking.com/..." />
-        <label for="owner-rebook-instructions">Uputstvo za goste (opciono)</label>
-        <textarea id="owner-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
+        <details class="admin-section">
+          <summary class="admin-section-title">🔁 Rezerviši ponovo</summary>
+          <div class="admin-section-body">
+            <label for="owner-rebook-name">Naziv apartmana</label>
+            <input id="owner-rebook-name" type="text" placeholder="Apartman Soča View" />
+            <label for="owner-rebook-phone">Telefon vlasnika</label>
+            <input id="owner-rebook-phone" type="text" placeholder="+386 31 123 456" />
+            <label for="owner-rebook-email">E-mail vlasnika (za mailto)</label>
+            <input id="owner-rebook-email" type="email" placeholder="owner@example.com" />
+            <label for="owner-rebook-link">Link za rezervaciju (opciono)</label>
+            <input id="owner-rebook-link" type="text" placeholder="https://booking.com/..." />
+            <label for="owner-rebook-instructions">Uputstvo za goste (opciono)</label>
+            <textarea id="owner-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
+          </div>
+        </details>
 
         <p id="owner-save-status" class="msg hidden"></p>
         <button id="btn-owner-save">Sačuvaj</button>
@@ -256,7 +724,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="../assets/supabase-client.js?v=20260220-1"></script>
-  <script src="./admin.js"></script>
+  <script src="../assets/supabase-client.js?v=20260225-1"></script>
+  <script src="./admin.js?v=20260225-1"></script>
 </body>
 </html>

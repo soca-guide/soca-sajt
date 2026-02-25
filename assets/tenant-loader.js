@@ -79,7 +79,7 @@
 
         // Step 1 — resolve tenant_id
         return sb.from('tenants')
-          .select('tenant_id')
+          .select('tenant_id, municipality_slug')
           .eq('slug', slug)
           .eq('status', 'active')
           .limit(1)
@@ -87,14 +87,11 @@
           .then(function (r1) {
             if (r1.error || !r1.data) return _errOv(slug, 'TENANT_NOT_FOUND');
             var tenantId = r1.data.tenant_id;
+            window._appMunicipality = r1.data.municipality_slug || 'bovec';
 
-            // Step 2 — fetch items for this tenant and global rows (tenant_id IS NULL)
+            // Step 2 — fetch items via RPC (server enforces tenant isolation)
             // Merge priority: tenant row > global (null) row
-            return sb.from('items')
-              .select('tenant_id, section_key, item_key, data_json')
-              .in('item_key', ['default_config', 'parking_recommended', 'house_rules_private'])
-              .eq('visible', true)
-              .or('tenant_id.is.null,tenant_id.eq.' + tenantId)
+            return sb.rpc('get_guest_items_by_slug', { p_slug: slug })
               .then(function (r2) {
                 if (r2.error) return _errOv(slug, 'ERROR');
 
@@ -114,6 +111,7 @@
                   config:             merged['info/default_config']              || null,
                   parkingRecommended: merged['parking/parking_recommended']      || null,
                   houseRulesPrivate:  merged['house_rules/house_rules_private']  || null,
+                  maintConfig:        merged['maintenance/maintenance_config']   || null,
                   __health: {
                     ok:         true,
                     reason:     itemsCount > 0 ? 'OK' : 'ITEMS_EMPTY',

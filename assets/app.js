@@ -126,6 +126,12 @@
       startHeaderClock();
       injectWeatherWidgetStacking();
       loadParkingFromFolder();
+      // Pre-fetch global DB data (~300 ms so supabaseClient is ready)
+      setTimeout(loadGlobalSiteName,  200);
+      setTimeout(loadEmergencyFromDb,       300);
+      setTimeout(loadAdrenalinFromDb,       400);
+      setTimeout(loadTaxiFromDb,            500);
+      setTimeout(loadDailyEssentialsFromDb, 600);
     }, { once: true });
     if (document.readyState !== 'loading') {
       setTimeout(function() { bootstrap(); startHeaderClock(); injectWeatherWidgetStacking(); }, 0);
@@ -153,6 +159,52 @@
       return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((p.name || '') + ' Bovec');
     }
     const BOVEC_PROVIDERS = ((CL && CL.getDataset('bovecProviders')) || []).map(function(p) { p.maps_url = p.maps_url || providerMapsUrl(p); return p; });
+
+    // Cache for providers fetched from Supabase (null = not yet loaded)
+    var _adrenalinDbCache = null;
+
+    function loadAdrenalinFromDb() {
+      if (_adrenalinDbCache !== null) return; // already fetched
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      var _munA = window._appMunicipality || 'bovec';
+      window.supabaseClient
+        .from('items')
+        .select('item_key, "order", data_json')
+        .eq('section_key', 'adrenalin')
+        .is('tenant_id', null)
+        .eq('visible', true)
+        .or('municipality_slugs.is.null,municipality_slugs.cs.{' + _munA + '}')
+        .order('order', { ascending: true })
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.length) return; // keep hardcoded fallback
+          _adrenalinDbCache = r.data.map(function (row) {
+            var dj = row.data_json || {};
+            var p = {
+              id:           row.item_key,
+              name:         dj.name         || '',
+              categories:   dj.categories   || [],
+              website:      dj.website       || '',
+              address_text: dj.address_text  || null,
+              maps_url:     dj.maps_url      || '',
+              banner_text:  dj.banner_text   || '',
+              tier:         dj.tier          || 'free',
+              priority:     dj.priority      || 0,
+              weight:       dj.weight        || 1,
+              active:       dj.active        !== false,
+              municipality: dj.municipality  || 'Bovec',
+              settlement:   null
+            };
+            p.maps_url = p.maps_url || providerMapsUrl(p);
+            return p;
+          });
+          // Refresh open screens if visible
+          var adrenalinScreen = document.getElementById('adrenalin-screen');
+          if (adrenalinScreen && adrenalinScreen.classList.contains('show')) renderAdrenalinContent();
+          var bpc = document.getElementById('bovec-providers-content');
+          if (bpc) renderProvidersSection();
+        })
+        .catch(function () {}); // silent — hardcoded fallback remains
+    }
     function getDateSeedKey() {
       var d = new Date();
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -240,8 +292,9 @@
       const container = document.getElementById('bovec-providers-content');
       if (!container) return;
       var trans = translations[currentLang] || translations.sl;
-      var featured = getFeaturedProviders(BOVEC_PROVIDERS);
-      var allOrdered = getAllProvidersOrdered(BOVEC_PROVIDERS);
+      var _providers = (_adrenalinDbCache && _adrenalinDbCache.length) ? _adrenalinDbCache : BOVEC_PROVIDERS;
+      var featured = getFeaturedProviders(_providers);
+      var allOrdered = getAllProvidersOrdered(_providers);
       var featuredHtml = featured.length >= 1 ? ('<h4 class="providers-subtitle">' + (trans.activity_highlighted || 'Istaknuti') + '</h4><div class="providers-featured">' + featured.map(renderProviderMiniBanner).join('') + '</div>') : '';
       var allHtml = '<h4 class="providers-subtitle">' + (trans.activity_all_providers || 'Svi provajderi') + '</h4><div class="providers-all">' + allOrdered.map(renderProviderMiniBanner).join('') + '</div>';
       container.innerHTML = '<div class="providers-section">' + '<h3 class="providers-section-title">' + (trans.activity_bovec_title || 'Aktivnosti – Občina Bovec') + '</h3>' + featuredHtml + allHtml + '</div>';
@@ -292,27 +345,13 @@
       // Save language preference instantly
       localStorage.setItem('preferredLanguage', lang);
       
-      // Update brand/title text
+      // Update brand/title text — always use apartment_name from config (never trans.brand_title)
+      const _siteName = defaultConfig.apartment_name || 'DOLINA SOČE';
       const appTitle = document.getElementById('app-title');
-      if (appTitle) {
-        const apartmentName = defaultConfig.apartment_name;
-        if (apartmentName && apartmentName !== 'DOLINA SOČE') {
-          appTitle.textContent = apartmentName;
-        } else {
-          const brandTitle = trans.brand_title || 'DOLINA SOČE';
-          appTitle.textContent = brandTitle;
-        }
-      }
-      
+      if (appTitle) appTitle.textContent = _siteName;
+
       const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) {
-        const apartmentName = defaultConfig.apartment_name;
-        if (apartmentName && apartmentName !== 'DOLINA SOČE') {
-          heroTitle.textContent = apartmentName.split(' ')[0];
-        } else {
-          heroTitle.textContent = trans.brand_title || 'DOLINA SOČE';
-        }
-      }
+      if (heroTitle) heroTitle.textContent = _siteName.split(' ')[0];
       
       // Welcome subtitle stays static - "SOČA VALLEY" - don't update it
       
@@ -410,6 +449,61 @@
       }
 
     // Accordion panels
+    // Cache for emergency services fetched from Supabase (null = not yet loaded)
+    var _emergencyDbCache = null;
+
+    // Fetches global emergency services from Supabase once; re-renders panel if open.
+    // Falls back silently to hardcoded APP_DATA if fetch fails or returns empty.
+    function loadGlobalSiteName() {
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      window.supabaseClient
+        .from('items')
+        .select('data_json')
+        .eq('section_key', 'ui')
+        .eq('item_key', 'site_name')
+        .is('tenant_id', null)
+        .maybeSingle()
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.data_json) return;
+          var dj = r.data.data_json;
+          if (dj.name) {
+            defaultConfig.apartment_name = dj.name;
+            var at = document.getElementById('app-title');
+            if (at) at.textContent = dj.name;
+            var ht = document.getElementById('hero-title');
+            if (ht) ht.textContent = dj.name.split(' ')[0];
+          }
+          if (dj.subtitle) defaultConfig.location_subtitle = dj.subtitle;
+        })
+        .catch(function () {});
+    }
+
+    function loadEmergencyFromDb() {
+      if (_emergencyDbCache !== null) return; // already fetched
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      var _munE = window._appMunicipality || 'bovec';
+      window.supabaseClient
+        .from('items')
+        .select('data_json, "order"')
+        .eq('section_key', 'emergency')
+        .is('tenant_id', null)
+        .eq('visible', true)
+        .or('municipality_slugs.is.null,municipality_slugs.cs.{' + _munE + '}')
+        .order('order', { ascending: true })
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.length) return; // keep hardcoded fallback
+          _emergencyDbCache = r.data.map(function (row) {
+            var dj = row.data_json || {};
+            return { name: dj.name || '', address: dj.address || '', phone: dj.phone || '',
+                     tel: dj.tel || '', web: dj.web || '', directions: dj.directions || '' };
+          });
+          // Refresh panel only if it is currently open
+          var panel = document.getElementById('emergency-panel');
+          if (panel && panel.classList.contains('open')) renderEmergencyContent();
+        })
+        .catch(function () {}); // silent — hardcoded fallback remains
+    }
+
     function renderEmergencyContent() {
       const emergencyList = document.getElementById('emergency-list-content');
       if (!emergencyList) return;
@@ -438,10 +532,12 @@
         <a href="tel:113" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
       </div>`;
       
-      // Services list
-      const services = ((CL && CL.getDataset('emergencyServices')) || []).map(function(s) {
-        return { name: trans[s.nameKey] || s.nameDefault, address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
-      });
+      // Services list — prefer Supabase DB data, fall back to hardcoded APP_DATA
+      const services = (_emergencyDbCache && _emergencyDbCache.length)
+        ? _emergencyDbCache
+        : ((CL && CL.getDataset('emergencyServices')) || []).map(function(s) {
+            return { name: trans[s.nameKey] || s.nameDefault, address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
+          });
       
       services.forEach(service => {
         html += `<div class="quick-help-service-item">
@@ -486,7 +582,8 @@
       }
       
       if (panelId === 'emergency') {
-        renderEmergencyContent();
+        loadEmergencyFromDb(); // pre-fetch from DB; re-renders automatically when ready
+        renderEmergencyContent(); // render immediately with whatever is cached/hardcoded
         // Sačekaj da se panel otvori - skroluj na vrh da bude odmah na oku (nujno!)
         setTimeout(() => {
           const panelContent = panel.querySelector('.panel-content');
@@ -534,6 +631,8 @@
           openTaxiBus();
         } else if (card.id === 'adrenalin-card') {
           openAdrenalin();
+        } else if (card.id === 'maintenance-card') {
+          openMaintenanceModal();
         }
       });
     });
@@ -649,6 +748,14 @@
       // 3) House rules private — inject into rules panel
       window.__TENANT_OVERRIDES.houseRulesPrivate = ov.houseRulesPrivate || null;
       applyPrivateRulesToUI();
+
+      // 4) Maintenance card — show only if owner enabled it
+      var maintCfg = ov.maintConfig || null;
+      var maintCard = document.getElementById('maintenance-card');
+      if (maintCard) {
+        var show = !maintCfg || maintCfg.visible !== false;
+        maintCard.style.display = show ? '' : 'none';
+      }
     }
 
     // ── Apply quick action links (call / directions / rules) ──────────────────
@@ -677,10 +784,12 @@
     }
 
     // ── Inject tenant private rules into #rules-panel ─────────────────────────
+    // When tenant text exists: hide ALL static/generic rules, show only tenant text.
+    // When no tenant text: restore static list visibility, remove injected block.
     function applyPrivateRulesToUI() {
       var hr = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.houseRulesPrivate;
 
-      // Resolve text from either supported format
+      // Resolve text — support both {text:"..."} and {rules:[...]} formats
       var text = '';
       if (hr && typeof hr.text === 'string' && hr.text.trim()) {
         text = hr.text.trim();
@@ -688,41 +797,61 @@
         text = hr.rules.join('\n');
       }
 
-      var existing = document.getElementById('tenant-private-rules');
+      var rulesPanel    = document.getElementById('rules-panel');
+      var panelContent  = rulesPanel && rulesPanel.querySelector('.panel-content');
+      var target        = panelContent || rulesPanel;
+      var staticList    = rulesPanel  && rulesPanel.querySelector('.rules-list');
+      var existing      = document.getElementById('tenant-private-rules');
 
-      // No text: remove injected block if present, then stop
       if (!text) {
+        // No tenant text — show static list, remove any injected block
+        if (staticList) staticList.style.display = '';
         if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
         return;
       }
 
-      // Create block once
+      // Tenant text present — hide generic static list completely
+      if (staticList) staticList.style.display = 'none';
+
+      // Auto-detect icon per line keyword
+      function _autoIcon(line) {
+        var l = line.toLowerCase();
+        if (/bučno|šum|glasno|hrup|tiho|tišina|mirno|noise|quiet/.test(l))        return '🔇';
+        if (/kurit|kaditi|pušiti|pušenje|cigareta|smok/.test(l))                  return '🚭';
+        if (/čisto|smeće|smeti|smetišče|čiščenj|odpad|clean|trash/.test(l))       return '🗑️';
+        if (/ključ|zakleni|zakleniti|zaklep|key|lock/.test(l))                    return '🔐';
+        if (/izhod|izlaz|odhod|check.?out|odlazak|departure/.test(l))             return '🚪';
+        if (/parkira|parkirišče|parking/.test(l))                                 return '🅿️';
+        if (/wifi|wi.?fi|internet|geslo|password|lozinka/.test(l))                return '📶';
+        if (/gostje|gost|obiskovalci|prijava|check.?in|arrival|dolazak/.test(l))  return '👥';
+        if (/žival|pes|mačka|hišni ljub|pet|ljubimac/.test(l))                   return '🐾';
+        if (/kuhinja|kuhati|jedi|hrana|kitchen|food/.test(l))                     return '🍳';
+        if (/kopa|tuš|kopalnica|brisač|shower|bath/.test(l))                     return '🚿';
+        if (/postelj|rjuha|vzglavnik|posteljina|bed|linen/.test(l))               return '🛏️';
+        if (/vrat|door|porta/.test(l))                                            return '🚪';
+        if (/odmet|waste|recikl/.test(l))                                         return '♻️';
+        return '📌';
+      }
+
+      // Build the block with one rule-item per non-empty line
       if (!existing) {
         existing = document.createElement('div');
         existing.id = 'tenant-private-rules';
-        existing.style.cssText = 'margin-top:1rem;padding-top:1rem;border-top:1px solid var(--glass-border,rgba(255,255,255,0.1));';
-
-        var title = document.createElement('p');
-        title.style.cssText = 'font-size:0.78rem;font-weight:600;color:var(--text-secondary,#94a3b8);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;';
-        title.textContent = 'Dodatna pravila apartmaja';
-
-        var body = document.createElement('div');
-        body.id = 'tenant-private-rules-body';
-        body.style.cssText = 'font-size:0.92rem;line-height:1.6;white-space:pre-line;color:var(--text-primary,#e2e8f0);';
-
-        existing.appendChild(title);
-        existing.appendChild(body);
-
-        var rulesPanel = document.getElementById('rules-panel');
-        var panelContent = rulesPanel && rulesPanel.querySelector('.panel-content');
-        var target = panelContent || rulesPanel;
-        if (!target) return; // panel not in DOM yet — safe no-op
-        target.appendChild(existing);
+        existing.style.cssText = 'margin:0;padding:0;display:flex;flex-direction:column;gap:0.85rem;';
+        if (target) target.appendChild(existing);
       }
-
-      // Always update text via textContent (never innerHTML)
-      var bodyEl = document.getElementById('tenant-private-rules-body');
-      if (bodyEl) bodyEl.textContent = text;
+      existing.innerHTML = '';
+      text.split(/\r?\n/).forEach(function (line) {
+        var t = line.trim();
+        if (!t) return;
+        var item = document.createElement('div'); item.className = 'rule-item';
+        var icon = document.createElement('span'); icon.className = 'rule-icon'; icon.textContent = _autoIcon(t);
+        var p    = document.createElement('p');    p.className    = 'rule-text';
+        p.style.cssText = 'font-size:0.92rem;line-height:1.6;color:var(--text-primary,#e2e8f0);margin:0;';
+        p.textContent = t;
+        item.appendChild(icon); item.appendChild(p);
+        existing.appendChild(item);
+      });
     }
 
     // ── Lazy-load base house rules from Supabase (global house_rules/base row) ───
@@ -732,6 +861,7 @@
     // Rebuilds the static hardcoded rules using current translations (restores after DB override)
     function _restoreI18nRules(rulesList) {
       if (!rulesList) return;
+      rulesList.style.display = '';
       var trans = translations[currentLang] || translations.sl;
       var STATIC = [
         ['🔇','rule1'], ['🚭','rule2'], ['🗑️','rule3'], ['🔐','rule4'], ['🚪','rule5']
@@ -751,6 +881,7 @@
     function _applyBaseRulesToPanel(dj) {
       var rulesList = document.querySelector('#rules-panel .rules-list');
       if (!rulesList) return;
+      rulesList.style.display = '';
       var baseItems = [];
       // Multilingual format: dj.by_lang or dj.items_by_lang → { "sl":[...], "en":[...], ... }
       var byLang = dj.by_lang || dj.items_by_lang;
@@ -763,7 +894,14 @@
         if (Array.isArray(dj.items) && dj.items.length > 0) {
           baseItems = dj.items;
         } else if (typeof dj.text === 'string' && dj.text.trim()) {
-          baseItems = dj.text.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+          // Free-text format: render as ONE pre-wrap block — do NOT split into bullet items
+          rulesList.innerHTML = '';
+          var _tp = document.createElement('p');
+          _tp.className = 'rule-text';
+          _tp.style.cssText = 'white-space:pre-line;line-height:1.65;padding:0.25rem 0';
+          _tp.textContent = dj.text.trim();
+          rulesList.appendChild(_tp);
+          return;
         }
       }
       // No usable data for this language → restore translated static rules
@@ -783,6 +921,9 @@
       if (_baseRulesState !== 'idle') return; // already loading or loaded
       if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
       _baseRulesState = 'loading';
+      // Show loading placeholder immediately — prevents flash of static/i18n text
+      var _rl = document.querySelector('#rules-panel .rules-list');
+      if (_rl) { _rl.style.display = ''; _rl.innerHTML = '<p style="opacity:0.5;font-size:0.9rem;padding:0.25rem 0">Učitavam\u2026</p>'; }
       window.supabaseClient
         .from('items')
         .select('data_json')
@@ -793,11 +934,18 @@
         .maybeSingle()
         .then(function (r) {
           _baseRulesState = 'loaded';
-          if (r.error || !r.data || !r.data.data_json) return; // keep static fallback
+          if (r.error || !r.data || !r.data.data_json) {
+            // No DB data — restore translated static rules
+            _restoreI18nRules(document.querySelector('#rules-panel .rules-list'));
+            return;
+          }
           _baseRulesDJ = r.data.data_json;
           _applyBaseRulesToPanel(_baseRulesDJ);
         })
-        .catch(function () { _baseRulesState = 'failed'; }); // silent fallback
+        .catch(function () {
+          _baseRulesState = 'failed';
+          _restoreI18nRules(document.querySelector('#rules-panel .rules-list'));
+        });
     }
 
     // Close all panels
@@ -2699,7 +2847,7 @@
       let sceneClass = 'scene-clouds'; // default
       
       if (code === 0 || code === 1) {
-        sceneClass = 'scene-clear';
+        sceneClass = isLocalNight() ? 'scene-night' : 'scene-clear';
       } else if (code === 2 || code === 3) {
         sceneClass = 'scene-clouds';
       } else if (code === 45 || code === 48) {
@@ -3059,6 +3207,7 @@
       const screen = document.getElementById('daily-essentials-screen');
       if (screen) {
         screen.classList.add('show');
+        loadDailyEssentialsFromDb();
         renderDailyEssentialsContent();
         history.pushState({ overlay: 'daily-essentials' }, '', window.location.pathname + window.location.search + (window.location.hash || ''));
       }
@@ -3081,6 +3230,29 @@
       window.APP.utils.scrollToTopReliable();
     }
     
+    // Cache for DB-fetched daily essentials (null = not loaded yet)
+    var _deDbCache = null;
+
+    function loadDailyEssentialsFromDb() {
+      var sb = window.supabaseClient || window.SB;
+      if (!sb) return;
+      var _munX = window._appMunicipality || 'bovec';
+      sb.from('items')
+        .select('data_json, order')
+        .eq('section_key', 'daily_essentials')
+        .is('tenant_id', null)
+        .or('municipality_slugs.is.null,municipality_slugs.cs.{' + _munX + '}')
+        .eq('visible', true)
+        .order('order', { ascending: true })
+        .then(function(r) {
+          if (!r.error && r.data && r.data.length) {
+            _deDbCache = r.data.map(function(row) { return row.data_json || {}; });
+            var deScreen = document.getElementById('daily-essentials-screen');
+            if (deScreen && deScreen.classList.contains('show')) { renderDailyEssentialsContent(); }
+          }
+        });
+    }
+
     function renderDailyEssentialsContent() {
       const body = document.getElementById('daily-essentials-body');
       if (!body) return;
@@ -3088,13 +3260,23 @@
       const trans = translations[currentLang];
       if (!trans) return;
       
-      var _deItems = (CL && CL.getDataset('dailyEssentials')) || [];
+      var _deItems;
+      if (_deDbCache && _deDbCache.length) {
+        _deItems = _deDbCache.map(function(item) {
+          return { labelKey: item.label_key, url: item.url, customLabel: item.custom_label };
+        });
+      } else {
+        _deItems = (CL && CL.getDataset('dailyEssentials')) || [];
+      }
       var _deLinks = _deItems.map(function(item) {
-        return '<a href="' + item.url + '" target="_blank" rel="noopener noreferrer" class="quick-help-button">' +
-               '<div class="quick-help-button-title">' + (trans[item.labelKey] || '') + '</div>' +
+        var title = (item.labelKey === 'custom' && item.customLabel)
+          ? item.customLabel
+          : (trans[item.labelKey] || item.customLabel || item.labelKey || '');
+        return '<a href="' + (item.url || '#') + '" target="_blank" rel="noopener noreferrer" class="quick-help-button">' +
+               '<div class="quick-help-button-title">' + title + '</div>' +
                '</a>';
       }).join('\n          ');
-      let html = '<div style="padding: 1rem;">' +
+      var html = '<div style="padding: 1rem;">' +
         '<div class="quick-help-section">' +
         '<h2 class="quick-help-section-title">' + (trans.daily_essentials || 'Daily essentials') + '</h2>' +
         _deLinks +
@@ -3120,6 +3302,7 @@
       const screen = document.getElementById('adrenalin-screen');
       if (screen) {
         screen.classList.add('show');
+        loadAdrenalinFromDb(); // fetch from DB; re-renders automatically if cache updates
         renderAdrenalinContent();
         history.pushState({ overlay: 'adrenalin' }, '', window.location.pathname + window.location.search + (window.location.hash || ''));
       }
@@ -3134,7 +3317,12 @@
     
     function openAdrenalin() {
       closeAllPanels();
-      showAdrenalinScreen();
+      // Use new directory page via iframe modal if available
+      if (window.__MODALS && window.__MODALS.openAktivnosti) {
+        window.__MODALS.openAktivnosti();
+      } else {
+        showAdrenalinScreen(); // fallback to old screen
+      }
     }
     
     function closeAdrenalin() {
@@ -3280,9 +3468,10 @@
       
       const trans = translations[currentLang] || translations.sl;
       if (!trans) return;
-      
-      var featured = getFeaturedProviders(BOVEC_PROVIDERS);
-      var allOrdered = getAllProvidersOrdered(BOVEC_PROVIDERS);
+
+      var _providers = (_adrenalinDbCache && _adrenalinDbCache.length) ? _adrenalinDbCache : BOVEC_PROVIDERS;
+      var featured = getFeaturedProviders(_providers);
+      var allOrdered = getAllProvidersOrdered(_providers);
       var featuredHtml = featured.length >= 1 ? ('<h4 class="providers-subtitle">' + (trans.activity_highlighted || 'Istaknuti') + '</h4><div class="providers-featured">' + featured.map(renderProviderMiniBanner).join('') + '</div>') : '';
       var allHtml = '<h4 class="providers-subtitle">' + (trans.activity_all_providers || 'Svi provajderi') + '</h4><div class="providers-all">' + allOrdered.map(renderProviderMiniBanner).join('') + '</div>';
       var providersBlock = '<div class="providers-section"><h3 class="providers-section-title">' + (trans.activity_bovec_title || 'Aktivnosti – Občina Bovec') + '</h3>' + featuredHtml + allHtml + '</div>';
@@ -3404,42 +3593,59 @@
         return;
       }
       
-      // Build feedback object
-      const feedbackData = {
-        id: window.APP.utils.generateId(),
-        timestamp: new Date().toISOString(),
-        lang: currentLang,
-        page: window.location.hash || window.location.pathname || 'main',
-        role: roleValue,
-        answers: {
-          add: addValue,
-          confusing: confusingValue || '',
-          idea: ideaValue || ''
-        }
-      };
-      
-      // Save to localStorage
-      try {
-        const existing = localStorage.getItem('guestGuide_feedback_demo');
-        const feedbackArray = existing ? JSON.parse(existing) : [];
-        feedbackArray.push(feedbackData);
-        localStorage.setItem('guestGuide_feedback_demo', JSON.stringify(feedbackArray));
-      } catch (e) {
-        console.error('Failed to save feedback:', e);
-      }
-      
-      // Show success message
       feedbackError.style.display = 'none';
-      feedbackSuccess.style.display = 'block';
-      feedbackSuccess.textContent = trans.feedback_success || 'Thanks! Your feedback was saved (demo).';
-      
-      // Clear form
-      feedbackForm.reset();
-      
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        closeFeedbackModal();
-      }, 2000);
+      feedbackSuccess.style.display = 'none';
+
+      var sb = window.supabaseClient || window.SB;
+      var tenantSlug = (new URLSearchParams(window.location.search).get('t') || '').toLowerCase() || null;
+
+      function _onSuccess() {
+        feedbackSuccess.style.display = 'block';
+        feedbackSuccess.textContent = trans.feedback_success || 'Hvala! Predlog je sačuvan.';
+        feedbackForm.reset();
+        setTimeout(function() { closeFeedbackModal(); }, 2200);
+      }
+
+      function _trySendEmail(w3fKey, adminEmail) {
+        if (!w3fKey || !adminEmail) return;
+        fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            access_key: w3fKey,
+            to: adminEmail,
+            subject: 'Novi predlog gosta — ' + (tenantSlug || 'sajt'),
+            message: [
+              addValue      ? 'Šta dodati: ' + addValue      : '',
+              confusingValue? 'Nejasno: '    + confusingValue : '',
+              ideaValue     ? 'Ideja: '      + ideaValue      : ''
+            ].filter(Boolean).join('\n\n') + '\n\nUloga: ' + roleValue + ' | Jezik: ' + currentLang
+          })
+        }).catch(function(){});
+      }
+
+      if (sb) {
+        sb.rpc('create_suggestion', {
+          p_lang: currentLang, p_role: roleValue,
+          p_add_text: addValue || null, p_confusing: confusingValue || null,
+          p_idea: ideaValue || null, p_tenant_slug: tenantSlug
+        }).then(function(r) {
+          if (r && r.error) {
+            feedbackError.textContent = trans.feedback_error || 'Greška. Pokušaj ponovo.';
+            feedbackError.style.display = 'block';
+            return;
+          }
+          _onSuccess();
+          sb.from('items').select('data_json').eq('section_key','ui').eq('item_key','site_name').is('tenant_id',null).maybeSingle()
+            .then(function(cfg) {
+              if (!cfg.error && cfg.data && cfg.data.data_json) {
+                _trySendEmail(cfg.data.data_json.w3f_key, cfg.data.data_json.admin_email);
+              }
+            });
+        }).catch(function() { _onSuccess(); });
+      } else {
+        _onSuccess();
+      }
     }
     
     // Event listeners
@@ -3520,6 +3726,7 @@
       const screen = document.getElementById('taxi-bus-screen');
       if (screen) {
         screen.classList.add('show');
+        loadTaxiFromDb(); // fetch from DB; re-renders automatically if cache updates
         renderTaxiBusContent();
         history.pushState({ overlay: 'taxi-bus' }, '', window.location.pathname + window.location.search + (window.location.hash || ''));
       }
@@ -3534,14 +3741,227 @@
     
     function openTaxiBus() {
       closeAllPanels();
-      showTaxiBusScreen();
+      // Use new directory page via iframe modal if available
+      if (window.__MODALS && window.__MODALS.openTaxi) {
+        window.__MODALS.openTaxi();
+      } else {
+        showTaxiBusScreen(); // fallback to old screen
+      }
     }
+
+    // ── Maintenance (Prijava okvare) modal ────────────────────────────────────
+    (function() {
+      var _maintModal   = document.getElementById('maintenance-modal');
+      var _maintClose   = document.getElementById('maint-modal-close');
+      var _maintSubmit  = document.getElementById('maint-submit');
+      var _maintFormWrap= document.getElementById('maint-form-wrap');
+      var _maintSuccess = document.getElementById('maint-success');
+      var _maintNoEmail = document.getElementById('maint-no-email');
+      var _maintError   = document.getElementById('maint-error');
+      var _maintCat     = document.getElementById('maint-category');
+      var _maintLoc     = document.getElementById('maint-location');
+      var _maintDesc    = document.getElementById('maint-description');
+      var _maintPhone   = document.getElementById('maint-phone-link');
+      var _maintPhoneDisp = document.getElementById('maint-phone-display');
+
+      function _closeMaint() {
+        if (!_maintModal) return;
+        _maintModal.style.display = 'none';
+        document.body.style.overflow = '';
+        if (_maintFormWrap) _maintFormWrap.style.display = '';
+        if (_maintSuccess) _maintSuccess.style.display = 'none';
+        if (_maintNoEmail) _maintNoEmail.style.display = 'none';
+        if (_maintError)   _maintError.style.display   = 'none';
+        if (_maintLoc)     _maintLoc.value = '';
+        if (_maintDesc)    _maintDesc.value = '';
+      }
+
+      window.openMaintenanceModal = function() {
+        if (!_maintModal) return;
+        if (_maintFormWrap) _maintFormWrap.style.display = '';
+        if (_maintSuccess) _maintSuccess.style.display = 'none';
+        if (_maintNoEmail) _maintNoEmail.style.display = 'none';
+        if (_maintError)   _maintError.style.display   = 'none';
+        _maintModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        _updateMaintI18n();
+      };
+
+      function _updateMaintI18n() {
+        var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
+        var opts = [
+          { v:'electric',  k:'maint_cat_electric'  },
+          { v:'water',     k:'maint_cat_water'     },
+          { v:'wifi',      k:'maint_cat_wifi'      },
+          { v:'cleaning',  k:'maint_cat_cleaning'  },
+          { v:'appliance', k:'maint_cat_appliance' },
+          { v:'other',     k:'maint_cat_other'     }
+        ];
+        if (_maintCat) {
+          var cur = _maintCat.value;
+          _maintCat.innerHTML = opts.map(function(o) {
+            return '<option value="' + o.v + '"' + (o.v === cur ? ' selected' : '') + '>' + (trans[o.k] || o.v) + '</option>';
+          }).join('');
+        }
+        document.querySelectorAll('[data-i18n^="maint_"]').forEach(function(el) {
+          var k = el.getAttribute('data-i18n');
+          if (trans[k]) el.textContent = trans[k];
+        });
+        document.querySelectorAll('[data-i18n-placeholder^="maint_"]').forEach(function(el) {
+          var k = el.getAttribute('data-i18n-placeholder');
+          if (trans[k]) el.placeholder = trans[k];
+        });
+      }
+
+      if (_maintClose) _maintClose.addEventListener('click', _closeMaint);
+      if (_maintModal) _maintModal.addEventListener('click', function(e) {
+        if (e.target === _maintModal) _closeMaint();
+      });
+
+      if (_maintSubmit) {
+        _maintSubmit.addEventListener('click', function() {
+          var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
+          var slug = (new URLSearchParams(window.location.search).get('t') || '').toLowerCase().trim();
+          var cat  = _maintCat  ? _maintCat.value : 'other';
+          var loc  = _maintLoc  ? _maintLoc.value.trim()  : '';
+          var desc = _maintDesc ? _maintDesc.value.trim() : '';
+
+          if (_maintError) _maintError.style.display = 'none';
+
+          var sb = window.supabaseClient || window.SB;
+
+          // Load maintenance config (email + w3f_key) from tenant's default_config
+          function _getOwnerConfig(cb) {
+            if (!sb || !slug) { cb(null); return; }
+            sb.rpc('get_guest_items_by_slug', { p_slug: slug })
+              .then(function(r) {
+                if (r.error || !r.data) { cb(null); return; }
+                var cfgRow = r.data.find(function(x) { return x.item_key === 'default_config'; });
+                var bookRow = r.data.find(function(x) { return x.item_key === 'rebook'; });
+                var maintRow = r.data.find(function(x) { return x.item_key === 'maintenance_config'; });
+                var email = (maintRow && maintRow.data_json && maintRow.data_json.email) || '';
+                var phone = (cfgRow   && cfgRow.data_json   && cfgRow.data_json.owner_phone) ||
+                            (bookRow  && bookRow.data_json  && bookRow.data_json.owner_phone) || '';
+                var aptName = (cfgRow && cfgRow.data_json && cfgRow.data_json.apartment_name) || slug;
+                cb({ email: email, phone: phone, aptName: aptName });
+              }).catch(function() { cb(null); });
+          }
+
+          function _doSendEmail(cfg) {
+            var emailTo = cfg && cfg.email;
+            if (!emailTo) { _showNoEmail(cfg); return; }
+            // Always use global MASTER Web3Forms key
+            if (sb) {
+              sb.from('items').select('data_json').eq('section_key','ui').eq('item_key','site_name').is('tenant_id',null).maybeSingle()
+                .then(function(r) {
+                  var key = (!r.error && r.data && r.data.data_json && r.data.data_json.w3f_key) || '';
+                  if (key) { _sendViaW3f(key, emailTo, cfg); } else { _showNoEmail(cfg); }
+                }).catch(function() { _showNoEmail(cfg); });
+            } else {
+              _showNoEmail(cfg);
+            }
+          }
+
+          function _sendViaW3f(key, toEmail, cfg) {
+            var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
+            var catLabel = (_maintCat && _maintCat.options[_maintCat.selectedIndex] && _maintCat.options[_maintCat.selectedIndex].text) || cat;
+            var aptName = (cfg && cfg.aptName) || slug;
+            fetch('https://api.web3forms.com/submit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                access_key: key,
+                to: toEmail,
+                subject: '⚠️ PRIJAVA OKVARE – ' + aptName,
+                message: [
+                  'Lokacija: ' + aptName,
+                  'Kategorija: ' + catLabel.toUpperCase(),
+                  loc  ? 'Gde: ' + loc   : '',
+                  desc ? 'Detalji: ' + desc : '',
+                  'Vreme: ' + new Date().toLocaleString('sr-Latn'),
+                  '',
+                  'Ovo je automatsko obaveštenje iz vašeg digitalnog info panela.'
+                ].filter(function(x){ return x !== ''; }).join('\n')
+              })
+            }).catch(function(){});
+            _showSuccess();
+          }
+
+          function _showSuccess() {
+            var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
+            if (_maintFormWrap) _maintFormWrap.style.display = 'none';
+            if (_maintNoEmail)  _maintNoEmail.style.display  = 'none';
+            if (_maintSuccess)  _maintSuccess.style.display  = 'block';
+            var successP = _maintSuccess && _maintSuccess.querySelector('p');
+            if (successP) successP.textContent = trans.maint_success || '✓ Sporočilo je bilo poslano!';
+            setTimeout(function() { _closeMaint(); }, 3000);
+          }
+
+          function _showNoEmail(cfg) {
+            var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
+            var phone = (cfg && cfg.phone) || '';
+            if (_maintFormWrap) _maintFormWrap.style.display = 'none';
+            if (_maintSuccess)  _maintSuccess.style.display  = 'none';
+            if (_maintNoEmail)  _maintNoEmail.style.display  = 'block';
+            var noEmailP = _maintNoEmail && _maintNoEmail.querySelector('p');
+            if (noEmailP) noEmailP.textContent = trans.maint_no_email || 'Vlasnik nije dodao email. Pozovite:';
+            if (_maintPhone)     _maintPhone.href = 'tel:' + phone;
+            if (_maintPhoneDisp) _maintPhoneDisp.textContent = phone || '—';
+          }
+
+          // Save to DB then send email
+          if (sb && slug) {
+            if (_maintSubmit) { _maintSubmit.disabled = true; _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_sending || 'Pošiljam…'; }
+            sb.rpc('create_maintenance_report', {
+              p_tenant_slug: slug, p_category: cat,
+              p_location: loc || null, p_description: desc || null
+            }).then(function(r) {
+              if (_maintSubmit) { _maintSubmit.disabled = false; _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_submit || 'Pošlji'; }
+              _getOwnerConfig(_doSendEmail);
+            }).catch(function() {
+              if (_maintSubmit) { _maintSubmit.disabled = false; }
+              _getOwnerConfig(_doSendEmail);
+            });
+          } else {
+            _getOwnerConfig(_doSendEmail);
+          }
+        });
+      }
+    })();
+    // ── End Maintenance modal ─────────────────────────────────────────────────
     
     function closeTaxiBus() {
       hideTaxiBusScreen();
       window.APP.utils.scrollToTopReliable();
     }
     
+    // Cache for taxi services fetched from Supabase (null = not yet loaded)
+    var _taxiDbCache = null;
+
+    function loadTaxiFromDb() {
+      if (_taxiDbCache !== null) return;
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      var _munT = window._appMunicipality || 'bovec';
+      window.supabaseClient
+        .from('items')
+        .select('item_key, "order", data_json')
+        .eq('section_key', 'taxi')
+        .is('tenant_id', null)
+        .eq('visible', true)
+        .or('municipality_slugs.is.null,municipality_slugs.cs.{' + _munT + '}')
+        .order('order', { ascending: true })
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.length) return;
+          _taxiDbCache = r.data.map(function (row) {
+            var dj = row.data_json || {};
+            return { name: dj.name || '', phone: dj.phone || '', tel: dj.tel || '' };
+          });
+          var screen = document.getElementById('taxi-bus-screen');
+          if (screen && screen.classList.contains('show')) renderTaxiBusContent();
+        })
+        .catch(function () {});
+    }
+
     function renderTaxiBusContent() {
       const body = document.getElementById('taxi-bus-body');
       if (!body) return;
@@ -3564,8 +3984,11 @@
       
       let html = `<div style="padding: 1rem;">`;
       
-      // Taxi Services Section (before Transport)
-      var _taxiListHtml = (_tbData.taxiServices || []).map(function(svc) {
+      // Taxi Services — prefer DB cache, fall back to hardcoded
+      var _taxiServices = (_taxiDbCache && _taxiDbCache.length)
+        ? _taxiDbCache
+        : (_tbData.taxiServices || []);
+      var _taxiListHtml = _taxiServices.map(function(svc) {
         return '<div class="quick-help-taxi-item">' +
           '<div class="quick-help-taxi-name">' + svc.name + '</div>' +
           '<div class="quick-help-taxi-actions">' +

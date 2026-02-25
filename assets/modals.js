@@ -93,6 +93,14 @@
   btnLF?.addEventListener('click', () => openModal('SOČA • Izgubljeno / Najdeno', './izgubljeno-nadjeno/index.html'));
   btnRestavracije?.addEventListener('click', () => openModal('SOČA • Restavracije & Kavarne', './restavracije/index.html'));
 
+  // Directory pages — Aktivnosti & Taxi (called from app.js via window.__MODALS)
+  window.__MODALS.openAktivnosti = function() {
+    openModal('SOČA • Adrenalin & Aktivnosti', './aktivnosti/index.html');
+  };
+  window.__MODALS.openTaxi = function() {
+    openModal('SOČA • Taxi & Bus', './taxi/index.html');
+  };
+
   overlay?.addEventListener('click', closeModal);
 
   document.addEventListener('keydown', (e) => {

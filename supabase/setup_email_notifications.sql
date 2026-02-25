@@ -1,0 +1,62 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Soča Sajt — Email obaveštenja via Resend + Supabase Edge Function
+--
+-- KORAK 1: Deploy Edge Function (uradi u terminalu jednom):
+--
+--   supabase login
+--   supabase link --project-ref hkztanenhxoducivluor
+--   supabase functions deploy send-email --no-verify-jwt
+--
+-- KORAK 2: Podesi Secrets u Supabase Dashboard:
+--   Dashboard → Settings → Edge Functions → Add new secret
+--
+--   RESEND_API_KEY  = re_TVOJ_NOVI_KLJUC   (regeneriši na resend.com/api-keys!)
+--   NOTIFY_EMAIL    = tvoj@email.com        (na koji primaš obaveštenja)
+--   WEBHOOK_SECRET  = izmisli_tajnu_lozinku (npr. "soca2026-webhook-secret")
+--
+-- KORAK 3: Kopiraj URL Edge funkcije:
+--   Dashboard → Edge Functions → send-email → Copy URL
+--   Izgleda ovako: https://hkztanenhxoducivluor.supabase.co/functions/v1/send-email
+--
+-- KORAK 4: Napravi Database Webhooks u Supabase Dashboard:
+--   Dashboard → Database → Webhooks → Create a new hook
+--
+--   Za svaku tabelu ispod napravi poseban webhook:
+--     Table:        suggestions
+--     Events:       INSERT
+--     URL:          https://hkztanenhxoducivluor.supabase.co/functions/v1/send-email
+--     HTTP Headers: x-webhook-secret = (ista vrednost kao WEBHOOK_SECRET)
+--
+--     Table:        maintenance_reports
+--     Events:       INSERT
+--     URL:          (isti URL)
+--     HTTP Headers: x-webhook-secret = (ista vrednost)
+--
+--     Table:        lost_found_posts
+--     Events:       INSERT
+--     URL:          (isti URL)
+--     HTTP Headers: x-webhook-secret = (ista vrednost)
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- OPCIONO: Ako želiš da primaš email i na email koji je vlasnik konfigurišao
+-- (pored NOTIFY_EMAIL), možeš dodati logiku u Edge Function da čita iz tenant config.
+-- Za sada, sve ide na jedan NOTIFY_EMAIL koji ti podeliš.
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Verifikacija: testiranje webhookova
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- Testiraj suggestions webhook ručno:
+-- INSERT INTO public.suggestions (email, message, tenant_slug)
+-- VALUES ('test@test.com', 'Ovo je test predlog', 'bovec');
+-- → Trebalo bi da dobiješ email za ~5 sekundi.
+
+-- Testiraj maintenance_reports webhook:
+-- INSERT INTO public.maintenance_reports (category, location, description, tenant_slug)
+-- VALUES ('wifi', 'Spavaća soba', 'WiFi ne radi', 'bovec');
+-- → Trebalo bi da dobiješ email.
+
+-- Obriši test redove:
+-- DELETE FROM public.suggestions WHERE email = 'test@test.com';
+-- DELETE FROM public.maintenance_reports WHERE location = 'Spavaća soba' AND description = 'WiFi ne radi';

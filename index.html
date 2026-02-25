@@ -13,8 +13,16 @@
   <link rel="manifest" href="./manifest.json">
   <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
   <!-- Bump ?v= on deploy for cache-bust (e.g. 20260220-1 = YYYYMMDD-N) -->
-  <link rel="stylesheet" href="./assets/app.css?v=20260220-1">
+  <link rel="stylesheet" href="./assets/app.css?v=20260225-1">
   <script>window.dataSdk=window.dataSdk||{};</script>
+  <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());
+  gtag('config','G-XXXXXXXXXX');
+  </script>
  </head>
  <body class="h-full"><!--
   STRUCTURE (for maintainability): Main entry index.html.
@@ -36,7 +44,7 @@
   </div><!-- Main App -->
   <div id="app-container"><!-- Glass Header -->
    <header class="glass-header">
-    <iframe class="weather-bg" src="weather-animations.html?v=20260220-1" title="Weather background"></iframe>
+    <iframe class="weather-bg" src="weather-animations.html?v=20260225-1" title="Weather background"></iframe>
     <div id="header-weather-scene" class="header-weather-scene" aria-hidden="true"></div>
     <div id="header-moon" class="header-moon" aria-hidden="true"></div>
     <div class="header-content">
@@ -93,21 +101,21 @@
       <div class="panel-header">
        <h3 class="panel-title" data-i18n="rules">Hišni red</h3><button class="close-btn" data-close="rules" type="button">×</button>
       </div>
-      <div class="rules-list">
+      <div class="rules-list" style="display:none">
        <div class="rule-item"><span class="rule-icon">🔇</span>
-        <p class="rule-text" data-i18n="rule1">Prosimo za spoštovanje miru po 22. uri</p>
+        <p class="rule-text" data-i18n="rule1"></p>
        </div>
        <div class="rule-item"><span class="rule-icon">🚭</span>
-        <p class="rule-text" data-i18n="rule2">Kajenje je dovoljeno samo na terasi</p>
+        <p class="rule-text" data-i18n="rule2"></p>
        </div>
        <div class="rule-item"><span class="rule-icon">🗑️</span>
-        <p class="rule-text" data-i18n="rule3">Smeti odložite v zabojnik na hodniku</p>
+        <p class="rule-text" data-i18n="rule3"></p>
        </div>
        <div class="rule-item"><span class="rule-icon">🔐</span>
-        <p class="rule-text" data-i18n="rule4">Zaklenite vrata ob odhodu iz apartmaja</p>
+        <p class="rule-text" data-i18n="rule4"></p>
        </div>
        <div class="rule-item"><span class="rule-icon">🚪</span>
-        <p class="rule-text" data-i18n="rule5">Check-out ob 11:00. Ključe pustite v varnostni škatli</p>
+        <p class="rule-text" data-i18n="rule5"></p>
        </div>
       </div>
      </div>
@@ -201,11 +209,54 @@
       <p class="menu-subtitle" data-i18n="soca_live_sub">Vodostaj • obvestila občin</p>
      </div>
      <div class="menu-card" id="openLostFound">
-      <div class="menu-icon">
-       🔍
-      </div>
+      <div class="menu-icon">🔍</div>
       <h3 class="menu-title" data-i18n="lost_found_title">Izgubljeno / Nađeno</h3>
       <p class="menu-subtitle" data-i18n="lost_found_sub">Poruke turista</p>
+     </div>
+     <div class="menu-card" id="maintenance-card" style="display:none">
+      <div class="menu-icon" style="color:#f97316;filter:drop-shadow(0 0 8px rgba(249,115,22,0.5))">🔧</div>
+      <h3 class="menu-title" data-i18n="maint_card_title">Prijavite okvaro</h3>
+      <p class="menu-subtitle" data-i18n="maint_card_sub">Pošljite sporočilo lastniku</p>
+     </div>
+    </div><!-- Maintenance Modal -->
+    <div id="maintenance-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);overflow-y:auto;padding:1.5rem 1rem">
+     <div style="max-width:480px;margin:auto;background:#0f1923;border:1px solid rgba(249,115,22,0.25);border-radius:20px;padding:1.5rem;position:relative">
+      <button id="maint-modal-close" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+      <div style="font-size:2rem;margin-bottom:0.5rem">🔧</div>
+      <h2 style="margin:0 0 0.25rem;font-size:1.1rem;font-weight:700;color:#fff" data-i18n="maint_modal_title">Prijava okvare</h2>
+      <p style="margin:0 0 1.25rem;font-size:0.82rem;color:#9ca3af" data-i18n="maint_card_sub">Pošljite sporočilo lastniku</p>
+
+      <div id="maint-form-wrap">
+       <label style="display:block;font-size:0.8rem;color:#9ca3af;margin-bottom:0.3rem" data-i18n="maint_cat_label">Kaj ne deluje?</label>
+       <select id="maint-category" style="width:100%;background:#1a2535;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.65rem 0.75rem;color:#fff;font-size:0.9rem;margin-bottom:1rem;box-sizing:border-box">
+        <option value="electric"  data-i18n="maint_cat_electric">Elektrika</option>
+        <option value="water"     data-i18n="maint_cat_water">Voda / ogrevanje</option>
+        <option value="wifi"      data-i18n="maint_cat_wifi">WiFi / internet</option>
+        <option value="cleaning"  data-i18n="maint_cat_cleaning">Čistoča</option>
+        <option value="appliance" data-i18n="maint_cat_appliance">Naprava / pohištvo</option>
+        <option value="other"     data-i18n="maint_cat_other">Ostalo</option>
+       </select>
+
+       <label style="display:block;font-size:0.8rem;color:#9ca3af;margin-bottom:0.3rem" data-i18n="maint_loc_label">Kje se nahaja težava?</label>
+       <input id="maint-location" type="text" data-i18n-placeholder="maint_loc_placeholder" placeholder="npr. Kopalnica, Kuhinja" style="width:100%;background:#1a2535;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.65rem 0.75rem;color:#fff;font-size:0.9rem;margin-bottom:1rem;box-sizing:border-box">
+
+       <label style="display:block;font-size:0.8rem;color:#9ca3af;margin-bottom:0.3rem" data-i18n="maint_desc_label">Opis težave</label>
+       <textarea id="maint-description" rows="4" maxlength="1000" data-i18n-placeholder="maint_desc_placeholder" placeholder="Opišite težavo…" style="width:100%;background:#1a2535;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.65rem 0.75rem;color:#fff;font-size:0.9rem;margin-bottom:1rem;box-sizing:border-box;resize:vertical"></textarea>
+
+       <div id="maint-error" style="display:none;color:#f87171;font-size:0.82rem;margin-bottom:0.75rem;padding:0.5rem 0.75rem;background:rgba(248,113,113,0.1);border-radius:8px"></div>
+
+       <button id="maint-submit" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);border:none;border-radius:12px;padding:0.85rem;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;transition:opacity 0.2s" data-i18n="maint_submit">Pošlji sporočilo</button>
+      </div>
+
+      <div id="maint-success" style="display:none;text-align:center;padding:1.5rem 0">
+       <div style="font-size:3rem;animation:maintCheckAnim 0.5s ease">✅</div>
+       <p style="color:#4ade80;font-size:1rem;font-weight:600;margin:0.75rem 0 0" data-i18n="maint_success">Sporočilo poslano!</p>
+      </div>
+
+      <div id="maint-no-email" style="display:none;text-align:center;padding:1rem 0">
+       <p style="color:#fbbf24;font-size:0.9rem;margin:0 0 0.75rem" data-i18n="maint_no_email">Lastnik ni dodal e-pošte. Prosimo pokličite:</p>
+       <a id="maint-phone-link" href="tel:" style="display:inline-block;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:12px;padding:0.75rem 1.5rem;color:#4ade80;font-size:1.1rem;font-weight:700;text-decoration:none">📞 <span id="maint-phone-display"></span></a>
+      </div>
      </div>
     </div><!-- Recommendations Panel -->
     <div class="accordion-panel" id="recommendations-panel">
@@ -380,19 +431,19 @@
    </div>
   </div><!-- Footer Attribution -->
   <footer class="app-footer" id="app-footer" data-i18n="footer_attribution">Ustvarjeno z ❤️ od V.N. · Demo različica · Darilo lokalni skupnosti za boljšo izkušnjo turistov</footer>
- <script src="./assets/config.js?v=20260220-1"></script>
- <script src="./assets/i18n.js?v=20260220-1"></script>
- <script src="./assets/utils.js?v=20260220-1"></script>
- <script src="./assets/data/content/emergency.js?v=20260220-1"></script>
- <script src="./assets/data/content/daily_essentials.js?v=20260220-1"></script>
- <script src="./assets/data/content/adrenalin_providers.js?v=20260220-1"></script>
- <script src="./assets/data/content/trip_ideas.js?v=20260220-1"></script>
- <script src="./assets/data/content/attractions.js?v=20260220-1"></script>
- <script src="./assets/data/content/taxi_bus.js?v=20260220-1"></script>
- <script src="./assets/content-loader.js?v=20260220-1"></script>
- <script src="./assets/supabase-client.js?v=20260220-1"></script>
- <script src="./assets/tenant-loader.js?v=20260220-1"></script>
- <script src="./assets/app.js?v=20260220-1"></script>
+ <script src="./assets/config.js?v=20260225-1"></script>
+ <script src="./assets/i18n.js?v=20260225-1"></script>
+ <script src="./assets/utils.js?v=20260225-1"></script>
+ <script src="./assets/data/content/emergency.js?v=20260225-1"></script>
+ <script src="./assets/data/content/daily_essentials.js?v=20260225-1"></script>
+ <script src="./assets/data/content/adrenalin_providers.js?v=20260225-1"></script>
+ <script src="./assets/data/content/trip_ideas.js?v=20260225-1"></script>
+ <script src="./assets/data/content/attractions.js?v=20260225-1"></script>
+ <script src="./assets/data/content/taxi_bus.js?v=20260225-1"></script>
+ <script src="./assets/content-loader.js?v=20260225-1"></script>
+ <script src="./assets/supabase-client.js?v=20260225-1"></script>
+ <script src="./assets/tenant-loader.js?v=20260225-1"></script>
+ <script src="./assets/app.js?v=20260225-1"></script>
  <!-- Modal System -->
  <div id="iframeModal" class="vt-modal" aria-hidden="true">
   <div class="vt-overlay" id="vtOverlay"></div>
@@ -405,7 +456,7 @@
  </div>
  <script>
  (function(){
-   var __BUILD_ID='20260220-1'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
+   var __BUILD_ID='20260225-1'; /* Bump on each deploy (e.g. YYYYMMDD-N) for cache-bust */
    document.write('<link rel="stylesheet" href="./assets/modals.css?v='+__BUILD_ID+'">');
    document.write('<script src="./assets/modals.js?v='+__BUILD_ID+'"><\/script>');
  })();
@@ -432,9 +483,70 @@
    window.addEventListener('pageshow',panicUnlockScroll);
  })();
  </script>
+ <!-- GA4 card-click events + Supabase analytics (fire-and-forget, never blocks guest UX) -->
  <script>
  (function(){
-   if (!('serviceWorker' in navigator)) return;
+  'use strict';
+
+  /* ── Slug from URL (?t=<slug>) ─────────────────────────────────────────── */
+  var urlParams   = new URLSearchParams(window.location.search);
+  var currentSlug = urlParams.get('t') || null;
+
+  /* ── GA4 card-click events ─────────────────────────────────────────────── */
+  var grid = document.querySelector('.menu-grid');
+  if (grid) {
+    grid.addEventListener('click', function (e) {
+      var card = e.target.closest('[data-section],.menu-card');
+      if (!card) return;
+      var titleEl = card.querySelector('.menu-title,.card-title');
+      var cardId  = card.id || card.getAttribute('data-section') || 'unknown';
+      var label   = titleEl ? titleEl.textContent.trim() : cardId;
+      /* GA4 event */
+      if (typeof gtag === 'function') {
+        gtag('event', 'card_click', {
+          event_category: 'engagement',
+          event_label:    label,
+          card_id:        cardId,
+          tenant_slug:    currentSlug || ''
+        });
+      }
+      /* Supabase analytics INSERT — fire-and-forget, never throws */
+      var _sb = window.supabaseClient || window.SB;
+      if (_sb && typeof _sb.from === 'function') {
+        _sb.from('analytics')
+          .insert({ event_type: 'card_click', tenant_slug: currentSlug, card_id: cardId })
+          .then(function (r) {
+            if (r && r.error) console.warn('[Analytics] card_click insert:', r.error.message);
+          })
+          .catch(function (err) { console.warn('[Analytics] card_click catch:', err); });
+      }
+    });
+  }
+
+  /* ── Page-view tracking — poll until Supabase client is ready ─────────── */
+  /* NOTE: does NOT query items directly (anon has no SELECT on that table). */
+  /* Card ordering from DB is handled by the tenant-loader once it resolves. */
+  var _waited = 0;
+  function pollForSB() {
+    var _sb = window.supabaseClient || window.SB;
+    if (_sb && typeof _sb.from === 'function') {
+      _sb.from('analytics')
+        .insert({ event_type: 'page_view', tenant_slug: currentSlug })
+        .then(function (r) {
+          if (r && r.error) console.warn('[Analytics] page_view insert:', r.error.message);
+        })
+        .catch(function (err) { console.warn('[Analytics] page_view catch:', err); });
+      return;
+    }
+    _waited += 250;
+    if (_waited < 12000) setTimeout(pollForSB, 250);
+  }
+  pollForSB();
+ })();
+ </script>
+ <script>
+(function(){
+  if (!('serviceWorker' in navigator)) return;
    navigator.serviceWorker.register('./sw.js').then(function(reg){
      reg.addEventListener('updatefound',function(){ if (reg.installing) reg.installing.addEventListener('statechange',function(){ if (this.state==='installed'&&navigator.serviceWorker.controller) { console.log('New version available'); this.postMessage('skipWaiting'); } }); });
      if (reg.waiting) reg.waiting.postMessage('skipWaiting');

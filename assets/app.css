@@ -243,6 +243,43 @@
       50% { background-position: 200% 0; }
     }
     
+    /* Night Scene - Stars twinkling (clear sky at night) */
+    .header-weather-scene.scene-night::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle 1px at 10% 20%, rgba(255,255,255,0.8) 0%, transparent 50%),
+        radial-gradient(circle 1px at 25% 10%, rgba(255,255,255,0.6) 0%, transparent 50%),
+        radial-gradient(circle 2px at 45% 25%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 1px at 65% 12%, rgba(255,255,255,0.7) 0%, transparent 50%),
+        radial-gradient(circle 1px at 80% 30%, rgba(255,255,255,0.5) 0%, transparent 50%),
+        radial-gradient(circle 1px at 55% 5%,  rgba(255,255,255,0.7) 0%, transparent 50%),
+        radial-gradient(circle 1px at 90% 8%,  rgba(255,255,255,0.6) 0%, transparent 50%),
+        radial-gradient(circle 2px at 35% 40%, rgba(255,255,255,0.4) 0%, transparent 50%),
+        radial-gradient(circle 1px at 72% 38%, rgba(255,255,255,0.8) 0%, transparent 50%),
+        radial-gradient(circle 1px at 15% 45%, rgba(255,255,255,0.5) 0%, transparent 50%);
+      animation: starTwinkle 4s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    .header-weather-scene.scene-night {
+      background: radial-gradient(ellipse 90% 60% at 50% -10%, rgba(10, 20, 50, 0.25) 0%, transparent 70%);
+      animation: nightGlow 8s ease-in-out infinite;
+    }
+
+    @keyframes starTwinkle {
+      0%, 100% { opacity: 0.6; }
+      25%       { opacity: 1.0; }
+      50%       { opacity: 0.3; }
+      75%       { opacity: 0.9; }
+    }
+
+    @keyframes nightGlow {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 0.9; }
+    }
+
     /* Clouds Scene - Large drifting clouds (3 layers) */
     .header-weather-scene.scene-clouds::before {
       content: "";
@@ -2491,6 +2528,12 @@
       opacity: 0.8;
     }
     
+    @keyframes maintCheckAnim {
+      0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+      60%  { transform: scale(1.2) rotate(5deg);  opacity: 1; }
+      100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+    }
+
     /* Animations */
     /* Feedback Button */
     .feedback-button {
