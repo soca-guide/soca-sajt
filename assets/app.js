@@ -463,6 +463,8 @@
         .eq('section_key', 'ui')
         .eq('item_key', 'site_name')
         .is('tenant_id', null)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
         .then(function (r) {
           if (r.error || !r.data || !r.data.data_json) return;
@@ -472,9 +474,13 @@
             var at = document.getElementById('app-title');
             if (at) at.textContent = dj.name;
             var ht = document.getElementById('hero-title');
-            if (ht) ht.textContent = dj.name.split(' ')[0];
+            if (ht) ht.textContent = dj.name;
           }
-          if (dj.subtitle) defaultConfig.location_subtitle = dj.subtitle;
+          if (dj.subtitle) {
+            defaultConfig.location_subtitle = dj.subtitle;
+            var hl = document.getElementById('hero-location');
+            if (hl) hl.textContent = dj.subtitle;
+          }
         })
         .catch(function () {});
     }

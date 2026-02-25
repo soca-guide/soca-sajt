@@ -2116,19 +2116,28 @@
     if (!name) { setStatus(globalSettingsStatus, 'Naziv ne može biti prazan.', 'error'); return; }
     if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = true;
     setStatus(globalSettingsStatus, 'Čuvam…', '');
-    sb.from('items').upsert({
-      tenant_id: null, section_key: 'ui', item_key: 'site_name',
-      type: 'config', order: 1, visible: true,
-      data_json: { name: name, subtitle: subtitle, admin_email: adminEmail, w3f_key: w3fKey },
-      municipality_slugs: null, updated_at: new Date().toISOString()
-    }, { onConflict: 'tenant_id,section_key,item_key' })
-      .then(function (r) {
-        if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
-        if (r.error) { setStatus(globalSettingsStatus, 'Greška: ' + r.error.message, 'error'); return; }
-        setStatus(globalSettingsStatus, 'Sačuvano ✓', 'success');
-      }).catch(function (err) {
-        if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
-        setStatus(globalSettingsStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+    // Delete+insert (upsert sa tenant_id=NULL ne radi zbog NULL conflict u PostgreSQL)
+    sb.from('items').delete()
+      .eq('section_key', 'ui').eq('item_key', 'site_name').is('tenant_id', null)
+      .then(function (dr) {
+        if (dr.error) {
+          if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
+          setStatus(globalSettingsStatus, 'Greška: ' + dr.error.message, 'error');
+          return;
+        }
+        sb.from('items').insert({
+          tenant_id: null, section_key: 'ui', item_key: 'site_name',
+          type: 'config', order: 1, visible: true,
+          data_json: { name: name, subtitle: subtitle, admin_email: adminEmail, w3f_key: w3fKey },
+          municipality_slugs: null, updated_at: new Date().toISOString()
+        }).then(function (r) {
+          if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
+          if (r.error) { setStatus(globalSettingsStatus, 'Greška: ' + r.error.message, 'error'); return; }
+          setStatus(globalSettingsStatus, 'Sačuvano ✓', 'success');
+        }).catch(function (err) {
+          if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
+          setStatus(globalSettingsStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+        });
       });
   }
 
