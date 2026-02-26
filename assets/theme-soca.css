@@ -1,0 +1,361 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   theme-soca.css  ·  Premium Tourism Theme  ·  v2
+   Scoped exclusively to body.theme-soca — zero logic changes.
+   Overrides directory.css (dark base) only where body.theme-soca is set.
+
+   TARGETED CLASSES (confirmed from HTML + directory.js):
+   Header   : .dir-header, .dir-back, .dir-title-text
+   Chips    : .dir-chips-wrap, .dir-chip (.active)
+   Sec HDR  : .dir-sec-hdr
+   Premium  : .dir-card--premium, .dir-card-img(--placeholder),
+              .dir-card-body, .dir-card-badge, .dir-card-name,
+              .dir-card-desc, .dir-card-btns
+   Featured : .dir-feat-card, .dir-feat-img(--placeholder),
+              .dir-feat-body, .dir-feat-cat, .dir-feat-name,
+              .dir-feat-desc, .dir-feat-btns
+   Standard : .dir-row, .dir-row-main, .dir-row-name,
+              .dir-row-cat, .dir-row-desc, .dir-row-btns
+   Logo     : .dir-logo, .dir-logo--placeholder
+   Buttons  : .dir-btn, .dir-btn-call, .dir-btn-wa,
+              .dir-btn-book, .dir-btn-web
+   Link     : .dir-website-link
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Design tokens ─────────────────────────────────────────────────────── */
+.theme-soca {
+  --dir-bg:      #F6F7FB;
+  --dir-bg2:     #F6F7FB;
+  --dir-glass:   #FFFFFF;
+  --dir-border:  #E6EAF0;
+  --dir-accent:  #3687CE;
+  --dir-accent2: #2d76b8;
+  --dir-text:    #233B50;
+  --dir-muted:   #64748B;
+  --dir-radius:  16px;
+  --dir-shadow:  0 6px 18px rgba(16, 24, 40, 0.08);
+}
+
+/* ── 2. Page background & base typography ─────────────────────────────────── */
+.theme-soca {
+  background: #F6F7FB;
+  color: #233B50;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 3. Header ────────────────────────────────────────────────────────────── */
+.theme-soca .dir-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E6EAF0;
+  box-shadow: 0 2px 12px rgba(16, 24, 40, 0.07);
+  min-height: 56px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.theme-soca .dir-back {
+  color: #233B50;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.theme-soca .dir-back:hover {
+  opacity: 1;
+}
+
+/* Title text — color + weight; ::before adds mountain icon, no HTML change */
+.theme-soca .dir-title-text {
+  color: #233B50;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.theme-soca .dir-title-text::before {
+  content: '⛰️';
+  margin-right: 0.4rem;
+  font-size: 1em;
+  vertical-align: -0.05em;
+}
+
+/* ── 4. Filter chips ──────────────────────────────────────────────────────── */
+.theme-soca .dir-chips-wrap {
+  background: #F6F7FB;
+}
+
+.theme-soca .dir-chip {
+  background: #FFFFFF;
+  border: 1.5px solid #E6EAF0;
+  color: #64748B;
+  padding: 0.38rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.18s ease;
+}
+
+.theme-soca .dir-chip.active,
+.theme-soca .dir-chip:hover {
+  background: #EBF4FB;
+  border-color: #3687CE;
+  color: #3687CE;
+  font-weight: 600;
+}
+
+/* ── 5. Section headers ───────────────────────────────────────────────────── */
+.theme-soca .dir-sec-hdr {
+  color: #94A3B8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  margin-bottom: 0.65rem;
+}
+
+/* ── 6. Main body ─────────────────────────────────────────────────────────── */
+.theme-soca .dir-body {
+  background: transparent;
+}
+
+.theme-soca .dir-premium-wrap {
+  gap: 1rem;
+}
+
+.theme-soca .dir-standard-wrap {
+  gap: 0.65rem;
+}
+
+/* ── 7. Premium cards ─────────────────────────────────────────────────────── */
+.theme-soca .dir-card--premium {
+  background: #FFFFFF;
+  border: 1px solid #E6EAF0;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.theme-soca .dir-card--premium:hover {
+  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.13);
+  transform: translateY(-3px);
+}
+
+.theme-soca .dir-card-body {
+  background: #FFFFFF;
+  padding: 1.1rem 1.2rem 1.2rem;
+}
+
+.theme-soca .dir-card-badge {
+  background: #EBF4FB;
+  color: #3687CE;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.theme-soca .dir-card-name {
+  color: #233B50;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.theme-soca .dir-card-desc {
+  color: #64748B;
+  font-size: 0.83rem;
+  line-height: 1.55;
+}
+
+/* ── 8. Premium card image placeholders ──────────────────────────────────── */
+.theme-soca .dir-card-img--placeholder {
+  background: linear-gradient(135deg, #EBF4FB 0%, #F0F7FD 100%);
+}
+
+.theme-soca .dir-card-img--placeholder::after {
+  opacity: 0.45;
+}
+
+/* ── 9. Featured cards ────────────────────────────────────────────────────── */
+.theme-soca .dir-feat-card {
+  background: #FFFFFF;
+  border: 1px solid #E6EAF0;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.07);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.theme-soca .dir-feat-card:hover {
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.12);
+  transform: scale(1.02);
+}
+
+.theme-soca .dir-feat-body {
+  background: #FFFFFF;
+  padding: 0.75rem 0.9rem 0.9rem;
+}
+
+.theme-soca .dir-feat-cat {
+  color: #3687CE;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.theme-soca .dir-feat-name {
+  color: #233B50;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.theme-soca .dir-feat-desc {
+  color: #64748B;
+}
+
+/* ── 10. Featured image placeholders ─────────────────────────────────────── */
+.theme-soca .dir-feat-img--placeholder {
+  background: linear-gradient(135deg, #EBF4FB 0%, #F0F7FD 100%);
+}
+
+.theme-soca .dir-feat-img--placeholder::after {
+  opacity: 0.45;
+}
+
+/* ── 11. Standard rows ────────────────────────────────────────────────────── */
+.theme-soca .dir-row {
+  background: #FFFFFF;
+  border: 1px solid #E6EAF0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.05);
+  padding: 0.85rem 1rem;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.theme-soca .dir-row:hover {
+  background: #F7FBFF;
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.09);
+}
+
+.theme-soca .dir-row-name {
+  color: #233B50;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.theme-soca .dir-row-cat {
+  color: #3687CE;
+  font-weight: 600;
+}
+
+.theme-soca .dir-row-desc {
+  color: #64748B;
+}
+
+/* ── 12. Logo / avatar ────────────────────────────────────────────────────── */
+.theme-soca .dir-logo {
+  border-color: #E6EAF0;
+}
+
+.theme-soca .dir-logo--placeholder {
+  background: linear-gradient(135deg, #EBF4FB 0%, #F0F7FD 100%);
+  color: #3687CE;
+  border-color: #E6EAF0;
+  font-weight: 700;
+}
+
+/* ── 13. Website link ─────────────────────────────────────────────────────── */
+.theme-soca .dir-website-link {
+  color: #64748B;
+}
+
+.theme-soca .dir-website-link:hover {
+  color: #3687CE;
+  opacity: 1;
+}
+
+/* ── 14. Shared button base ───────────────────────────────────────────────── */
+.theme-soca .dir-btn {
+  border-radius: 12px;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: all 0.16s ease;
+}
+
+/* ── 15. Call button (a[href^="tel:"]) ────────────────────────────────────── */
+.theme-soca .dir-btn-call {
+  background: #3687CE;
+  color: #FFFFFF;
+  border-color: #3687CE;
+  font-weight: 700;
+}
+
+.theme-soca .dir-btn-call:hover {
+  background: #2d76b8;
+  border-color: #2d76b8;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(54, 135, 206, 0.38);
+}
+
+/* ── 16. WhatsApp button (a[href*="wa.me"]) ───────────────────────────────── */
+.theme-soca .dir-btn-wa {
+  background: #469327;
+  color: #FFFFFF;
+  border-color: #469327;
+  font-weight: 700;
+}
+
+.theme-soca .dir-btn-wa:hover {
+  background: #3d8122;
+  border-color: #3d8122;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(70, 147, 39, 0.38);
+}
+
+/* ── 17. Book button ──────────────────────────────────────────────────────── */
+.theme-soca .dir-btn-book {
+  background: #F3EEFF;
+  color: #7C3AED;
+  border-color: #DDD6FE;
+}
+
+.theme-soca .dir-btn-book:hover {
+  background: #EDE9FF;
+  color: #7C3AED;
+  transform: translateY(-1px);
+}
+
+/* ── 18. Website button ───────────────────────────────────────────────────── */
+.theme-soca .dir-btn-web {
+  background: #F1F5F9;
+  color: #64748B;
+  border-color: #E6EAF0;
+}
+
+.theme-soca .dir-btn-web:hover {
+  background: #E8EDF3;
+  color: #233B50;
+}
+
+/* ── 19. Loading / empty states ───────────────────────────────────────────── */
+.theme-soca #dir-loading,
+.theme-soca #dir-empty {
+  color: #64748B;
+}
+
+/* ── 20. Footer legal ─────────────────────────────────────────────────────── */
+.theme-soca #footer-legal {
+  color: #94A3B8;
+  border-top: 1px solid #E6EAF0;
+  margin-top: 0.5rem;
+}
+
+/* ── 21. Responsive tweaks ────────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .theme-soca .dir-btn {
+    min-height: 40px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+  }
+}

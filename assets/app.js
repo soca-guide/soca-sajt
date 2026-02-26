@@ -352,7 +352,7 @@
       if (appTitle) appTitle.textContent = _siteName;
 
       const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) heroTitle.textContent = _siteName.split(' ')[0];
+      if (heroTitle) heroTitle.textContent = _siteName;
       
       // Welcome subtitle stays static - "SOČA VALLEY" - don't update it
       
@@ -760,8 +760,7 @@
       // 1) Safe config fields from tenant override + quick actions
       if (ov.config) {
         var _oc = ov.config;
-        // apartment_name / full_address (direct keys)
-        if (_oc.apartment_name) defaultConfig.apartment_name = _oc.apartment_name;
+        // apartment_name intentionally NOT written to defaultConfig — header always shows global brand
         if (_oc.full_address)   defaultConfig.full_address   = _oc.full_address;
         // DB may use compact keys (phone, nav_link, checkin, checkout) OR legacy full keys
         var _ocPhone = _oc.phone      || _oc.host_phone;
@@ -4167,15 +4166,9 @@
       document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
       document.body.style.fontSize = `${baseSize}px`;
 
-      const apartmentName = config.apartment_name || defaultConfig.apartment_name;
-      document.getElementById('app-title').textContent = apartmentName;
-      const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) {
-        heroTitle.textContent = apartmentName.split(' ')[0];
-      }
       const welcomeSubtitle = document.getElementById('welcome-subtitle');
       if (welcomeSubtitle) {
-        welcomeSubtitle.textContent = apartmentName;
+        welcomeSubtitle.textContent = config.apartment_name || defaultConfig.apartment_name;
       }
 
       const heroLocation = document.getElementById('hero-location');

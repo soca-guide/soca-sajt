@@ -1,0 +1,11 @@
+# Big docs (heavy embeddings)
+*.docx
+
+# SQL seeds and migrations (not needed for code audit)
+*.sql
+
+# Backup artifact
+index.inline-backup.html
+
+# Notes (optional, safe)
+*.txt

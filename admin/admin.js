@@ -818,20 +818,16 @@
   }
 
   // ── MASTER: Seed default items for a newly created tenant ────────────────────
+  // Uses upsertItem() so ensureSectionExists() is called for every section key.
   function seedDefaultItems(tenantId, name) {
-    var now = new Date().toISOString();
-    var defaults = [
-      { sk: 'info',        ik: 'default_config',      t: 'config',  dj: { apartment_name: name, quick_rules_url: './pravila/index.html' } },
-      { sk: 'house_rules', ik: 'house_rules_private',  t: 'rules',   dj: { text: '' } },
-      { sk: 'parking',     ik: 'parking_recommended',  t: 'parking', dj: { title: '', address: '', mapsLink: '', notes: '' } },
-      { sk: 'booking',     ik: 'rebook',               t: 'config',  dj: { apartment_name: name, owner_phone: '', owner_email: '', rebook_link: '', instructions: '' } }
-    ];
-    return Promise.all(defaults.map(function (d) {
-      return sb.from('items').insert({
-        tenant_id: tenantId, section_key: d.sk, item_key: d.ik,
-        type: d.t, order: 0, visible: true, data_json: d.dj, updated_at: now
-      });
-    }));
+    return Promise.all([
+      upsertItem(tenantId, 'info',        'default_config',      'config',  0, true, { apartment_name: name, quick_rules_url: './pravila/index.html' }),
+      upsertItem(tenantId, 'house_rules', 'house_rules_private', 'rules',   0, true, { text: '' }),
+      upsertItem(tenantId, 'parking',     'parking_recommended', 'parking', 0, true, { title: '', address: '', mapsLink: '', notes: '' }),
+      upsertItem(tenantId, 'booking',     'rebook',              'config',  0, true, { apartment_name: name, owner_phone: '', owner_email: '', rebook_link: '', instructions: '' }),
+      upsertItem(tenantId, 'maintenance', 'maintenance_config',  'config',  0, true, { visible: true, email: '' }),
+      upsertItem(tenantId, 'biznis',      'owner_config',        'config',  0, false, { enabled: false, name: '', type: 'other', short_desc: '', phone: '', website: '', booking_url: '', image_url: '', logo_url: '' })
+    ]);
   }
 
   // ── MASTER: Quick-add tenant (create + optionally invite owner) ───────────────
@@ -892,9 +888,10 @@
           return;
         }
 
-        // Seed items asynchronously (non-blocking — failures are cosmetic)
         setStatus(createTenantStatus, 'Seedujem stavke…', 'info');
-        seedDefaultItems(newId, name).catch(function () {});
+        seedDefaultItems(newId, name).catch(function (err) {
+          setStatus(createTenantStatus, 'Apartman kreiran ✓, greška pri seedovanju: ' + (err && err.message || 'nepoznata'), 'warning');
+        });
 
         if (!sendInvite || !email) {
           unlockButtons();
@@ -1239,13 +1236,27 @@
     if (!slugs.length) { setStatus(municipalitiesSaveStatus, 'Lista ne može biti prazna.', 'error'); return; }
     if (btnMunicipalitiesSave) btnMunicipalitiesSave.disabled = true;
     setStatus(municipalitiesSaveStatus, 'Čuvam…', '');
-    sb.from('items').upsert({
-      tenant_id: null, section_key: 'municipalities', item_key: 'list',
-      type: 'config', order: 1, visible: true,
-      data_json: { slugs: slugs },
-      municipality_slugs: null, updated_at: new Date().toISOString()
-    }, { onConflict: 'tenant_id,section_key,item_key' })
-      .then(function (r) {
+    // NULL tenant_id breaks onConflict upsert (NULL != NULL in PG unique constraints).
+    // Use delete-then-insert to avoid phantom duplicates.
+    ensureSectionExists('municipalities').then(function () {
+      return sb.from('items').delete()
+        .is('tenant_id', null)
+        .eq('section_key', 'municipalities')
+        .eq('item_key', 'list');
+    }).then(function (dr) {
+        if (dr && dr.error) {
+          if (btnMunicipalitiesSave) btnMunicipalitiesSave.disabled = false;
+          setStatus(municipalitiesSaveStatus, 'Greška: ' + dr.error.message, 'error');
+          return;
+        }
+        return sb.from('items').insert({
+          tenant_id: null, section_key: 'municipalities', item_key: 'list',
+          type: 'config', order: 1, visible: true,
+          data_json: { slugs: slugs },
+          municipality_slugs: null, updated_at: new Date().toISOString()
+        });
+      }).then(function (r) {
+        if (!r) return; // already returned after delete error
         if (btnMunicipalitiesSave) btnMunicipalitiesSave.disabled = false;
         if (r.error) { setStatus(municipalitiesSaveStatus, 'Greška: ' + r.error.message, 'error'); return; }
         setStatus(municipalitiesSaveStatus, 'Sačuvano ✓', 'success');
@@ -1376,6 +1387,7 @@
       });
     });
     if (deSaveStatus) { deSaveStatus.textContent = 'Čuvam…'; deSaveStatus.className = 'msg'; }
+    ensureSectionExists('daily_essentials').then(function () {
     sb.from('items').delete().is('tenant_id', null).eq('section_key', 'daily_essentials')
       .then(function(d) {
         if (d.error) { if (deSaveStatus) { deSaveStatus.textContent = 'Greška pri brisanju: ' + d.error.message; deSaveStatus.className = 'msg msg--error'; } return; }
@@ -1385,6 +1397,9 @@
           if (deSaveStatus) { deSaveStatus.textContent = '✓ Sačuvano ' + upserts.length + ' linkova.'; deSaveStatus.className = 'msg msg--ok'; }
         });
       });
+    }).catch(function(err) {
+      if (deSaveStatus) { deSaveStatus.textContent = 'Greška: ' + (err && err.message ? err.message : err); deSaveStatus.className = 'msg msg--error'; }
+    });
   }
 
   if (btnDeAdd)  btnDeAdd.addEventListener('click',  function() { _addDeRow(null); });
@@ -1456,6 +1471,7 @@
       };
       reader.readAsDataURL(file);
       _uploadImageToStorage(file, folder, hiddenInput, statusEl);
+      fileInput.value = ''; // reset so same file re-selectable on next partner
     });
   }
 
@@ -2117,6 +2133,7 @@
     if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = true;
     setStatus(globalSettingsStatus, 'Čuvam…', '');
     // Delete+insert (upsert sa tenant_id=NULL ne radi zbog NULL conflict u PostgreSQL)
+    ensureSectionExists('ui').then(function () {
     sb.from('items').delete()
       .eq('section_key', 'ui').eq('item_key', 'site_name').is('tenant_id', null)
       .then(function (dr) {
@@ -2139,6 +2156,10 @@
           setStatus(globalSettingsStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
         });
       });
+    }).catch(function (err) {
+      if (btnGlobalSettingsSave) btnGlobalSettingsSave.disabled = false;
+      setStatus(globalSettingsStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+    });
   }
 
   if (btnGlobalSettingsSave) btnGlobalSettingsSave.addEventListener('click', saveGlobalSettings);
@@ -2176,7 +2197,8 @@
     };
 
     // NULL tenant_id breaks standard upsert onConflict (NULL != NULL in PG).
-    // Safe approach: DELETE existing global rows, then INSERT fresh ones.
+    // Safe approach: ensure section, DELETE existing global rows, then INSERT fresh ones.
+    ensureSectionExists('ui').then(function () {
     var deleteAll = sb.from('items')
       .delete()
       .is('tenant_id', null)
@@ -2212,6 +2234,10 @@
         if (btnLegalSave) btnLegalSave.disabled = false;
         setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
       });
+    }).catch(function(err) {
+      if (btnLegalSave) btnLegalSave.disabled = false;
+      setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+    });
     }).catch(function(err) {
       if (btnLegalSave) btnLegalSave.disabled = false;
       setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
@@ -2592,16 +2618,27 @@
       setStatus(restaurantsSaveStatus, 'Nema podataka za čuvanje.', 'error');
       return;
     }
-    sb.from('items').upsert(upserts, { onConflict: 'tenant_id,section_key,item_key', ignoreDuplicates: false })
-      .then(function (r) {
+    // NULL tenant_id breaks onConflict upsert — use delete+insert (same as municipalities)
+    ensureSectionExists('restaurants').then(function() {
+      return sb.from('items').delete()
+        .is('tenant_id', null).eq('section_key', 'restaurants');
+    }).then(function(dr) {
+      if (dr && dr.error) {
         if (btnRestaurantsSave) btnRestaurantsSave.disabled = false;
-        if (r.error) { setStatus(restaurantsSaveStatus, 'Greška: ' + r.error.message, 'error'); return; }
-        setStatus(restaurantsSaveStatus, 'Sačuvano ✓', 'success');
-        loadRestaurants();
-      }).catch(function (err) {
-        if (btnRestaurantsSave) btnRestaurantsSave.disabled = false;
-        setStatus(restaurantsSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
-      });
+        setStatus(restaurantsSaveStatus, 'Greška pri brisanju: ' + dr.error.message, 'error');
+        return;
+      }
+      return sb.from('items').insert(upserts);
+    }).then(function(r) {
+      if (!r) return;
+      if (btnRestaurantsSave) btnRestaurantsSave.disabled = false;
+      if (r.error) { setStatus(restaurantsSaveStatus, 'Greška: ' + r.error.message, 'error'); return; }
+      setStatus(restaurantsSaveStatus, 'Sačuvano ✓', 'success');
+      loadRestaurants();
+    }).catch(function(err) {
+      if (btnRestaurantsSave) btnRestaurantsSave.disabled = false;
+      setStatus(restaurantsSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
+    });
   }
 
   if (restaurantsListEl) {
@@ -3117,7 +3154,7 @@
     sb.from('items')
       .select('section_key, item_key, data_json')
       .eq('tenant_id', tenantId)
-      .in('item_key', ['default_config', 'house_rules_private', 'parking_recommended', 'rebook'])
+      .in('item_key', ['default_config', 'house_rules_private', 'parking_recommended', 'rebook', 'maintenance_config'])
       .then(function (result) {
         if (result.error) {
           setStatus(ownerSaveStatus, 'Greška pri učitavanju: ' + result.error.message, 'error');
@@ -3322,9 +3359,23 @@
         }
 
         if (!data) {
-          showDashStatus('Nema profila — kontaktiraj admina.', 'warning');
-          dashRole.textContent   = 'nema';
-          dashTenant.textContent = 'n/a';
+          // No profile yet — check if there's a pending owner invite for this email
+          showDashStatus('Provjavam pozivnicu…', 'info');
+          sb.rpc('claim_owner_invite').then(function(claimRes) {
+            if (claimRes.error || !claimRes.data || !claimRes.data[0] || !claimRes.data[0].claimed) {
+              showDashStatus('Nema profila — kontaktiraj admina.', 'warning');
+              dashRole.textContent   = 'nema';
+              dashTenant.textContent = 'n/a';
+              return;
+            }
+            // Invite claimed — reload profile
+            showDashStatus('Profil kreiran ✓ Učitavam…', 'info');
+            setTimeout(function() { loadProfile(userId); }, 800);
+          }).catch(function() {
+            showDashStatus('Nema profila — kontaktiraj admina.', 'warning');
+            dashRole.textContent   = 'nema';
+            dashTenant.textContent = 'n/a';
+          });
           return;
         }
 
@@ -3525,7 +3576,11 @@
     tenantSlugInput.value = slugify(tenantNameInput.value);
   });
 
-  btnCreateTenant.addEventListener('click', function () { quickAddTenant(false); });
+  btnCreateTenant.addEventListener('click', function () {
+    var email = quickOwnerEmailInput ? quickOwnerEmailInput.value.trim() : '';
+    // If email is filled, treat as invite flow automatically
+    quickAddTenant(!!email);
+  });
   if (btnQuickInvite) btnQuickInvite.addEventListener('click', function () { quickAddTenant(true); });
 
   btnLinkOwner.addEventListener('click', linkOwnerToTenant);
@@ -3643,10 +3698,12 @@
       ownerDirectionsLinkInput.value = '';
       ownerRulesUrlInput.value       = '';
       ownerRulesTextArea.value       = '';
-      ownerParkingTitleInput.value   = '';
+      if (ownerParkingTitleSlInput) ownerParkingTitleSlInput.value = '';
+      if (ownerParkingTitleEnInput) ownerParkingTitleEnInput.value = '';
       ownerParkingAddressInput.value = '';
       ownerParkingMapsInput.value    = '';
-      ownerParkingNotesArea.value    = '';
+      if (ownerParkingNotesSlArea) ownerParkingNotesSlArea.value = '';
+      if (ownerParkingNotesEnArea) ownerParkingNotesEnArea.value = '';
       ownerRebookNameInput.value        = '';
       ownerRebookPhoneInput.value       = '';
       ownerRebookEmailInput.value       = '';
@@ -3663,10 +3720,12 @@
       masterDirectionsLinkInput.value      = '';
       masterRulesUrlInput.value            = '';
       masterRulesTextArea.value            = '';
-      masterParkingTitleInput.value        = '';
+      if (masterParkingTitleSlInput) masterParkingTitleSlInput.value = '';
+      if (masterParkingTitleEnInput) masterParkingTitleEnInput.value = '';
       masterParkingAddressInput.value      = '';
       masterParkingMapsInput.value         = '';
-      masterParkingNotesArea.value         = '';
+      if (masterParkingNotesSlArea) masterParkingNotesSlArea.value = '';
+      if (masterParkingNotesEnArea) masterParkingNotesEnArea.value = '';
       masterRebookNameInput.value          = '';
       masterRebookPhoneInput.value         = '';
       masterRebookEmailInput.value         = '';
@@ -3789,28 +3848,33 @@
       btnCardLabelsSave.disabled = true;
       if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Čuvam…'; cardLabelsStatus.className = 'msg'; cardLabelsStatus.classList.remove('hidden'); }
 
-      // Delete existing, then insert fresh (same as legal pages)
-      sb.from('items').delete().eq('item_key', 'card_labels').is('tenant_id', null)
-        .then(function(dr) {
+      // Ensure 'ui' section exists, then delete-and-insert card_labels
+      ensureSectionExists('ui').then(function() {
+        return sb.from('items').delete().eq('section_key', 'ui').eq('item_key', 'card_labels').is('tenant_id', null);
+      }).then(function(dr) {
           if (dr.error) {
             btnCardLabelsSave.disabled = false;
             if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + dr.error.message; cardLabelsStatus.className = 'msg msg--error'; }
             return;
           }
-          sb.from('items').insert({
+          return sb.from('items').insert({
             item_key:   'card_labels',
-            section_key:'global',
+            section_key:'ui',
             tenant_id:  null,
             data_json:  payload,
-          }).then(function(ir) {
-            btnCardLabelsSave.disabled = false;
-            if (ir.error) {
-              if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + ir.error.message; cardLabelsStatus.className = 'msg msg--error'; }
-              return;
-            }
-            _clData = payload;
-            if (cardLabelsStatus) { cardLabelsStatus.textContent = '✓ Nazivi kartica sačuvani!'; cardLabelsStatus.className = 'msg msg--ok'; }
           });
+        }).then(function(ir) {
+          if (!ir) return;
+          btnCardLabelsSave.disabled = false;
+          if (ir.error) {
+            if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + ir.error.message; cardLabelsStatus.className = 'msg msg--error'; }
+            return;
+          }
+          _clData = payload;
+          if (cardLabelsStatus) { cardLabelsStatus.textContent = '✓ Nazivi kartica sačuvani!'; cardLabelsStatus.className = 'msg msg--ok'; }
+        }).catch(function(err) {
+          btnCardLabelsSave.disabled = false;
+          if (cardLabelsStatus) { cardLabelsStatus.textContent = 'Greška: ' + (err && err.message || 'nepoznata'); cardLabelsStatus.className = 'msg msg--error'; }
         });
     });
   }
