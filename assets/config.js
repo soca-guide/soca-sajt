@@ -9,7 +9,7 @@
     highlight_color: "#06b6d4",
     font_family: "system-ui",
     font_size: 16,
-    apartment_name: "DOLINA SOČE",
+    apartment_name: "",
     location_subtitle: "Slovenija",
     full_address: "Trg golobarskih žrtev 12, 5230 Bovec, Slovenija",
     checkin_time: "15:00",

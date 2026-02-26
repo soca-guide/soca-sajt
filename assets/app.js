@@ -129,6 +129,7 @@
       // Pre-fetch global DB data (~300 ms so supabaseClient is ready)
       setTimeout(loadGlobalSiteName,       200);
       setTimeout(loadCardLabelOverrides,   250);
+      setTimeout(loadHomeCardsConfig,      270);
       setTimeout(loadEmergencyFromDb,       300);
       setTimeout(loadAdrenalinFromDb,       400);
       setTimeout(loadTaxiFromDb,            500);
@@ -346,13 +347,14 @@
       // Save language preference instantly
       localStorage.setItem('preferredLanguage', lang);
       
-      // Update brand/title text — always use apartment_name from config (never trans.brand_title)
-      const _siteName = defaultConfig.apartment_name || 'DOLINA SOČE';
-      const appTitle = document.getElementById('app-title');
-      if (appTitle) appTitle.textContent = _siteName;
-
-      const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) heroTitle.textContent = _siteName;
+      // Update brand/title text — only when name is already loaded from Supabase
+      const _siteName = defaultConfig.apartment_name;
+      if (_siteName) {
+        const appTitle = document.getElementById('app-title');
+        if (appTitle) appTitle.textContent = _siteName;
+        const heroTitle = document.getElementById('hero-title');
+        if (heroTitle) heroTitle.textContent = _siteName;
+      }
       
       // Welcome subtitle stays static - "SOČA VALLEY" - don't update it
       
@@ -514,6 +516,49 @@
           if (typeof updateLanguage === 'function') {
             updateLanguage(currentLang || 'sl');
           }
+        })
+        .catch(function () {});
+    }
+
+    // ── Global home_cards config: order + visibility ──────────────────────────
+    // Maps admin CARD_DEFS id → CSS selector for the .menu-card element
+    var _HOME_CARD_SELECTORS = {
+      emergency:        '[data-section="emergency"]',
+      parking:          '[data-section="parking"]',
+      restavracije:     '#openRestavracije',
+      adrenalin:        '#adrenalin-card',
+      attractions:      '#attractions-card',
+      daily_essentials: '#daily-essentials-card',
+      taxi_bus:         '#taxi-bus-card',
+      soca_live:        '#openSocaLive',
+      lost_found:       '#openLostFound',
+      maintenance:      '#maintenance-card'
+    };
+
+    function loadHomeCardsConfig() {
+      if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') return;
+      window.supabaseClient
+        .from('items')
+        .select('data_json')
+        .eq('section_key', 'ui')
+        .eq('item_key', 'home_cards')
+        .is('tenant_id', null)
+        .maybeSingle()
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.data_json) return;
+          var cards = r.data.data_json.cards;
+          if (!Array.isArray(cards)) return;
+          cards.forEach(function (cfg) {
+            var sel = _HOME_CARD_SELECTORS[cfg.id];
+            if (!sel) return;
+            var el = document.querySelector(sel);
+            if (!el) return;
+            // Apply CSS order (works in both flex and grid layouts)
+            if (cfg.order != null) el.style.order = cfg.order;
+            // Apply visibility — only HIDE if explicitly false; never force-show
+            // (maintenance card has its own tenant-level visibility logic)
+            if (cfg.visible === false) el.style.display = 'none';
+          });
         })
         .catch(function () {});
     }
@@ -3905,40 +3950,19 @@
           function _doSendEmail(cfg) {
             var emailTo = cfg && cfg.email;
             if (!emailTo) { _showNoEmail(cfg); return; }
-            // Always use global MASTER Web3Forms key
+            // Send via Resend Edge Function — best-effort, always show success
             if (sb) {
-              sb.from('items').select('data_json').eq('section_key','ui').eq('item_key','site_name').is('tenant_id',null).maybeSingle()
-                .then(function(r) {
-                  var key = (!r.error && r.data && r.data.data_json && r.data.data_json.w3f_key) || '';
-                  if (key) { _sendViaW3f(key, emailTo, cfg); } else { _showNoEmail(cfg); }
-                }).catch(function() { _showNoEmail(cfg); });
-            } else {
-              _showNoEmail(cfg);
+              sb.functions.invoke('send-email', {
+                body: {
+                  action:      'maintenance_notify',
+                  owner_email: emailTo,
+                  tenant_slug: slug   || '',
+                  category:    cat    || 'other',
+                  location:    loc    || '',
+                  description: desc   || ''
+                }
+              }).catch(function() {});
             }
-          }
-
-          function _sendViaW3f(key, toEmail, cfg) {
-            var trans = (window.APP && window.APP.translations && window.APP.translations[currentLang]) || {};
-            var catLabel = (_maintCat && _maintCat.options[_maintCat.selectedIndex] && _maintCat.options[_maintCat.selectedIndex].text) || cat;
-            var aptName = (cfg && cfg.aptName) || slug;
-            fetch('https://api.web3forms.com/submit', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({
-                access_key: key,
-                to: toEmail,
-                subject: '⚠️ PRIJAVA OKVARE – ' + aptName,
-                message: [
-                  'Lokacija: ' + aptName,
-                  'Kategorija: ' + catLabel.toUpperCase(),
-                  loc  ? 'Gde: ' + loc   : '',
-                  desc ? 'Detalji: ' + desc : '',
-                  'Vreme: ' + new Date().toLocaleString('sr-Latn'),
-                  '',
-                  'Ovo je automatsko obaveštenje iz vašeg digitalnog info panela.'
-                ].filter(function(x){ return x !== ''; }).join('\n')
-              })
-            }).catch(function(){});
             _showSuccess();
           }
 

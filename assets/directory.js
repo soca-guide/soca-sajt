@@ -197,10 +197,20 @@
     });
   }
 
+  // Fisher-Yates shuffle — returns a new shuffled copy, original untouched
+  function _shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
   function _renderSections(partners) {
     var tiers = ['premium', 'featured', 'standard'];
     tiers.forEach(function (tier) {
-      var group = partners.filter(function (p) { return p.tier === tier; });
+      var group = _shuffle(partners.filter(function (p) { return p.tier === tier; }));
       var sec = document.getElementById('dir-sec-' + tier);
       var hdr = document.getElementById('dir-hdr-' + tier);
       if (!sec) return;

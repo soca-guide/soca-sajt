@@ -49,7 +49,7 @@
     <div id="header-moon" class="header-moon" aria-hidden="true"></div>
     <div class="header-content">
      <div class="header-title-section">
-      <h1 class="app-title" id="app-title">DOLINA SOČE</h1>
+      <h1 class="app-title" id="app-title"></h1>
       <p class="app-subtitle" id="app-subtitle">Vodič za obiskovalce</p>
       <div class="lang-selector">
        <select class="lang-select" id="lang-select">
@@ -79,7 +79,7 @@
    <main class="main-content"><!-- Hero Card -->
     <div class="hero-card"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&amp;h=600&amp;fit=crop" alt="Mountain view" class="hero-image">
      <div class="hero-overlay"><span class="hero-badge" id="hero-badge" data-i18n="guest_badge">Vodič za obiskovalce</span>
-      <h2 class="hero-title" id="hero-title">DOLINA SOČE</h2>
+      <h2 class="hero-title" id="hero-title"></h2>
       <p class="hero-location"><span>📍</span> <span id="hero-location">Slovenija</span></p>
      </div>
     </div><!-- Quick Actions -->
@@ -199,8 +199,8 @@
       <div class="menu-icon">
        🚌
       </div>
-      <h3 class="menu-title" data-i18n="taxi_bus">Taxi/Bus</h3>
-      <p class="menu-subtitle" data-i18n="taxi_bus_sub">Taxi/Bus</p>
+      <h3 class="menu-title" data-i18n="taxi_bus">Taxi</h3>
+      <p class="menu-subtitle" data-i18n="taxi_bus_sub">Prevozi</p>
      </div>
      <div class="menu-card" id="openSocaLive">
       <div class="menu-icon">
@@ -363,7 +363,7 @@
   <div id="taxi-bus-screen" class="screen">
    <div class="screen-header">
     <button id="taxi-bus-back" class="screen-back-btn" type="button">←</button>
-    <div class="screen-title" data-i18n="taxi_bus">Taxi/Bus</div>
+    <div class="screen-title" data-i18n="taxi_bus">Taxi</div>
    </div>
    <div class="screen-body" id="taxi-bus-body"></div>
   </div><!-- Adrenalin/Aktivnosti Screen -->
@@ -426,7 +426,7 @@
    </div>
   </div><!-- Footer Attribution -->
   <footer class="app-footer" id="app-footer" style="display:none"></footer>
-  <div id="footer-legal" style="text-align:center;padding:0.5rem 1rem 1.25rem;font-size:0.72rem;opacity:0.5;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 0.9rem"></div>
+  <div id="footer-legal" style="text-align:center;padding:0.75rem 1rem 1.5rem;font-size:0.75rem;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 1rem;position:relative;z-index:1"></div>
  <script src="./assets/config.js?v=20260226-5"></script>
  <script src="./assets/i18n.js?v=20260226-5"></script>
  <script src="./assets/utils.js?v=20260226-5"></script>
@@ -439,7 +439,7 @@
  <script src="./assets/content-loader.js?v=20260226-5"></script>
  <script src="./assets/supabase-client.js?v=20260226-5"></script>
  <script src="./assets/tenant-loader.js?v=20260226-5"></script>
- <script src="./assets/app.js?v=20260226-5"></script>
+ <script src="./assets/app.js?v=20260226-6"></script>
  <!-- Modal System -->
  <div id="iframeModal" class="vt-modal" aria-hidden="true">
   <div class="vt-overlay" id="vtOverlay"></div>
@@ -552,7 +552,8 @@
      links: [
        { label: { sl: 'Impressum', en: 'Imprint' },  url: './legal/?doc=impressum', enabled: true },
        { label: { sl: 'Zasebnost', en: 'Privacy' },  url: './legal/?doc=privacy',   enabled: true },
-       { label: { sl: 'Piškotki', en: 'Cookies' },   url: './legal/?doc=cookies',   enabled: true }
+       { label: { sl: 'Piškotki', en: 'Cookies' },   url: './legal/?doc=cookies',   enabled: true },
+       { label: { sl: 'Pogoji',   en: 'Terms' },     url: './legal/?doc=terms',     enabled: true }
      ]
    };
 
@@ -563,7 +564,9 @@
      var html = copy ? '<span>' + copy + '</span>' : '';
      links.forEach(function(l){
        var label = l.label && (l.label[lang] || l.label.sl);
-       html += '<a href="' + l.url + '" style="color:inherit;text-decoration:none;opacity:0.7">' + label + '</a>';
+       var doc = (l.url || '').replace(/.*[?&]doc=([^&]*).*/, '$1');
+       var onclick = doc ? 'if(window.__MODALS&&window.__MODALS.openLegal){window.__MODALS.openLegal(\'' + doc + '\');return false;}' : '';
+       html += '<a href="' + l.url + '" onclick="' + onclick + '" style="color:#3687CE;text-decoration:none;cursor:pointer;padding:0.2rem 0.1rem">' + label + '</a>';
      });
      el.innerHTML = html;
    }

@@ -141,6 +141,20 @@
     mailtoEl.href = 'mailto:' + encodeURIComponent(rbData.owner_email)
       + '?subject=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
+    // Notify owner via Resend Edge Function (best-effort)
+    if (window.supabaseClient) {
+      window.supabaseClient.functions.invoke('send-email', {
+        body: {
+          action:         'rebook_notify',
+          owner_email:    rbData.owner_email,
+          guest_email:    userEmail,
+          apartment_name: aptName,
+          owner_phone:    rbData.owner_phone  || '',
+          rebook_link:    rbData.rebook_link  || '',
+          tenant_slug:    _rbSlug             || ''
+        }
+      }).catch(function() {});
+    }
   });
   document.getElementById('copy').addEventListener('click', async function() {
     try { await navigator.clipboard.writeText(msgEl.textContent); } catch(e) {}
@@ -155,7 +169,8 @@
   var fb={copyright:{sl:'© 2026 Soča Guide',en:'© 2026 Soča Guide'},links:[
     {label:{sl:'Impressum',en:'Imprint'},url:'../legal/?doc=impressum',enabled:true},
     {label:{sl:'Zasebnost',en:'Privacy'},url:'../legal/?doc=privacy',enabled:true},
-    {label:{sl:'Piškotki',en:'Cookies'},url:'../legal/?doc=cookies',enabled:true}
+    {label:{sl:'Piškotki',en:'Cookies'},url:'../legal/?doc=cookies',enabled:true},
+    {label:{sl:'Pogoji',en:'Terms'},url:'../legal/?doc=terms',enabled:true}
   ]};
   function render(cfg){
     var links=(cfg.links||[]).filter(function(l){return l.enabled;});if(!links.length)return;

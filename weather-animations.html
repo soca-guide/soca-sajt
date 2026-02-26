@@ -338,13 +338,14 @@
       return 'phase-crescent-waning';
     }
 
-    // --- LOGIKA VREMENA: lokalno vreme kao izvor (API is_day može grešiti) ---
+    // --- LOGIKA VREMENA: API is_day je primarni izvor (zna pravi zapad/izlaz sunca) ---
     function isLocalNight() {
       const hour = new Date().getHours();
-      return hour >= 21 || hour < 6; // 21:00–06:00 = noć (SLO/CET)
+      return hour >= 19 || hour < 7; // 19:00–07:00 = potencijalna noć (fallback)
     }
     function setScene(code, isDay) {
-      const isNight = isLocalNight();
+      // Prefer API is_day (0=night, 1=day); fall back to local time check
+      const isNight = (isDay === 0) || (isDay == null && isLocalNight());
       state.isNight = isNight;
 
       // Reset
@@ -445,7 +446,7 @@
     const GEO_KEY = 'wx_geo_v1';
     const DENY_KEY = 'wx_geo_denied_v1';
     const TTL_MS = 6 * 60 * 60 * 1000;
-    const DEFAULT_LAT = 44.7866, DEFAULT_LON = 20.4489;
+    const DEFAULT_LAT = 46.3370, DEFAULT_LON = 13.5540; // Bovec, Slovenija
 
     function startup() {
       try {

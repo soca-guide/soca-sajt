@@ -106,6 +106,16 @@
     openModal('SOČA • Biznis', url);
   };
 
+  var LEGAL_TITLES = {
+    impressum: 'Impressum',
+    privacy:   'Zasebnost / Privacy',
+    cookies:   'Piškotki / Cookies',
+    terms:     'Pogoji / Terms'
+  };
+  window.__MODALS.openLegal = function(doc) {
+    openModal('SOČA • ' + (LEGAL_TITLES[doc] || doc), './legal/index.html?doc=' + doc);
+  };
+
   overlay?.addEventListener('click', closeModal);
 
   document.addEventListener('keydown', (e) => {

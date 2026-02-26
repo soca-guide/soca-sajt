@@ -1084,7 +1084,8 @@
     { id: 'daily_essentials', icon: '🛒', label: 'Daily Essentials' },
     { id: 'taxi_bus',         icon: '🚌', label: 'Taxi / Bus' },
     { id: 'soca_live',        icon: '🌊', label: 'Soča Live' },
-    { id: 'lost_found',       icon: '🔍', label: 'Izgubljeno & Nađeno' }
+    { id: 'lost_found',       icon: '🔍', label: 'Izgubljeno & Nađeno' },
+    { id: 'maintenance',      icon: '🔧', label: 'Prijava okvare' }
   ];
 
   function renderCardsEditor(cards) {
@@ -1379,9 +1380,10 @@
       upserts.push({
         section_key: 'daily_essentials',
         item_key: lk + '_' + i,
+        type: 'link',
         tenant_id: null,
         data_json: { label_key: lk, url: url, custom_label: customLabel },
-        municipality_slugs: muns.length ? muns : null,
+        municipality_slugs: (muns && muns.length) ? muns : null,
         visible: true,
         order: i
       });
@@ -1451,7 +1453,8 @@
     hiking:'Planinarenje', cycling:'Biciklizam', climbing:'Penjanje', zipline:'Zipline', other_act:'Ostalo',
     restaurant:'Restoran', gostilna:'Gostilna', cafe:'Kafić', pizzeria:'Pizzerija',
     bar:'Bar', bistro:'Bistro', brewery:'Pivara', street_food:'Street food', other_food:'Ostalo',
-    taxi:'Taxi', transfer:'Transfer', bus:'Bus', other_taxi:'Ostalo'
+    taxi:'Taxi', transfer:'Transfer', bus:'Bus', other_taxi:'Ostalo',
+    custom:'✏️ Prilagođena…'
   };
   var PARTNER_TYPE_LABELS = { activities:'🎯 Adrenalin', food:'🍽️ Restorani', taxi:'🚌 Taxi' };
   var PARTNER_TIER_LABELS = { premium:'⭐ Premium', featured:'🔥 Featured', standard:'📍 Standard' };
@@ -1557,20 +1560,44 @@
 
   // Sync category dropdown based on type
   var CAT_BY_TYPE = {
-    activities: ['rafting','paragliding','kayak','canyoning','hiking','cycling','climbing','zipline','other_act'],
-    food:       ['restaurant','gostilna','cafe','pizzeria','bar','bistro','brewery','street_food','other_food'],
-    taxi:       ['taxi','transfer','bus','other_taxi']
+    activities: ['rafting','paragliding','kayak','canyoning','hiking','cycling','climbing','zipline','other_act','custom'],
+    food:       ['restaurant','gostilna','cafe','pizzeria','bar','bistro','brewery','street_food','other_food','custom'],
+    taxi:       ['taxi','transfer','bus','other_taxi','custom']
   };
 
   function _syncCategoryByType(type, selected) {
     if (!pfCategory) return;
     var cats = CAT_BY_TYPE[type] || [];
+    var customInput = document.getElementById('pf-category-custom');
+    // if selected is a known key use it; if it's unknown (custom) keep select on 'custom'
+    var isPredefined = !selected || cats.indexOf(selected) >= 0;
+    var selectVal = isPredefined ? selected : 'custom';
     pfCategory.innerHTML = cats.map(function(c) {
-      return '<option value="' + c + '"' + (c === selected ? ' selected' : '') + '>' + (PARTNER_CAT_LABELS[c] || c) + '</option>';
+      return '<option value="' + c + '"' + (c === selectVal ? ' selected' : '') + '>' + (PARTNER_CAT_LABELS[c] || c) + '</option>';
     }).join('');
+    if (customInput) {
+      if (!isPredefined) {
+        // existing partner with custom category → show input with value
+        customInput.style.display = 'block';
+        customInput.value = selected;
+      } else if (selectVal === 'custom') {
+        customInput.style.display = 'block';
+        customInput.value = '';
+      } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+      }
+    }
   }
 
   if (pfTypeSel) pfTypeSel.addEventListener('change', function() { _syncCategoryByType(this.value, ''); });
+  if (pfCategory) pfCategory.addEventListener('change', function() {
+    var customInput = document.getElementById('pf-category-custom');
+    if (customInput) {
+      customInput.style.display = this.value === 'custom' ? 'block' : 'none';
+      if (this.value !== 'custom') customInput.value = '';
+    }
+  });
 
   // Render partner list
   function _renderPartnerRow(p) {
@@ -1712,7 +1739,14 @@
     var payload  = {
       name:              name,
       type:              pfTypeSel  ? pfTypeSel.value  : 'activities',
-      category:          pfCategory ? pfCategory.value : 'other',
+      category:          (function() {
+        if (!pfCategory) return 'other';
+        if (pfCategory.value === 'custom') {
+          var ci = document.getElementById('pf-category-custom');
+          return (ci && ci.value.trim()) ? ci.value.trim() : 'other';
+        }
+        return pfCategory.value;
+      }()),
       tier:              pfTierSel  ? pfTierSel.value  : 'standard',
       order_index:       pfOrder    ? (parseInt(pfOrder.value) || 100) : 100,
       short_desc:        pfDesc     ? pfDesc.value.trim()    || null : null,
@@ -1771,6 +1805,227 @@
   if (btnPartnerSave)   btnPartnerSave.addEventListener('click',   _savePartner);
   if (btnPartnerCancel) btnPartnerCancel.addEventListener('click', function() { partnerFormWrap.style.display = 'none'; });
   if (btnPartnersFilter)btnPartnersFilter.addEventListener('click',loadPartners);
+
+  // ── CSV Import ────────────────────────────────────────────────────────────
+  (function() {
+    var btnCsv          = document.getElementById('btn-partner-csv');
+    var btnCsvTemplate  = document.getElementById('btn-partner-csv-template');
+    var csvFileInput    = document.getElementById('csv-import-input');
+    var csvModal        = document.getElementById('csv-import-modal');
+    var csvModalClose   = document.getElementById('csv-modal-close');
+    var csvModalCancel  = document.getElementById('csv-modal-cancel');
+    var csvConfirm      = document.getElementById('csv-import-confirm');
+    var csvInfo         = document.getElementById('csv-preview-info');
+    var csvTable        = document.getElementById('csv-preview-table');
+    var csvStatus       = document.getElementById('csv-import-status');
+
+    var _parsedRows = [];
+
+    var CSV_HEADERS = [
+      'name','type','category','tier','order_index','short_desc',
+      'phone','whatsapp','website_url','booking_url',
+      'image_url','logo_url','municipalities','all_municipalities','is_active'
+    ];
+
+    var TEMPLATE_ROWS = [
+      ['Rafting Soča','activities','rafting','featured','10','Adrenalinski rafting na smaragdni Soči','+38641111222','+38641111222','https://rafting.si','https://booking.si','','','bovec','FALSE','TRUE'],
+      ['Restavracija Pri Mihi','food','restaurant','premium','20','Domača kuhinja s pogledom na reko','+38641333444','','https://primihi.si','','','','bovec,kobarid','FALSE','TRUE'],
+      ['Taxi Bovec','taxi','taxi','standard','30','Prevoz po dolini Soče','+38641555666','+38641555666','','','','','','TRUE','TRUE']
+    ];
+
+    // ── Template download ─────────────────────────────────────────────────
+    function _downloadTemplate() {
+      var rows = [CSV_HEADERS.join(',')];
+      TEMPLATE_ROWS.forEach(function(r) {
+        rows.push(r.map(function(v) { return v.indexOf(',') >= 0 ? '"' + v + '"' : v; }).join(','));
+      });
+      var blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      a.download = 'partneri-template.csv';
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    // ── CSV parser (handles quoted fields with commas) ────────────────────
+    function _parseCSV(text) {
+      var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(function(l) { return l.trim(); });
+      if (lines.length < 2) return [];
+
+      function parseLine(line) {
+        var result = [], cur = '', inQ = false;
+        for (var i = 0; i < line.length; i++) {
+          var c = line[i];
+          if (c === '"') {
+            if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+            else { inQ = !inQ; }
+          } else if (c === ',' && !inQ) {
+            result.push(cur); cur = '';
+          } else {
+            cur += c;
+          }
+        }
+        result.push(cur);
+        return result;
+      }
+
+      var headers = parseLine(lines[0]).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g,'_'); });
+      var rows = [];
+      for (var i = 1; i < lines.length; i++) {
+        var vals = parseLine(lines[i]);
+        var obj  = {};
+        headers.forEach(function(h, idx) { obj[h] = (vals[idx] || '').trim(); });
+        if (obj.name) rows.push(obj); // skip empty rows
+      }
+      return rows;
+    }
+
+    // ── Convert CSV row → partner payload ────────────────────────────────
+    function _rowToPayload(row) {
+      var allMun = row.all_municipalities === 'TRUE' || row.all_municipalities === 'true' || row.all_municipalities === '1';
+      var munRaw = row.municipalities || '';
+      var muns   = munRaw ? munRaw.split(/[,;]+/).map(function(m) { return m.trim().toLowerCase(); }).filter(Boolean) : null;
+      var validTypes = ['activities', 'food', 'taxi'];
+      var validTiers = ['standard', 'featured', 'premium'];
+      return {
+        name:               row.name,
+        type:               validTypes.indexOf(row.type) >= 0 ? row.type : 'activities',
+        category:           row.category || 'other',
+        tier:               validTiers.indexOf(row.tier) >= 0 ? row.tier : 'standard',
+        order_index:        parseInt(row.order_index) || 100,
+        short_desc:         row.short_desc  || null,
+        image_url:          row.image_url   || null,
+        logo_url:           row.logo_url    || null,
+        phone:              row.phone       || null,
+        whatsapp:           row.whatsapp    || null,
+        website_url:        row.website_url || null,
+        booking_url:        row.booking_url || null,
+        municipalities:     (!allMun && muns && muns.length) ? muns : null,
+        all_municipalities: allMun,
+        is_active:          row.is_active !== 'FALSE' && row.is_active !== 'false' && row.is_active !== '0',
+        updated_at:         new Date().toISOString()
+      };
+    }
+
+    // ── Build preview table ───────────────────────────────────────────────
+    var TYPE_LABELS  = { activities: '🎯 Aktivnosti', food: '🍽️ Hrana', taxi: '🚌 Taxi' };
+    var TIER_LABELS  = { standard: '📍 Std', featured: '🔥 Feat', premium: '⭐ Prem' };
+
+    function _buildPreview(rows) {
+      var cols = ['#','Naziv','Tip','Kategorija','Tier','Red.','Telefon','Website','Opštine','Aktivan'];
+      var head = '<thead><tr>' + cols.map(function(c) {
+        return '<th style="padding:0.4rem 0.5rem;text-align:left;border-bottom:1px solid rgba(34,211,238,0.2);color:#22d3ee;white-space:nowrap;position:sticky;top:0;background:#0d2019">' + c + '</th>';
+      }).join('') + '</tr></thead>';
+
+      var body = '<tbody>' + rows.map(function(row, i) {
+        var p = _rowToPayload(row);
+        var ok = p.name && p.type;
+        var bg = ok ? '' : 'background:rgba(239,68,68,0.08)';
+        return '<tr style="' + bg + '">'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);color:#6b7280">' + (i + 1) + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);font-weight:600;color:#e5e7eb;white-space:nowrap">' + (p.name || '<span style="color:#f87171">❌ prazno</span>') + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)">' + (TYPE_LABELS[p.type] || p.type) + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)">' + (p.category || '—') + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)">' + (TIER_LABELS[p.tier] || p.tier) + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center">' + p.order_index + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)">' + (p.phone || '—') + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (p.website_url ? '<a href="' + p.website_url + '" target="_blank" style="color:#22d3ee">' + p.website_url.replace(/^https?:\/\//, '') + '</a>' : '—') + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)">' + (p.all_municipalities ? '<span style="color:#4ade80">Sve</span>' : (p.municipalities ? p.municipalities.join(', ') : '—')) + '</td>'
+          + '<td style="padding:0.35rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center">' + (p.is_active ? '✅' : '❌') + '</td>'
+          + '</tr>';
+      }).join('') + '</tbody>';
+
+      csvTable.innerHTML = head + body;
+    }
+
+    // ── Show/hide modal ───────────────────────────────────────────────────
+    function _openModal(rows) {
+      _parsedRows = rows;
+      var valid   = rows.filter(function(r) { return r.name; }).length;
+      var invalid = rows.length - valid;
+      csvInfo.innerHTML =
+        '<strong style="color:#e5e7eb">' + rows.length + ' redova učitano</strong> — '
+        + '<span style="color:#4ade80">' + valid + ' ispravnih</span>'
+        + (invalid ? ' · <span style="color:#f87171">' + invalid + ' bez naziva (preskočeni)</span>' : '')
+        + '<br><span style="font-size:0.75rem;opacity:0.6">Slike se ne uvoze automatski — dodaj ih naknadno kroz formu za svaki partner. Duplikati po nazivu NEĆE biti provereni.</span>';
+      _buildPreview(rows);
+      if (csvStatus) csvStatus.textContent = '';
+      if (csvConfirm) { csvConfirm.disabled = false; csvConfirm.textContent = '✓ Uvezi sve partnere'; }
+      csvModal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function _closeModal() {
+      csvModal.style.display = 'none';
+      document.body.style.overflow = '';
+      if (csvFileInput) csvFileInput.value = '';
+    }
+
+    // ── Confirm import ────────────────────────────────────────────────────
+    function _doImport() {
+      var payloads = _parsedRows.filter(function(r) { return r.name; }).map(_rowToPayload);
+      if (!payloads.length) { if (csvStatus) { csvStatus.textContent = 'Nema ispravnih redova.'; csvStatus.style.color = '#f87171'; } return; }
+      if (!sb) { if (csvStatus) { csvStatus.textContent = 'Greška: Supabase nije dostupan.'; csvStatus.style.color = '#f87171'; } return; }
+      if (csvConfirm) { csvConfirm.disabled = true; csvConfirm.textContent = 'Uvozim…'; }
+      if (csvStatus) { csvStatus.textContent = 'Šaljem ' + payloads.length + ' partnera…'; csvStatus.style.color = '#9ca3af'; }
+
+      // Chunk insert (max 50 per request to avoid Supabase limits)
+      var CHUNK = 50;
+      var chunks = [];
+      for (var i = 0; i < payloads.length; i += CHUNK) { chunks.push(payloads.slice(i, i + CHUNK)); }
+
+      var idx = 0;
+      function nextChunk() {
+        if (idx >= chunks.length) {
+          if (csvStatus) { csvStatus.textContent = '✓ Uvezeno ' + payloads.length + ' partnera!'; csvStatus.style.color = '#4ade80'; }
+          if (csvConfirm) { csvConfirm.textContent = '✓ Gotovo'; }
+          loadPartners();
+          setTimeout(_closeModal, 1800);
+          return;
+        }
+        sb.from('partners').insert(chunks[idx]).then(function(r) {
+          if (r.error) {
+            if (csvStatus) { csvStatus.textContent = 'Greška: ' + r.error.message; csvStatus.style.color = '#f87171'; }
+            if (csvConfirm) { csvConfirm.disabled = false; csvConfirm.textContent = '✓ Uvezi sve partnere'; }
+            return;
+          }
+          idx++;
+          if (csvStatus) csvStatus.textContent = 'Uvozim… (' + Math.min(idx * CHUNK, payloads.length) + '/' + payloads.length + ')';
+          nextChunk();
+        }).catch(function(err) {
+          if (csvStatus) { csvStatus.textContent = 'Greška: ' + (err.message || err); csvStatus.style.color = '#f87171'; }
+          if (csvConfirm) { csvConfirm.disabled = false; csvConfirm.textContent = '✓ Uvezi sve partnere'; }
+        });
+      }
+      nextChunk();
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────
+    if (btnCsv)         btnCsv.addEventListener('click',  function() { if (csvFileInput) csvFileInput.click(); });
+    if (btnCsvTemplate) btnCsvTemplate.addEventListener('click', _downloadTemplate);
+    if (csvModalClose)  csvModalClose.addEventListener('click',  _closeModal);
+    if (csvModalCancel) csvModalCancel.addEventListener('click', _closeModal);
+    if (csvConfirm)     csvConfirm.addEventListener('click',     _doImport);
+    if (csvModal)       csvModal.addEventListener('click', function(e) { if (e.target === csvModal) _closeModal(); });
+
+    if (csvFileInput) {
+      csvFileInput.addEventListener('change', function() {
+        var file = csvFileInput.files && csvFileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var rows = _parseCSV(e.target.result);
+          if (!rows.length) {
+            alert('CSV fajl je prazan ili ima pogrešan format. Proveri da li je prvi red zaglavlje.');
+            return;
+          }
+          _openModal(rows);
+        };
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
+  })();
 
   // ── MASTER: Partner Analytics ────────────────────────────────────────────
   var paFromEl     = document.getElementById('pa-from');
@@ -2173,11 +2428,10 @@
     LEGAL_KEYS.forEach(function(k) {
       sb.from('items').select('data_json')
         .eq('section_key', 'ui').eq('item_key', 'legal_' + k).is('tenant_id', null)
-        .order('updated_at', { ascending: false })
-        .limit(1)
+        .maybeSingle()
         .then(function(r) {
-          if (!r || !r.data || !r.data.length) return;
-          var bh = r.data[0].data_json && r.data[0].data_json.body_html || {};
+          if (!r || !r.data || !r.data.data_json) return;
+          var bh = r.data.data_json.body_html || {};
           var sl = document.getElementById('legal-' + k + '-sl');
           var en = document.getElementById('legal-' + k + '-en');
           if (sl) sl.value = bh.sl || '';
@@ -2226,10 +2480,37 @@
         };
       });
       sb.from('items').insert(rows).then(function(insRes) {
-        if (btnLegalSave) btnLegalSave.disabled = false;
-        if (insRes && insRes.error) { setStatus(legalSaveStatus, 'Greška: ' + insRes.error.message, 'error'); return; }
-        setStatus(legalSaveStatus, 'Sačuvano ✓', 'success');
-        loadLegalPages();
+        if (insRes && insRes.error) {
+          if (btnLegalSave) btnLegalSave.disabled = false;
+          setStatus(legalSaveStatus, 'Greška: ' + insRes.error.message, 'error');
+          return;
+        }
+        // Also save footer_config with all 4 legal links so they appear in the footer
+        var footerConfig = {
+          copyright: { sl: '© 2026 Soča Guide', en: '© 2026 Soča Guide' },
+          links: [
+            { label: { sl: 'Impressum', en: 'Imprint' },        url: './legal/?doc=impressum', enabled: true },
+            { label: { sl: 'Zasebnost', en: 'Privacy' },        url: './legal/?doc=privacy',   enabled: true },
+            { label: { sl: 'Piškotki', en: 'Cookies' },         url: './legal/?doc=cookies',   enabled: true },
+            { label: { sl: 'Pogoji',   en: 'Terms' },           url: './legal/?doc=terms',     enabled: true }
+          ]
+        };
+        sb.from('items').delete()
+          .eq('section_key', 'ui').eq('item_key', 'footer_config').is('tenant_id', null)
+          .then(function() {
+            return sb.from('items').insert({
+              tenant_id: null, section_key: 'ui', item_key: 'footer_config',
+              type: 'config', order: 10, visible: true,
+              data_json: footerConfig, municipality_slugs: null
+            });
+          }).then(function() {
+            if (btnLegalSave) btnLegalSave.disabled = false;
+            setStatus(legalSaveStatus, 'Sačuvano ✓', 'success');
+            loadLegalPages();
+          }).catch(function(err) {
+            if (btnLegalSave) btnLegalSave.disabled = false;
+            setStatus(legalSaveStatus, 'Greška (footer): ' + (err && err.message ? err.message : err), 'error');
+          });
       }).catch(function(err) {
         if (btnLegalSave) btnLegalSave.disabled = false;
         setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');
@@ -3745,7 +4026,7 @@
     { key: 'adrenalin',         label: 'Adrenalin / Activities',      icon: '🎯' },
     { key: 'attractions',       label: 'Znamenitosti / Attractions',  icon: '⭐' },
     { key: 'daily_essentials',  label: 'Daily Essentials',            icon: '🛒' },
-    { key: 'taxi_bus',          label: 'Taxi/Bus',                    icon: '🚌' },
+    { key: 'taxi_bus',          label: 'Taxi',                        icon: '🚌' },
     { key: 'soca_live_title',   label: 'Soča Live',                   icon: '🌊' },
     { key: 'lost_found_title',  label: 'Izgubljeno / Lost & Found',   icon: '🔍' },
     { key: 'maint_card_title',  label: 'Prijava okvare / Maintenance',icon: '🔧' },
@@ -3860,6 +4141,7 @@
           return sb.from('items').insert({
             item_key:   'card_labels',
             section_key:'ui',
+            type:       'config',
             tenant_id:  null,
             data_json:  payload,
           });

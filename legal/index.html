@@ -44,7 +44,7 @@
       <div id="legal-title" class="legal-title"></div>
       <div id="legal-body"></div>
     </div>
-    <div id="legal-error" class="legal-error" style="display:none">Dokument ni na voljo.</div>
+    <div id="legal-error" class="legal-error" style="display:none">Vsebina še ni bila dodana. / Content not yet available.<br><a href="javascript:history.back()" style="color:#22d3ee;font-size:0.82rem">← Nazaj / Back</a></div>
   </div>
 
   <script src="../assets/supabase-client.js?v=20260219-1"></script>
@@ -87,11 +87,10 @@
         .eq('section_key', 'ui')
         .eq('item_key', itemKey)
         .is('tenant_id', null)
-        .order('updated_at', { ascending: false })
-        .limit(1)
+        .maybeSingle()
         .then(function (r) {
-          if (r.error || !r.data || !r.data.length) { showError(); return; }
-          render(r.data[0].data_json);
+          if (r.error || !r.data || !r.data.data_json) { showError(); return; }
+          render(r.data.data_json);
         }).catch(showError);
     }
 

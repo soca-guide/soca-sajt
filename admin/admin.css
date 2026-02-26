@@ -77,6 +77,14 @@ button:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
 }
 .btn-secondary:hover { background: #1e293b; border-color: #94a3b8; color: #e2e8f0; }
 
+/* Language tab active state */
+.cl-lang-btn.active {
+  background: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #0a1612 !important;
+  font-weight: 700;
+}
+
 .dash-header {
   display: flex;
   align-items: center;
@@ -104,9 +112,11 @@ button:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
   border-radius: 6px;
   padding: 0.55rem 0.75rem;
 }
-.msg.hidden { display: none !important; }
-.msg.error   { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
-.msg.info    { background: #0c2a1a; color: #86efac; border: 1px solid #14532d; }
+.msg.hidden  { display: none !important; }
+.msg.error,
+.msg--error  { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+.msg.info,
+.msg--ok     { background: #0c2a1a; color: #86efac; border: 1px solid #14532d; }
 .msg.warning { background: #1c1203; color: #fde68a; border: 1px solid #78350f; }
 
 .placeholder {

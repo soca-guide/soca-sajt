@@ -120,6 +120,33 @@ function templateMaintenance(row: Record<string, unknown>): { subject: string; h
   };
 }
 
+function templateRebook(payload: Record<string, unknown>): { subject: string; html: string } {
+  const guestEmail  = String(payload.guest_email   || '—');
+  const aptName     = String(payload.apartment_name || '');
+  const ownerPhone  = String(payload.owner_phone   || '—');
+  const rebookLink  = String(payload.rebook_link   || '');
+  return {
+    subject: `📅 Zahtev za ponovnu rezervaciju — ${aptName || 'apartma'}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f0f9ff;border-radius:12px;border-left:4px solid #0ea5e9">
+        <h2 style="color:#0369a1;margin-top:0">📅 Gost želi ponovo da rezerviše</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:6px 0;color:#6b7280;font-size:14px;width:140px">Apartma:</td>
+              <td style="padding:6px 0;font-weight:700">${aptName || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;font-size:14px">Email gosta:</td>
+              <td style="padding:6px 0;font-weight:600">${guestEmail}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;font-size:14px">Vaš telefon:</td>
+              <td style="padding:6px 0">${ownerPhone}</td></tr>
+          ${rebookLink ? `<tr><td style="padding:6px 0;color:#6b7280;font-size:14px">Link za rez.:</td>
+              <td style="padding:6px 0"><a href="${rebookLink}" style="color:#0ea5e9">${rebookLink}</a></td></tr>` : ''}
+        </table>
+        <p style="font-size:12px;color:#9ca3af;margin-top:24px">
+          Primljeno: ${new Date().toLocaleString('sr-RS')}
+        </p>
+      </div>`,
+  };
+}
+
 function templateLostFound(row: Record<string, unknown>): { subject: string; html: string } {
   const typeLabel = row.post_type === 'found' ? '✅ Pronađeno' : '🔍 Izgubljeno';
   return {
@@ -236,6 +263,42 @@ serve(async (req: Request) => {
       const tpl = templateOwnerWelcome({ email: ownerEmail, tenant_name: tenantName,
                                          guest_url: guestUrl, admin_url: adminUrl });
       const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom);
+      return new Response(JSON.stringify(result), {
+        status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── Direct call: action=maintenance_notify (guest, no auth required) ─────────
+    if (payload.action === 'maintenance_notify') {
+      const ownerEmail = String(payload.owner_email || '');
+      if (!ownerEmail || !ownerEmail.includes('@')) {
+        return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'no_owner_email' }), {
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+      const row = {
+        category:    payload.category    ?? 'other',
+        location:    payload.location    ?? '',
+        description: payload.description ?? '',
+        tenant_slug: payload.tenant_slug ?? '',
+      };
+      const tpl = templateMaintenance(row);
+      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom);
+      return new Response(JSON.stringify(result), {
+        status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── Direct call: action=rebook_notify (guest, no auth required) ───────────
+    if (payload.action === 'rebook_notify') {
+      const ownerEmail = String(payload.owner_email || '');
+      if (!ownerEmail || !ownerEmail.includes('@')) {
+        return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'no_owner_email' }), {
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+      const tpl = templateRebook(payload);
+      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom);
       return new Response(JSON.stringify(result), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });

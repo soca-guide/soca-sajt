@@ -50,7 +50,7 @@
     };
     try { if (window.parent && window.parent._appMunicipality) window._appMunicipality = window.parent._appMunicipality; } catch(e){}
   </script>
-  <script src="../assets/directory.js?v=20260219-1"></script>
+  <script src="../assets/directory.js?v=20260226-1"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var lang = (localStorage.getItem('preferredLanguage') || 'sl').toLowerCase();
@@ -73,7 +73,8 @@
     var fb={copyright:{sl:'© 2026 Soča Guide',en:'© 2026 Soča Guide'},links:[
       {label:{sl:'Impressum',en:'Imprint'},url:'../legal/?doc=impressum',enabled:true},
       {label:{sl:'Zasebnost',en:'Privacy'},url:'../legal/?doc=privacy',enabled:true},
-      {label:{sl:'Piškotki',en:'Cookies'},url:'../legal/?doc=cookies',enabled:true}
+      {label:{sl:'Piškotki',en:'Cookies'},url:'../legal/?doc=cookies',enabled:true},
+      {label:{sl:'Pogoji',en:'Terms'},url:'../legal/?doc=terms',enabled:true}
     ]};
     function render(cfg){
       var links=(cfg.links||[]).filter(function(l){return l.enabled;});if(!links.length)return;
