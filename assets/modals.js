@@ -113,7 +113,7 @@
     terms:     'Pogoji / Terms'
   };
   window.__MODALS.openLegal = function(doc) {
-    openModal('SOČA • ' + (LEGAL_TITLES[doc] || doc), './legal/index.html?doc=' + doc);
+    openModal('SOČA • ' + (LEGAL_TITLES[doc] || doc), '/legal/index.html?doc=' + doc);
   };
 
   overlay?.addEventListener('click', closeModal);

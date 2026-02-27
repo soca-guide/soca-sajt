@@ -15,7 +15,7 @@
         <div class="font-semibold" id="pageTitle">Soča Live</div>
         <div id="updated" class="text-xs text-gray-400"></div>
       </div>
-      <div class="text-xs px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300">DEMO</div>
+      <div id="live-badge" class="text-xs px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300">LIVE</div>
     </div>
 
     <div class="max-w-4xl mx-auto px-4 pb-3 overflow-x-auto">
@@ -97,43 +97,110 @@
     },{passive:false});
     window.addEventListener('touchend',function(){ touchStartX=null; touchStartY=null; isSwiping=false; },true);
   })();
-  var DEMO={updated_at:new Date().toISOString(),stations:[
-    {group:'bovec',name:'Soča – Log Čezsoški',metrics:{level_cm:142,flow_m3s:28.5,temp_c:8.2,trend:'stable'},recent:[{t:new Date().toISOString(),level_cm:142,flow_m3s:28.5},{t:new Date(Date.now()-1800000).toISOString(),level_cm:141,flow_m3s:28.1}]},
-    {group:'kobarid',name:'Soča – Kobarid',metrics:{level_cm:198,flow_m3s:52.3,temp_c:9.1,trend:'up'},recent:[{t:new Date().toISOString(),level_cm:198,flow_m3s:52.3},{t:new Date(Date.now()-1800000).toISOString(),level_cm:195,flow_m3s:50.1}]},
-    {group:'tolmin',name:'Tolminka – Tolmin I',metrics:{level_cm:86,flow_m3s:12.1,temp_c:7.5,trend:'down'},recent:[{t:new Date().toISOString(),level_cm:86,flow_m3s:12.1},{t:new Date(Date.now()-1800000).toISOString(),level_cm:89,flow_m3s:13.2}]},
-    {group:'koritnica',name:'Koritnica – Kal-Koritnica',metrics:{level_cm:52,flow_m3s:4.8,temp_c:6.3,trend:'stable'},recent:[{t:new Date().toISOString(),level_cm:52,flow_m3s:4.8},{t:new Date(Date.now()-1800000).toISOString(),level_cm:51,flow_m3s:4.6}]},
-    {group:'zaga',name:'Učja – Žaga',metrics:{level_cm:68,flow_m3s:8.2,temp_c:7.8,trend:'up'},recent:[{t:new Date().toISOString(),level_cm:68,flow_m3s:8.2},{t:new Date(Date.now()-1800000).toISOString(),level_cm:65,flow_m3s:7.5}]}
-  ],municipal:[
+  // Fallback demo data (used when ARSO is unreachable)
+  var DEMO_STATIONS=[
+    {group:'bovec',name:'Soča – Log Čezsoški',metrics:{level_cm:142,flow_m3s:28.5,temp_c:8.2,trend:'stable'},recent:[]},
+    {group:'kobarid',name:'Soča – Kobarid',metrics:{level_cm:198,flow_m3s:52.3,temp_c:9.1,trend:'up'},recent:[]},
+    {group:'tolmin',name:'Tolminka – Tolmin I',metrics:{level_cm:86,flow_m3s:12.1,temp_c:7.5,trend:'down'},recent:[]},
+    {group:'koritnica',name:'Koritnica – Kal-Koritnica',metrics:{level_cm:52,flow_m3s:4.8,temp_c:6.3,trend:'stable'},recent:[]},
+    {group:'zaga',name:'Učja – Žaga',metrics:{level_cm:68,flow_m3s:8.2,temp_c:7.8,trend:'up'},recent:[]}
+  ];
+  var DEMO_MUNICIPAL=[
     {name:'Občina Bovec',items:[{title:'Obvestilo: zapora ceste',date:'2026-02-05'}]},
     {name:'Občina Kobarid',items:[{title:'Razpis: štipendije',date:'2026-02-04'}]},
     {name:'Občina Tolmin',items:[{title:'Nova kolesarska steza',date:'2026-02-03'}]}
-  ]};
+  ];
+
+  // ARSO station name → group mapping
+  var ARSO_GROUP_MAP=[
+    {group:'bovec',    patterns:['Log Čezsoški','Čezsoška','Log Čez']},
+    {group:'kobarid',  patterns:['Kobarid']},
+    {group:'tolmin',   patterns:['Tolmin']},
+    {group:'koritnica',patterns:['Koritnica','Kal-Koritnica']},
+    {group:'zaga',     patterns:['Žaga','Zaga','Učja']}
+  ];
+  function arsoGroup(station){
+    var name=(station.merilno_mesto||station.naziv||'').toLowerCase();
+    var river=(station.reka||'').toLowerCase();
+    for(var i=0;i<ARSO_GROUP_MAP.length;i++){
+      var g=ARSO_GROUP_MAP[i];
+      for(var j=0;j<g.patterns.length;j++){
+        if(name.indexOf(g.patterns[j].toLowerCase())>=0||river.indexOf(g.patterns[j].toLowerCase())>=0) return g.group;
+      }
+    }
+    return null;
+  }
+
+  var _liveData = null; // { updated_at, stations, municipal }
+
+  async function fetchARSO(){
+    try {
+      var r = await fetch('https://www.arso.gov.si/storitve/opendata/hidro.json');
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var json = await r.json();
+      var postaje = (json.hidro&&json.hidro.postaja)||json.postaja||[];
+      if(!Array.isArray(postaje)) postaje=[];
+      var stations=[];
+      postaje.forEach(function(p){
+        var group=arsoGroup(p);
+        if(!group) return;
+        var lvl=parseFloat(p.vodostaj||p.ge_vodostaj||0);
+        var flow=parseFloat(p.pretok||p.ge_pretok||0);
+        var temp=parseFloat(p.temp_vode||p.ge_temp_vode||0);
+        var name=(p.reka||'')+(p.merilno_mesto?' – '+p.merilno_mesto:'');
+        stations.push({
+          group:group,
+          name:name,
+          metrics:{level_cm:isNaN(lvl)?0:Math.round(lvl),flow_m3s:isNaN(flow)?0:Math.round(flow*10)/10,temp_c:isNaN(temp)?0:Math.round(temp*10)/10,trend:'stable'},
+          recent:[]
+        });
+      });
+      if(stations.length===0) throw new Error('no stations parsed');
+      _liveData={updated_at:new Date().toISOString(),stations:stations,municipal:DEMO_MUNICIPAL};
+      var badge=document.getElementById('live-badge');
+      if(badge){badge.textContent='LIVE';badge.className='text-xs px-2 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 text-emerald-300';}
+    } catch(e) {
+      _liveData={updated_at:new Date().toISOString(),stations:DEMO_STATIONS,municipal:DEMO_MUNICIPAL};
+      var badge=document.getElementById('live-badge');
+      if(badge){badge.textContent='OFFLINE';badge.className='text-xs px-2 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-300';}
+    }
+    renderStations(currentFilter);
+    var t=labelsByLang[getSelectedLang()]||labelsByLang.en;
+    var updated=document.getElementById('updated');
+    if(updated) updated.textContent=t.updated+': '+new Date(_liveData.updated_at).toLocaleString();
+  }
+
   var updated=document.getElementById('updated'),stationsEl=document.getElementById('stations'),municipalEl=document.getElementById('municipal'),municipalList=document.getElementById('municipalList'),chips=document.getElementById('chips');
   var currentFilter='all';
   function trendIcon(t){return t==='up'?'↑':t==='down'?'↓':'→';}
   function trendColor(t){return t==='up'?'text-red-400':t==='down'?'text-emerald-300':'text-amber-300';}
   function renderStations(filter){
     if(filter==='municipal'){stationsEl.innerHTML='';return;}
-    var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
-    var list=DEMO.stations.filter(function(s){return filter==='all'?true:s.group===filter;});
+    var data=_liveData||{stations:DEMO_STATIONS};
+    var t=labelsByLang[getSelectedLang()]||labelsByLang.en;
+    var list=data.stations.filter(function(s){return filter==='all'?true:s.group===filter;});
+    if(!list.length){stationsEl.innerHTML='<div class="text-sm text-gray-400 text-center py-8">…</div>';return;}
     stationsEl.innerHTML=list.map(function(s){
-      var trendLabel = s.metrics.trend==='up'?t.trend_up:s.metrics.trend==='down'?t.trend_down:t.trend_stable;
-      return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3"><div class="flex items-start justify-between gap-3"><div><div class="font-semibold">'+s.name+'</div><div class="text-xs text-emerald-300 opacity-80">'+t.demo_arso+'</div></div><div class="px-2 py-1 rounded-lg border border-white/10 bg-black/20 flex items-center gap-2"><span class="'+trendColor(s.metrics.trend)+' font-bold text-lg">'+trendIcon(s.metrics.trend)+'</span><span class="text-xs text-gray-400">'+trendLabel+'</span></div></div><div class="grid grid-cols-3 gap-2 mt-3"><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold">'+s.metrics.level_cm+'</div><div class="text-xs text-gray-400">cm • '+t.level+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-cyan-300">'+s.metrics.flow_m3s+'</div><div class="text-xs text-gray-400">m³/s • '+t.flow+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-amber-300">'+s.metrics.temp_c+'</div><div class="text-xs text-gray-400">°C • '+t.temp+'</div></div></div><details class="mt-3"><summary class="cursor-pointer text-sm text-gray-300">'+t.details+'</summary><div class="mt-2 space-y-2">'+s.recent.map(function(r){return '<div class="flex justify-between text-xs text-gray-300 bg-black/20 border border-white/10 rounded-lg px-2 py-2"><span>'+new Date(r.t).toLocaleString()+'</span><span>'+r.level_cm+' cm</span><span>'+r.flow_m3s+' m³/s</span></div>';}).join('')+'</div></details></div>';
+      var trendLabel=s.metrics.trend==='up'?t.trend_up:s.metrics.trend==='down'?t.trend_down:t.trend_stable;
+      return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3"><div class="flex items-start justify-between gap-3"><div><div class="font-semibold">'+s.name+'</div></div><div class="px-2 py-1 rounded-lg border border-white/10 bg-black/20 flex items-center gap-2"><span class="'+trendColor(s.metrics.trend)+' font-bold text-lg">'+trendIcon(s.metrics.trend)+'</span><span class="text-xs text-gray-400">'+trendLabel+'</span></div></div><div class="grid grid-cols-3 gap-2 mt-3"><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold">'+s.metrics.level_cm+'</div><div class="text-xs text-gray-400">cm • '+t.level+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-cyan-300">'+s.metrics.flow_m3s+'</div><div class="text-xs text-gray-400">m³/s • '+t.flow+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-amber-300">'+s.metrics.temp_c+'</div><div class="text-xs text-gray-400">°C • '+t.temp+'</div></div></div></div>';
     }).join('');
   }
   function renderMunicipal(show){
     municipalEl.style.display=show?'block':'none';
     if(!show)return;
-    municipalList.innerHTML=DEMO.municipal.map(function(m){return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4"><div class="font-semibold">'+m.name+'</div><div class="mt-2 space-y-2">'+m.items.slice(0,3).map(function(i){return '<div class="rounded-xl bg-black/20 border border-white/10 p-3"><div class="text-sm">'+i.title+'</div><div class="text-xs text-gray-400 mt-1">'+i.date+'</div></div>';}).join('')+'</div></div>';}).join('');
+    var data=_liveData||{municipal:DEMO_MUNICIPAL};
+    municipalList.innerHTML=(data.municipal||DEMO_MUNICIPAL).map(function(m){return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4"><div class="font-semibold">'+m.name+'</div><div class="mt-2 space-y-2">'+m.items.slice(0,3).map(function(i){return '<div class="rounded-xl bg-black/20 border border-white/10 p-3"><div class="text-sm">'+i.title+'</div><div class="text-xs text-gray-400 mt-1">'+i.date+'</div></div>';}).join('')+'</div></div>';}).join('');
   }
   function setActiveChip(filter){
     [].slice.call(chips.querySelectorAll('.chip')).forEach(function(b){b.classList.remove('bg-emerald-500/20','border-emerald-500/30');if(b.dataset.filter===filter)b.classList.add('bg-emerald-500/20','border-emerald-500/30');});
   }
-  chips.addEventListener('click',function(e){var btn=e.target.closest('.chip');if(!btn)return;currentFilter=btn.dataset.filter;setActiveChip(currentFilter);renderStations(currentFilter);});
+  chips.addEventListener('click',function(e){var btn=e.target.closest('.chip');if(!btn)return;currentFilter=btn.dataset.filter;setActiveChip(currentFilter);renderStations(currentFilter);renderMunicipal(currentFilter==='municipal');});
   setActiveChip('all');
   applyLang();
-  updated.textContent = (labelsByLang[getSelectedLang()] || labelsByLang.en).updated + ': ' + new Date(DEMO.updated_at).toLocaleString();
-  window.addEventListener('storage', function(e){ if(e.key==='preferredLanguage'){ applyLang(); updated.textContent = (labelsByLang[getSelectedLang()] || labelsByLang.en).updated + ': ' + new Date(DEMO.updated_at).toLocaleString(); } });
+  // Show loading state, then fetch ARSO
+  stationsEl.innerHTML='<div class="text-sm text-gray-400 text-center py-8">Nalaganje…</div>';
+  fetchARSO();
+  window.addEventListener('storage',function(e){if(e.key==='preferredLanguage'){applyLang();}});
 </script>
 </body>
 </html>

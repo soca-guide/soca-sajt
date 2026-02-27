@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Izgubljeno / Nađeno</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260227-2"></script>
+  <script src="../assets/supabase-client.js?v=20260227-4"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
@@ -101,10 +101,13 @@
       return;
     }
     list.innerHTML = '<div class="text-sm text-gray-400">\u2026</div>';
+    var thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     window.supabaseClient
       .from('lost_found_posts')
       .select('id, created_at, email, message')
+      .gte('created_at', thirtyDaysAgo)
       .order('created_at', { ascending: false })
+      .limit(50)
       .then(function(r) {
         var items = (!r.error && r.data) ? r.data : [];
         if (!items.length) {

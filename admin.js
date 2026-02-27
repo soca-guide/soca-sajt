@@ -787,9 +787,17 @@
 
         var biz = byKey['owner_config'] || {};
         if (masterBiznisEnabled)  masterBiznisEnabled.checked   = biz.enabled === true;
-        if (masterBiznisName)     masterBiznisName.value        = biz.name        || '';
+        // Load multilang name (backward compat: if string, put in sl)
+        var BIZ_LANGS = ['sl','en','de','pl','cs','it'];
+        var bizName = (biz.name && typeof biz.name === 'object') ? biz.name : {sl: biz.name || ''};
+        var bizDesc = (biz.short_desc && typeof biz.short_desc === 'object') ? biz.short_desc : {sl: biz.short_desc || ''};
+        BIZ_LANGS.forEach(function(lng) {
+          var ni = document.getElementById('master-biznis-name-' + lng);
+          var di = document.getElementById('master-biznis-desc-' + lng);
+          if (ni) ni.value = bizName[lng] || '';
+          if (di) di.value = bizDesc[lng] || '';
+        });
         if (masterBiznisType)     masterBiznisType.value        = biz.type        || 'other';
-        if (masterBiznisDesc)     masterBiznisDesc.value        = biz.short_desc  || '';
         if (masterBiznisPhone)    masterBiznisPhone.value       = biz.phone       || '';
         if (masterBiznisWebsite)  masterBiznisWebsite.value     = biz.website     || '';
         if (masterBiznisBooking)  masterBiznisBooking.value     = biz.booking_url || '';
@@ -3427,20 +3435,30 @@
         visible: masterMaintVisibleChk ? masterMaintVisibleChk.checked : true,
         email:   masterMaintEmailInput ? masterMaintEmailInput.value.trim() : ''
       }),
-      upsertItem(_masterTenantId, 'biznis', 'owner_config', 'config', 0,
-        masterBiznisEnabled ? masterBiznisEnabled.checked : false,
-        {
-          enabled:     masterBiznisEnabled  ? masterBiznisEnabled.checked          : false,
-          name:        masterBiznisName     ? masterBiznisName.value.trim()        : '',
-          type:        masterBiznisType     ? masterBiznisType.value               : 'other',
-          short_desc:  masterBiznisDesc     ? masterBiznisDesc.value.trim()        : '',
-          phone:       masterBiznisPhone    ? masterBiznisPhone.value.trim()       : '',
-          website:     masterBiznisWebsite  ? masterBiznisWebsite.value.trim()     : '',
-          booking_url: masterBiznisBooking  ? masterBiznisBooking.value.trim()     : '',
-          image_url:   masterBiznisImage    ? masterBiznisImage.value.trim()       : '',
-          logo_url:    masterBiznisLogo     ? masterBiznisLogo.value.trim()        : ''
-        }
-      )
+      (function(){
+        var BIZ_LANGS = ['sl','en','de','pl','cs','it'];
+        var bizNameObj = {}, bizDescObj = {};
+        BIZ_LANGS.forEach(function(lng) {
+          var ni = document.getElementById('master-biznis-name-' + lng);
+          var di = document.getElementById('master-biznis-desc-' + lng);
+          bizNameObj[lng] = ni ? ni.value.trim() : '';
+          bizDescObj[lng] = di ? di.value.trim() : '';
+        });
+        return upsertItem(_masterTenantId, 'biznis', 'owner_config', 'config', 0,
+          masterBiznisEnabled ? masterBiznisEnabled.checked : false,
+          {
+            enabled:     masterBiznisEnabled  ? masterBiznisEnabled.checked : false,
+            name:        bizNameObj,
+            type:        masterBiznisType     ? masterBiznisType.value      : 'other',
+            short_desc:  bizDescObj,
+            phone:       masterBiznisPhone    ? masterBiznisPhone.value.trim()    : '',
+            website:     masterBiznisWebsite  ? masterBiznisWebsite.value.trim()  : '',
+            booking_url: masterBiznisBooking  ? masterBiznisBooking.value.trim()  : '',
+            image_url:   masterBiznisImage    ? masterBiznisImage.value.trim()    : '',
+            logo_url:    masterBiznisLogo     ? masterBiznisLogo.value.trim()     : ''
+          }
+        );
+      })()
     ]).then(function (results) {
       btnMasterSave.disabled = false;
       var errors = results.filter(function (r) { return r && r.error; }).map(function (r) { return r.error.message; });

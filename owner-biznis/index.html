@@ -136,13 +136,17 @@
         ? '<img src="' + cfg.logo_url + '" class="ob-logo" alt="">'
         : '<div class="ob-logo-placeholder">🏢</div>';
 
+      // Resolve multilang name and desc (support both old string and new object format)
+      var bizName = cfg.name && typeof cfg.name === 'object' ? (cfg.name[lang] || cfg.name.sl || cfg.name.en || '') : (cfg.name || '');
+      var bizDesc = cfg.short_desc && typeof cfg.short_desc === 'object' ? (cfg.short_desc[lang] || cfg.short_desc.sl || cfg.short_desc.en || '') : (cfg.short_desc || '');
+
       // Header
       var headerHtml = '<div class="ob-header">' + logoHtml +
-        '<div><div class="ob-name">' + (cfg.name || '') + '</div>' +
+        '<div><div class="ob-name">' + bizName + '</div>' +
         '<div class="ob-type">' + typeLabel(cfg.type || 'other') + '</div></div></div>';
 
       // Description
-      var descHtml = cfg.short_desc ? '<p class="ob-desc">' + cfg.short_desc + '</p>' : '';
+      var descHtml = bizDesc ? '<p class="ob-desc">' + bizDesc + '</p>' : '';
 
       // Buttons
       var btnsHtml = '<div class="ob-btns">' + renderBtns(cfg, false) + '</div>';

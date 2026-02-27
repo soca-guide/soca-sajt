@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Soča Sajt</title>
-  <link rel="stylesheet" href="/admin.css?v=20260227-4" />
+  <link rel="stylesheet" href="/admin.css?v=20260227-5" />
 </head>
 <body>
 
@@ -690,8 +690,24 @@
                     <input type="checkbox" id="master-biznis-enabled">
                     Prikaži dugme "Naš biznis" pored "Rezerviraj znova"
                   </label>
-                  <label for="master-biznis-name">Naziv biznisa</label>
-                  <input id="master-biznis-name" type="text" placeholder="Primer: Soča Rafting Centar" style="width:100%;box-sizing:border-box">
+                  <!-- Multilang name -->
+                  <label>Naziv biznisa (po jeziku)</label>
+                  <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.4rem" id="biznis-name-tabs">
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name active" data-lang="sl" style="min-width:38px">🇸🇮</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name" data-lang="en" style="min-width:38px">🇬🇧</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name" data-lang="de" style="min-width:38px">🇩🇪</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name" data-lang="pl" style="min-width:38px">🇵🇱</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name" data-lang="cs" style="min-width:38px">🇨🇿</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--name" data-lang="it" style="min-width:38px">🇮🇹</button>
+                  </div>
+                  <input type="hidden" id="master-biznis-name">
+                  <input id="master-biznis-name-sl" type="text" placeholder="Soča Rafting Centar" style="width:100%;box-sizing:border-box" data-biz-name-lang="sl">
+                  <input id="master-biznis-name-en" type="text" placeholder="Soča Rafting Center" style="width:100%;box-sizing:border-box;display:none" data-biz-name-lang="en">
+                  <input id="master-biznis-name-de" type="text" placeholder="Soča Rafting Zentrum" style="width:100%;box-sizing:border-box;display:none" data-biz-name-lang="de">
+                  <input id="master-biznis-name-pl" type="text" placeholder="Centrum Raftingu Soča" style="width:100%;box-sizing:border-box;display:none" data-biz-name-lang="pl">
+                  <input id="master-biznis-name-cs" type="text" placeholder="Rafting centrum Soča" style="width:100%;box-sizing:border-box;display:none" data-biz-name-lang="cs">
+                  <input id="master-biznis-name-it" type="text" placeholder="Centro rafting Soča" style="width:100%;box-sizing:border-box;display:none" data-biz-name-lang="it">
+
                   <label for="master-biznis-type">Tip biznisa</label>
                   <select id="master-biznis-type" style="width:100%;box-sizing:border-box">
                     <option value="other">Ostalo / Biznis</option>
@@ -699,8 +715,44 @@
                     <option value="food">Restoran / Gostilna</option>
                     <option value="taxi">Taxi / Prevoz</option>
                   </select>
-                  <label for="master-biznis-desc">Kratak opis (za goste)</label>
-                  <textarea id="master-biznis-desc" rows="3" placeholder="Kratki opis biznisa koji vide gosti…" style="width:100%;box-sizing:border-box"></textarea>
+
+                  <!-- Multilang desc -->
+                  <label>Kratak opis (po jeziku)</label>
+                  <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.4rem" id="biznis-desc-tabs">
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc active" data-lang="sl" style="min-width:38px">🇸🇮</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc" data-lang="en" style="min-width:38px">🇬🇧</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc" data-lang="de" style="min-width:38px">🇩🇪</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc" data-lang="pl" style="min-width:38px">🇵🇱</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc" data-lang="cs" style="min-width:38px">🇨🇿</button>
+                    <button type="button" class="btn-secondary btn-sm biz-lang-tab biz-lang-tab--desc" data-lang="it" style="min-width:38px">🇮🇹</button>
+                  </div>
+                  <input type="hidden" id="master-biznis-desc">
+                  <textarea id="master-biznis-desc-sl" rows="3" placeholder="Kratki opis za goste (SL)…" style="width:100%;box-sizing:border-box" data-biz-desc-lang="sl"></textarea>
+                  <textarea id="master-biznis-desc-en" rows="3" placeholder="Short description for guests (EN)…" style="width:100%;box-sizing:border-box;display:none" data-biz-desc-lang="en"></textarea>
+                  <textarea id="master-biznis-desc-de" rows="3" placeholder="Kurze Beschreibung für Gäste (DE)…" style="width:100%;box-sizing:border-box;display:none" data-biz-desc-lang="de"></textarea>
+                  <textarea id="master-biznis-desc-pl" rows="3" placeholder="Krótki opis dla gości (PL)…" style="width:100%;box-sizing:border-box;display:none" data-biz-desc-lang="pl"></textarea>
+                  <textarea id="master-biznis-desc-cs" rows="3" placeholder="Krátký popis pro hosty (CS)…" style="width:100%;box-sizing:border-box;display:none" data-biz-desc-lang="cs"></textarea>
+                  <textarea id="master-biznis-desc-it" rows="3" placeholder="Breve descrizione per gli ospiti (IT)…" style="width:100%;box-sizing:border-box;display:none" data-biz-desc-lang="it"></textarea>
+                  <script>
+                  (function(){
+                    function setupBizLangTabs(group) {
+                      var tabs = document.querySelectorAll('.biz-lang-tab--' + group);
+                      tabs.forEach(function(tab) {
+                        tab.addEventListener('click', function() {
+                          var lang = tab.dataset.lang;
+                          tabs.forEach(function(t) { t.classList.remove('active'); t.style.background=''; t.style.borderColor=''; t.style.color=''; });
+                          tab.classList.add('active');
+                          tab.style.background='rgba(99,102,241,0.2)'; tab.style.borderColor='#6366f1'; tab.style.color='#a5b4fc';
+                          document.querySelectorAll('[data-biz-' + group + '-lang]').forEach(function(el) {
+                            el.style.display = el.dataset['biz' + (group==='name'?'Name':'Desc') + 'Lang'] === lang ? '' : 'none';
+                          });
+                        });
+                      });
+                    }
+                    setupBizLangTabs('name');
+                    setupBizLangTabs('desc');
+                  })();
+                  </script>
                   <label for="master-biznis-phone">Telefon</label>
                   <input id="master-biznis-phone" type="tel" placeholder="+386 31 123 456" style="width:100%;box-sizing:border-box">
                   <label for="master-biznis-website">Web stranica (URL)</label>
@@ -770,79 +822,79 @@
       <div id="owner-panel" class="hidden">
 
         <details class="admin-section" open>
-          <summary class="admin-section-title">📞 Quick dugmad</summary>
+          <summary class="admin-section-title">📞 Hitre tipke</summary>
           <div class="admin-section-body">
             <label for="owner-call-phone">Pokliči lastnika (telefon)</label>
             <input id="owner-call-phone" type="text" placeholder="+386 31 123 456" />
-            <label for="owner-directions-link">🗺️ Do apartmana (link)</label>
+            <label for="owner-directions-link">🗺️ Do apartmaja (povezava)</label>
             <input id="owner-directions-link" type="text" placeholder="https://maps.google.com/..." />
-            <label for="owner-rules-url">📋 Hišni red (link)</label>
+            <label for="owner-rules-url">📋 Hišni red (povezava)</label>
             <input id="owner-rules-url" type="text" placeholder="./pravila/index.html" />
           </div>
         </details>
 
         <details class="admin-section">
-          <summary class="admin-section-title">📋 Hišni red (privatno)</summary>
+          <summary class="admin-section-title">📋 Hišni red (zasebno)</summary>
           <div class="admin-section-body">
-            <label for="owner-rules-text">Tekst / sadržaj</label>
-            <textarea id="owner-rules-text" rows="8" placeholder="Unesite privatna pravila stanara…"></textarea>
+            <label for="owner-rules-text">Besedilo / vsebina</label>
+            <textarea id="owner-rules-text" rows="8" placeholder="Vnesite zasebna pravila stanovalcev…"></textarea>
           </div>
         </details>
 
         <details class="admin-section">
-          <summary class="admin-section-title">🅿️ Parking — preporučeno</summary>
+          <summary class="admin-section-title">🅿️ Parkiranje — priporočeno</summary>
           <div class="admin-section-body">
-            <label>Naziv parkirišta</label>
+            <label>Ime parkirišča</label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
               <div>
-                <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+                <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovensko</label>
                 <input id="owner-parking-title-sl" type="text" placeholder="Parkirišče Bovec" style="width:100%;box-sizing:border-box" />
               </div>
               <div>
-                <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+                <label style="font-size:0.72rem;opacity:0.6">🇬🇧 Angleško</label>
                 <input id="owner-parking-title-en" type="text" placeholder="Bovec Parking" style="width:100%;box-sizing:border-box" />
               </div>
             </div>
-            <label for="owner-parking-address">Adresa (ista za sve jezike)</label>
+            <label for="owner-parking-address">Naslov (enak za vse jezike)</label>
             <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
-            <label for="owner-parking-maps">Maps link</label>
+            <label for="owner-parking-maps">Povezava do karte</label>
             <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
-            <label>Napomena</label>
-            <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
+            <label>Opomba</label>
+            <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovensko</label>
             <textarea id="owner-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
-            <label style="font-size:0.72rem;opacity:0.6">🇬🇧 English</label>
+            <label style="font-size:0.72rem;opacity:0.6">🇬🇧 Angleško</label>
             <textarea id="owner-parking-notes-en" rows="2" placeholder="Free up to 2h…" style="width:100%;box-sizing:border-box"></textarea>
           </div>
         </details>
 
         <details class="admin-section">
-          <summary class="admin-section-title">🔧 Prijava okvare — nastavke</summary>
+          <summary class="admin-section-title">🔧 Okvara — nastavitve</summary>
           <div class="admin-section-body">
-            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Dodaj email na koji stižu prijave gostiju. Kartica je uvijek vidljiva gostima.</p>
-            <label for="owner-maint-email">Tvoj email za prijave okvara</label>
+            <p style="font-size:0.82rem;opacity:0.6;margin:0 0 0.75rem">Dodaj e-naslov za prijave okvar gostov. Kartica je vedno vidna gostom.</p>
+            <label for="owner-maint-email">Tvoj e-naslov za prijave okvar</label>
             <input id="owner-maint-email" type="email" placeholder="tvojmail@gmail.com" />
-            <p style="font-size:0.78rem;opacity:0.5;margin:0.2rem 0 0">Sistem šalje email automatski — ne trebaš ništa dodatno podešavati.</p>
+            <p style="font-size:0.78rem;opacity:0.5;margin:0.2rem 0 0">E-pošta se pošlje samodejno — ni potrebno ničesar dodatno nastavljati.</p>
           </div>
         </details>
 
         <details class="admin-section">
-          <summary class="admin-section-title">🔁 Rezerviši ponovo</summary>
+          <summary class="admin-section-title">🔁 Rezerviraj znova</summary>
           <div class="admin-section-body">
-            <label for="owner-rebook-name">Naziv apartmana</label>
-            <input id="owner-rebook-name" type="text" placeholder="Apartman Soča View" />
-            <label for="owner-rebook-phone">Telefon vlasnika</label>
+            <label for="owner-rebook-name">Ime apartmaja</label>
+            <input id="owner-rebook-name" type="text" placeholder="Apartma Soča View" />
+            <label for="owner-rebook-phone">Telefon lastnika</label>
             <input id="owner-rebook-phone" type="text" placeholder="+386 31 123 456" />
-            <label for="owner-rebook-email">E-mail vlasnika (za mailto)</label>
+            <label for="owner-rebook-email">E-pošta lastnika (za mailto)</label>
             <input id="owner-rebook-email" type="email" placeholder="owner@example.com" />
-            <label for="owner-rebook-link">Link za rezervaciju (opciono)</label>
+            <label for="owner-rebook-link">Povezava za rezervacijo (neobvezno)</label>
             <input id="owner-rebook-link" type="text" placeholder="https://booking.com/..." />
-            <label for="owner-rebook-instructions">Uputstvo za goste (opciono)</label>
-            <textarea id="owner-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 meseca unapred…"></textarea>
+            <label for="owner-rebook-instructions">Navodila za goste (neobvezno)</label>
+            <textarea id="owner-rebook-instructions" rows="4" placeholder="Kontaktirajte nas 3 mesece vnaprej…"></textarea>
           </div>
         </details>
 
         <p id="owner-save-status" class="msg hidden"></p>
-        <button id="btn-owner-save">Sačuvaj</button>
+        <button id="btn-owner-save">Shrani</button>
 
       </div><!-- /#owner-panel -->
 
@@ -889,7 +941,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="/assets/supabase-client.js?v=20260227-4"></script>
-  <script src="/admin.js?v=20260227-4"></script>
+  <script src="/assets/supabase-client.js?v=20260227-5"></script>
+  <script src="/admin.js?v=20260227-5"></script>
 </body>
 </html>
