@@ -4190,11 +4190,6 @@
       document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
       document.body.style.fontSize = `${baseSize}px`;
 
-      const welcomeSubtitle = document.getElementById('welcome-subtitle');
-      if (welcomeSubtitle) {
-        welcomeSubtitle.textContent = config.apartment_name || defaultConfig.apartment_name;
-      }
-
       const heroLocation = document.getElementById('hero-location');
       if (heroLocation) {
         const locationText = config.location_subtitle || defaultConfig.location_subtitle;

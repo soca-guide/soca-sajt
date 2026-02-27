@@ -1449,11 +1449,20 @@
 
   // Category labels for display
   var PARTNER_CAT_LABELS = {
-    rafting:'Rafting', paragliding:'Paragliding', kayak:'Kajak', canyoning:'Kanjoning',
-    hiking:'Planinarenje', cycling:'Biciklizam', climbing:'Penjanje', zipline:'Zipline', other_act:'Ostalo',
-    restaurant:'Restoran', gostilna:'Gostilna', cafe:'Kafić', pizzeria:'Pizzerija',
-    bar:'Bar', bistro:'Bistro', brewery:'Pivara', street_food:'Street food', other_food:'Ostalo',
-    taxi:'Taxi', transfer:'Transfer', bus:'Bus', other_taxi:'Ostalo',
+    // activities
+    rafting:'Rafting', kayak:'Kajak', canyoning:'Kanjoning', zipline:'Zipline',
+    cycling:'Kolesarstvo', paragliding:'Paragliding', skydiving:'Skydiving',
+    // legacy activities (kept for backward compat with existing DB data)
+    hiking:'Planinarenje', climbing:'Penjanje', other_act:'Ostalo',
+    // food
+    cafe:'Kavarna', street_food:'Street food', gostilna:'Gostilna',
+    restaurant:'Restavracija', pizzeria:'Pizzerija',
+    // legacy food
+    bar:'Bar', bistro:'Bistro', brewery:'Pivovarna', other_food:'Ostalo',
+    // taxi
+    taxi:'Taksi',
+    // legacy taxi
+    transfer:'Transfer', bus:'Bus', other_taxi:'Ostalo',
     custom:'✏️ Prilagođena…'
   };
   var PARTNER_TYPE_LABELS = { activities:'🎯 Adrenalin', food:'🍽️ Restorani', taxi:'🚌 Taxi' };
@@ -1560,9 +1569,9 @@
 
   // Sync category dropdown based on type
   var CAT_BY_TYPE = {
-    activities: ['rafting','paragliding','kayak','canyoning','hiking','cycling','climbing','zipline','other_act','custom'],
-    food:       ['restaurant','gostilna','cafe','pizzeria','bar','bistro','brewery','street_food','other_food','custom'],
-    taxi:       ['taxi','transfer','bus','other_taxi','custom']
+    activities: ['rafting','kayak','canyoning','zipline','cycling','paragliding','skydiving','custom'],
+    food:       ['cafe','street_food','gostilna','restaurant','pizzeria','custom'],
+    taxi:       ['taxi','custom']
   };
 
   function _syncCategoryByType(type, selected) {
@@ -1753,7 +1762,6 @@
       image_url:         pfImage    ? pfImage.value.trim()   || null : null,
       logo_url:          pfLogo     ? pfLogo.value.trim()    || null : null,
       phone:             pfPhone    ? pfPhone.value.trim()   || null : null,
-      whatsapp:          pfWhatsapp ? pfWhatsapp.value.trim()|| null : null,
       website_url:       pfWebsite  ? pfWebsite.value.trim() || null : null,
       booking_url:       pfBooking  ? pfBooking.value.trim() || null : null,
       municipalities:    muns && muns.length ? muns : null,
@@ -2002,6 +2010,24 @@
     }
 
     // ── Event listeners ───────────────────────────────────────────────────
+    // ── "Teren" link ──────────────────────────────────────────────────────
+    var btnFieldLink = document.getElementById('btn-partner-field-link');
+    if (btnFieldLink) {
+      btnFieldLink.addEventListener('click', function() {
+        var base = window.location.origin + window.location.pathname.replace(/\/admin\/[^/]*$/, '');
+        var url  = base + '/partner-entry/';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            var orig = btnFieldLink.textContent;
+            btnFieldLink.textContent = '✓ Kopirano!';
+            setTimeout(function() { btnFieldLink.textContent = orig; }, 2000);
+          }).catch(function() { prompt('Kopirajte link:', url); });
+        } else {
+          prompt('Kopirajte link:', url);
+        }
+      });
+    }
+
     if (btnCsv)         btnCsv.addEventListener('click',  function() { if (csvFileInput) csvFileInput.click(); });
     if (btnCsvTemplate) btnCsvTemplate.addEventListener('click', _downloadTemplate);
     if (csvModalClose)  csvModalClose.addEventListener('click',  _closeModal);

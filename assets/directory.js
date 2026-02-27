@@ -14,31 +14,35 @@
   var SUPPORTED_LANGS = ['sl', 'en', 'de', 'it', 'pl', 'cs'];
 
   var CATEGORY_LABELS = {
-    // activities
-    rafting:     { sl:'Rafting',      en:'Rafting',     de:'Rafting',    it:'Rafting',    pl:'Rafting',       cs:'Rafting' },
-    paragliding: { sl:'Paragliding',  en:'Paragliding', de:'Paragliding',it:'Parapendio', pl:'Paralotniarstwo',cs:'Paragliding' },
-    kayak:       { sl:'Kajak',        en:'Kayak',       de:'Kajak',      it:'Kayak',      pl:'Kajak',          cs:'Kajak' },
-    canyoning:   { sl:'Kanjoning',    en:'Canyoning',   de:'Canyoning',  it:'Canyoning',  pl:'Kanjoning',      cs:'Canyoning' },
-    hiking:      { sl:'Planinarenje', en:'Hiking',      de:'Wandern',    it:'Escursionismo',pl:'Piesze wycieczki',cs:'Turistika' },
-    cycling:     { sl:'Kolesarjenje', en:'Cycling',     de:'Radfahren',  it:'Ciclismo',   pl:'Kolarstwo',      cs:'Cyklistika' },
-    climbing:    { sl:'Plezanje',     en:'Climbing',    de:'Klettern',   it:'Arrampicata',pl:'Wspinaczka',      cs:'Lezení' },
-    zipline:     { sl:'Zipline',      en:'Zipline',     de:'Zipline',    it:'Zipline',    pl:'Zipline',         cs:'Zipline' },
-    other_act:   { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',      pl:'Inne',            cs:'Jiné' },
-    // food
-    restaurant:  { sl:'Restavracija', en:'Restaurant',  de:'Restaurant', it:'Ristorante', pl:'Restauracja',     cs:'Restaurace' },
-    gostilna:    { sl:'Gostilna',     en:'Inn',         de:'Gasthaus',   it:'Locanda',    pl:'Gospoda',         cs:'Hostinec' },
-    cafe:        { sl:'Kavarna',      en:'Café',        de:'Café',       it:'Caffè',      pl:'Kawiarnia',       cs:'Kavárna' },
-    pizzeria:    { sl:'Pizzerija',    en:'Pizzeria',    de:'Pizzeria',   it:'Pizzeria',   pl:'Pizzeria',         cs:'Pizzerie' },
-    bar:         { sl:'Bar',          en:'Bar',         de:'Bar',        it:'Bar',        pl:'Bar',              cs:'Bar' },
-    bistro:      { sl:'Bistro',       en:'Bistro',      de:'Bistro',     it:'Bistro',     pl:'Bistro',           cs:'Bistro' },
-    brewery:     { sl:'Pivovarna',    en:'Brewery',     de:'Brauerei',   it:'Birrificio', pl:'Browar',           cs:'Pivovar' },
-    street_food: { sl:'Street food',  en:'Street food', de:'Street food',it:'Street food',pl:'Street food',      cs:'Street food' },
-    other_food:  { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',      pl:'Inne',             cs:'Jiné' },
-    // taxi
-    taxi:        { sl:'Taxi',         en:'Taxi',        de:'Taxi',       it:'Taxi',       pl:'Taxi',             cs:'Taxi' },
-    transfer:    { sl:'Transfer',     en:'Transfer',    de:'Transfer',   it:'Transfer',   pl:'Transfer',         cs:'Transfer' },
-    bus:         { sl:'Bus',          en:'Bus',         de:'Bus',        it:'Bus',        pl:'Bus',              cs:'Bus' },
-    other_taxi:  { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',      pl:'Inne',             cs:'Jiné' }
+    // activities (active set)
+    rafting:     { sl:'Rafting',      en:'Rafting',     de:'Rafting',    it:'Rafting',      pl:'Rafting',            cs:'Rafting' },
+    kayak:       { sl:'Kajak',        en:'Kayak',       de:'Kajak',      it:'Kayak',         pl:'Kajak',              cs:'Kajak' },
+    canyoning:   { sl:'Kanjoning',    en:'Canyoning',   de:'Canyoning',  it:'Canyoning',     pl:'Kanjoning',          cs:'Canyoning' },
+    zipline:     { sl:'Zipline',      en:'Zipline',     de:'Zipline',    it:'Zipline',        pl:'Zipline',            cs:'Zipline' },
+    cycling:     { sl:'Kolesarstvo',  en:'Cycling',     de:'Radfahren',  it:'Ciclismo',       pl:'Kolarstwo',          cs:'Cyklistika' },
+    paragliding: { sl:'Paragliding',  en:'Paragliding', de:'Paragliding',it:'Parapendio',     pl:'Paralotniarstwo',    cs:'Paragliding' },
+    skydiving:   { sl:'Skydiving',    en:'Skydiving',   de:'Fallschirmspringen',it:'Paracadutismo',pl:'Spadochroniarstwo',cs:'Skydiving' },
+    // activities (legacy — display only, not in add-form)
+    hiking:      { sl:'Planinarenje', en:'Hiking',      de:'Wandern',    it:'Escursionismo',  pl:'Piesze wycieczki',   cs:'Turistika' },
+    climbing:    { sl:'Plezanje',     en:'Climbing',    de:'Klettern',   it:'Arrampicata',    pl:'Wspinaczka',         cs:'Lezení' },
+    other_act:   { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',           pl:'Inne',               cs:'Jiné' },
+    // food (active set)
+    cafe:        { sl:'Kavarna',      en:'Café',        de:'Café',       it:'Caffè',           pl:'Kawiarnia',          cs:'Kavárna' },
+    street_food: { sl:'Street food',  en:'Street food', de:'Street food',it:'Street food',     pl:'Street food',        cs:'Street food' },
+    gostilna:    { sl:'Gostilna',     en:'Inn',         de:'Gasthaus',   it:'Locanda',          pl:'Gospoda',            cs:'Hostinec' },
+    restaurant:  { sl:'Restavracija', en:'Restaurant',  de:'Restaurant', it:'Ristorante',       pl:'Restauracja',        cs:'Restaurace' },
+    pizzeria:    { sl:'Pizzerija',    en:'Pizzeria',    de:'Pizzeria',   it:'Pizzeria',          pl:'Pizzeria',           cs:'Pizzerie' },
+    // food (legacy)
+    bar:         { sl:'Bar',          en:'Bar',         de:'Bar',        it:'Bar',               pl:'Bar',                cs:'Bar' },
+    bistro:      { sl:'Bistro',       en:'Bistro',      de:'Bistro',     it:'Bistro',             pl:'Bistro',             cs:'Bistro' },
+    brewery:     { sl:'Pivovarna',    en:'Brewery',     de:'Brauerei',   it:'Birrificio',          pl:'Browar',             cs:'Pivovar' },
+    other_food:  { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',               pl:'Inne',               cs:'Jiné' },
+    // taxi (active set)
+    taxi:        { sl:'Taksi',        en:'Taxi',        de:'Taxi',       it:'Taxi',               pl:'Taxi',               cs:'Taxi' },
+    // taxi (legacy)
+    transfer:    { sl:'Transfer',     en:'Transfer',    de:'Transfer',   it:'Transfer',            pl:'Transfer',           cs:'Transfer' },
+    bus:         { sl:'Bus',          en:'Bus',         de:'Bus',        it:'Bus',                 pl:'Bus',                cs:'Bus' },
+    other_taxi:  { sl:'Ostalo',       en:'Other',       de:'Sonstiges',  it:'Altro',               pl:'Inne',               cs:'Jiné' }
   };
 
   var PAGE_I18N = {
@@ -51,8 +55,8 @@
       it:'Ristoranti & Caffè',     pl:'Restauracje & Kawiarnie', cs:'Restaurace & Kavárny'
     },
     taxi: {
-      sl:'Taxi & Bus',             en:'Taxi & Bus',              de:'Taxi & Bus',
-      it:'Taxi & Bus',             pl:'Taxi & Bus',              cs:'Taxi & Bus'
+      sl:'Taxi',  en:'Taxi',  de:'Taxi',
+      it:'Taxi',  pl:'Taxi',  cs:'Taxi'
     }
   };
 

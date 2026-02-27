@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Vnos partnerja — Soča Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100vh; background: #0a1612; color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; }
+
+    .page-wrap { max-width: 540px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+
+    .pg-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(34,211,238,0.2); }
+    .pg-header-icon { font-size: 1.6rem; }
+    .pg-header h1 { font-size: 1.1rem; font-weight: 700; color: #22d3ee; line-height: 1.2; }
+    .pg-header p  { font-size: 0.78rem; color: #9ca3af; margin-top: 0.1rem; }
+
+    .login-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(34,211,238,0.25); border-radius: 14px; padding: 1.5rem; }
+    .login-card h2 { font-size: 1rem; color: #22d3ee; margin-bottom: 1rem; }
+
+    label { display: block; font-size: 0.78rem; color: #9ca3af; margin-bottom: 0.3rem; margin-top: 0.85rem; font-weight: 600; }
+    label:first-child { margin-top: 0; }
+    input[type=text], input[type=tel], input[type=url], input[type=email],
+    input[type=password], input[type=number], textarea, select {
+      width: 100%; padding: 0.65rem 0.75rem;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px; color: #e5e7eb; font-size: 0.9rem;
+      -webkit-appearance: none; appearance: none;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: rgba(34,211,238,0.5); background: rgba(34,211,238,0.05); }
+    textarea { resize: vertical; min-height: 70px; }
+    select option { background: #1a2535; }
+
+    .btn { display: block; width: 100%; padding: 0.8rem 1rem; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; transition: opacity 0.15s; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary   { background: #22d3ee; color: #0a1612; margin-top: 1.25rem; }
+    .btn-danger    { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); margin-top: 0.5rem; }
+    .btn-primary:active:not(:disabled), .btn-danger:active:not(:disabled) { opacity: 0.8; }
+    .btn-logout { background: none; border: none; color: #9ca3af; font-size: 0.78rem; cursor: pointer; padding: 0.2rem 0; text-decoration: underline; }
+
+    .section-title {
+      font-size: 0.72rem; font-weight: 700; color: #22d3ee; letter-spacing: 0.08em;
+      text-transform: uppercase; margin: 1.25rem 0 0.5rem;
+      padding-bottom: 0.35rem; border-bottom: 1px solid rgba(34,211,238,0.15);
+    }
+
+    .img-upload-btn { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3); color: #22d3ee; border-radius: 8px; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-top: 0.35rem; }
+    .img-preview     { width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(34,211,238,0.2); margin-top: 0.5rem; display: none; }
+    .img-preview-sq  { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(34,211,238,0.2); margin-top: 0.5rem; display: none; }
+    .img-hint  { font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; line-height: 1.4; }
+    .img-status { font-size: 0.78rem; color: #22d3ee; margin-top: 0.3rem; display: none; }
+    .btn-clear-img { display: none; background: none; border: none; color: #f87171; font-size: 0.72rem; cursor: pointer; padding: 0.15rem 0; margin-top: 0.2rem; }
+
+    .mun-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .mun-chip { display: flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 0.35rem 0.85rem; font-size: 0.85rem; cursor: pointer; user-select: none; transition: background 0.12s, border-color 0.12s; }
+    .mun-chip input { width: 14px; height: 14px; cursor: pointer; accent-color: #22d3ee; }
+    .mun-chip:has(input:checked) { background: rgba(34,211,238,0.12); border-color: rgba(34,211,238,0.4); }
+
+    .msg { font-size: 0.85rem; border-radius: 10px; padding: 0.65rem 0.85rem; margin-top: 0.75rem; display: none; }
+    .msg.ok    { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); display: block; }
+    .msg.error { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); display: block; }
+    .msg.info  { background: rgba(34,211,238,0.08);  color: #22d3ee; border: 1px solid rgba(34,211,238,0.2); display: block; }
+
+    .success-banner { background: rgba(74,222,128,0.13); border: 1px solid rgba(74,222,128,0.35); border-radius: 12px; padding: 1rem 1.1rem; margin-top: 1rem; text-align: center; display: none; }
+    .success-banner .sb-icon { font-size: 2rem; margin-bottom: 0.35rem; }
+    .success-banner h3 { color: #4ade80; font-size: 1rem; margin-bottom: 0.2rem; }
+    .success-banner p  { color: #a7f3d0; font-size: 0.82rem; }
+
+    .toggle-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.85rem; }
+    .toggle-row input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: #22d3ee; }
+    .toggle-row span { font-size: 0.88rem; }
+
+    .user-bar { font-size: 0.75rem; color: #6b7280; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Confirm overlay */
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; padding: 1rem; }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box { background: #0f1f18; border: 1px solid rgba(34,211,238,0.3); border-radius: 14px; padding: 1.5rem; max-width: 320px; width: 100%; text-align: center; }
+    .confirm-box h3 { color: #e5e7eb; font-size: 1rem; margin-bottom: 0.5rem; }
+    .confirm-box p  { color: #9ca3af; font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .confirm-btns { display: flex; gap: 0.6rem; }
+    .confirm-btns button { flex: 1; padding: 0.7rem; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+    .confirm-yes  { background: #22d3ee; color: #0a1612; }
+    .confirm-yes-danger { background: #f87171; color: #0a1612; }
+    .confirm-no   { background: rgba(255,255,255,0.1); color: #e5e7eb; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- Confirm dialog (reusable) -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title"></h3>
+    <p id="confirm-msg"></p>
+    <div class="confirm-btns">
+      <button class="confirm-no"  id="confirm-no">Prekliči</button>
+      <button class="confirm-yes" id="confirm-yes">Potrdi</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="pg-header">
+    <div class="pg-header-icon">🤝</div>
+    <div>
+      <h1>Soča Guide — Vnos partnerja</h1>
+      <p>Dodajte svojo dejavnost v turistični vodič</p>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="view-login">
+    <div class="login-card">
+      <h2>🔐 Prijava</h2>
+      <label for="le">E-poštni naslov</label>
+      <input id="le" type="email" autocomplete="username" placeholder="admin@primer.com" />
+      <label for="lp">Geslo</label>
+      <input id="lp" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <div id="login-msg" class="msg"></div>
+      <button id="btn-login" class="btn btn-primary">Prijava</button>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div id="view-form" class="hidden">
+
+    <div class="user-bar">
+      <span id="user-email-disp"></span>
+      <button class="btn-logout" id="btn-logout">Odjava</button>
+    </div>
+
+    <div id="form-msg" class="msg"></div>
+
+    <div id="form-success" class="success-banner">
+      <div class="sb-icon">✅</div>
+      <h3>Partner je bil uspešno shranjen!</h3>
+      <p>Podatki so bili shranjeni v bazo. Obrazec se bo počistil čez trenutek.</p>
+    </div>
+
+    <!-- Osnovni podatki -->
+    <div class="section-title">Osnovni podatki</div>
+
+    <label for="f-name">Ime podjetja / dejavnosti *</label>
+    <input id="f-name" type="text" placeholder="npr. Rafting Soča d.o.o." />
+
+    <label for="f-type">Vrsta kartice *</label>
+    <select id="f-type">
+      <option value="activities">🎯 Adrenalin & Aktivnosti</option>
+      <option value="food">🍽️ Restavracije & Kavarne</option>
+      <option value="taxi">🚌 Taxi</option>
+    </select>
+
+    <label for="f-cat">Kategorija *</label>
+    <select id="f-cat"></select>
+    <input type="text" id="f-cat-custom" placeholder="Vpiši naziv kategorije (npr. Wellness)" style="display:none;margin-top:0.35rem" />
+
+    <label for="f-tier">Nivo prikaza</label>
+    <select id="f-tier">
+      <option value="standard">📍 Standard — seznam</option>
+      <option value="featured">🔥 Popularno — izpostavljeno</option>
+      <option value="premium">⭐ Priporočamo — hero kartica</option>
+    </select>
+
+    <label for="f-desc">Kratek opis</label>
+    <textarea id="f-desc" placeholder="npr. Rafting na smaragdni Soči za vse starosti…"></textarea>
+
+    <!-- Slike -->
+    <div class="section-title">🖼️ Slike</div>
+
+    <label>Logo podjetja</label>
+    <p class="img-hint">📐 200 × 200 px · kvadrat · PNG/WebP s prosojnim ozadjem · max 150 KB</p>
+    <label class="img-upload-btn">
+      📁 Izberi logo
+      <input type="file" id="f-logo-file" accept="image/png,image/webp,image/jpeg" style="display:none">
+    </label>
+    <img id="f-logo-preview" class="img-preview-sq" src="" alt="Logo predogled">
+    <button type="button" id="btn-logo-clear" class="btn-clear-img">✕ Odstrani logo</button>
+    <input type="hidden" id="f-logo">
+    <div id="logo-status" class="img-status"></div>
+
+    <label style="margin-top:1rem">Hero slika (pasica)</label>
+    <p class="img-hint">📐 800 × 400 px · razmerje 2:1 · JPG/WebP · max 500 KB — prikazuje se pri Premium in Popularno kartici</p>
+    <label class="img-upload-btn">
+      📁 Izberi sliko
+      <input type="file" id="f-img-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+    </label>
+    <img id="f-img-preview" class="img-preview" src="" alt="Slika predogled">
+    <button type="button" id="btn-img-clear" class="btn-clear-img">✕ Odstrani sliko</button>
+    <input type="hidden" id="f-img">
+    <div id="img-status" class="img-status"></div>
+
+    <!-- Kontakt -->
+    <div class="section-title">📞 Kontakt</div>
+
+    <label for="f-phone">Telefon</label>
+    <input id="f-phone" type="tel" placeholder="+386 41 123 456" />
+
+    <label for="f-web">Spletna stran</label>
+    <input id="f-web" type="url" placeholder="https://vasa-stran.si" />
+
+    <label for="f-book">Rezervacijska povezava</label>
+    <input id="f-book" type="url" placeholder="https://rezervacije.si" />
+
+    <!-- Območja -->
+    <div class="section-title">🌍 Območja prikaza</div>
+    <p style="font-size:0.78rem;color:#6b7280;margin-bottom:0.25rem">Izberite občine, v katerih bo partner prikazan gostom.</p>
+    <div class="mun-grid" id="f-mun-grid">
+      <p style="font-size:0.78rem;color:#6b7280;opacity:0.6">Nalagam občine…</p>
+    </div>
+
+    <button id="btn-save"  class="btn btn-primary">💾 Shrani partnerja</button>
+    <button id="btn-reset" class="btn btn-danger">🗑️ Počisti obrazec</button>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../assets/supabase-client.js?v=20260226-7"></script>
+<script>
+(function() {
+  'use strict';
+
+  var sb = window.supabaseClient || window.SB;
+  if (!sb) {
+    document.body.innerHTML = '<div style="padding:2rem;color:#f87171;font-family:sans-serif;background:#0a1612;min-height:100vh"><h2>Supabase ni inicializiran.</h2><p>Preverite internetno povezavo.</p></div>';
+    return;
+  }
+
+  // ── Category definitions ──────────────────────────────────────────────
+  var CAT_BY_TYPE = {
+    activities: [
+      { v:'rafting',    l:'Rafting' },
+      { v:'kayak',      l:'Kajak' },
+      { v:'canyoning',  l:'Kanjoning' },
+      { v:'zipline',    l:'Zipline' },
+      { v:'cycling',    l:'Kolesarstvo' },
+      { v:'paragliding',l:'Paragliding' },
+      { v:'skydiving',  l:'Skydiving' },
+      { v:'custom',     l:'✏️ Drugo…' }
+    ],
+    food: [
+      { v:'cafe',        l:'Kavarna' },
+      { v:'street_food', l:'Street food' },
+      { v:'gostilna',    l:'Gostilna' },
+      { v:'restaurant',  l:'Restavracija' },
+      { v:'pizzeria',    l:'Pizzerija' },
+      { v:'custom',      l:'✏️ Drugo…' }
+    ],
+    taxi: [
+      { v:'taxi',   l:'Taksi' },
+      { v:'custom', l:'✏️ Drugo…' }
+    ]
+  };
+
+  // ── DOM refs ──────────────────────────────────────────────────────────
+  var viewLogin    = document.getElementById('view-login');
+  var viewForm     = document.getElementById('view-form');
+  var loginMsg     = document.getElementById('login-msg');
+  var formMsg      = document.getElementById('form-msg');
+  var formSuccess  = document.getElementById('form-success');
+  var btnLogin     = document.getElementById('btn-login');
+  var btnLogout    = document.getElementById('btn-logout');
+  var btnSave      = document.getElementById('btn-save');
+  var btnReset     = document.getElementById('btn-reset');
+  var fName        = document.getElementById('f-name');
+  var fType        = document.getElementById('f-type');
+  var fCat         = document.getElementById('f-cat');
+  var fCatCustom   = document.getElementById('f-cat-custom');
+  var fTier        = document.getElementById('f-tier');
+  var fDesc        = document.getElementById('f-desc');
+  var fPhone       = document.getElementById('f-phone');
+  var fWeb         = document.getElementById('f-web');
+  var fBook        = document.getElementById('f-book');
+  var fMunGrid     = document.getElementById('f-mun-grid');
+  var fImg         = document.getElementById('f-img');
+  var fImgFile     = document.getElementById('f-img-file');
+  var fImgPreview  = document.getElementById('f-img-preview');
+  var imgStatus    = document.getElementById('img-status');
+  var btnImgClear  = document.getElementById('btn-img-clear');
+  var fLogo        = document.getElementById('f-logo');
+  var fLogoFile    = document.getElementById('f-logo-file');
+  var fLogoPrev    = document.getElementById('f-logo-preview');
+  var logoStatus   = document.getElementById('logo-status');
+  var btnLogoClear = document.getElementById('btn-logo-clear');
+  var userDisp     = document.getElementById('user-email-disp');
+
+  // ── Confirm dialog ────────────────────────────────────────────────────
+  var confirmOverlay = document.getElementById('confirm-overlay');
+  var confirmTitle   = document.getElementById('confirm-title');
+  var confirmMsgEl   = document.getElementById('confirm-msg');
+  var confirmYes     = document.getElementById('confirm-yes');
+  var confirmNo      = document.getElementById('confirm-no');
+
+  function showConfirm(opts) {
+    // opts: { title, msg, yesLabel, yesDanger, onYes }
+    confirmTitle.textContent  = opts.title  || 'Ste prepričani?';
+    confirmMsgEl.textContent  = opts.msg    || '';
+    confirmYes.textContent    = opts.yesLabel || 'Potrdi';
+    confirmYes.className      = opts.yesDanger ? 'confirm-yes-danger' : 'confirm-yes';
+    confirmOverlay.classList.add('open');
+    confirmYes.onclick = function() { confirmOverlay.classList.remove('open'); opts.onYes(); };
+    confirmNo.onclick  = function() { confirmOverlay.classList.remove('open'); };
+  }
+  confirmOverlay.addEventListener('click', function(e) {
+    if (e.target === confirmOverlay) confirmOverlay.classList.remove('open');
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+  function showMsg(el, text, type) { el.textContent = text; el.className = 'msg ' + (type || 'info'); }
+  function hideMsg(el)             { el.className = 'msg'; el.textContent = ''; }
+
+  // ── Category sync ─────────────────────────────────────────────────────
+  function syncCats() {
+    var cats = CAT_BY_TYPE[fType.value] || [];
+    fCat.innerHTML = cats.map(function(c) {
+      return '<option value="' + c.v + '">' + c.l + '</option>';
+    }).join('');
+    fCatCustom.style.display = 'none';
+    fCatCustom.value = '';
+  }
+  fType.addEventListener('change', syncCats);
+  fCat.addEventListener('change', function() {
+    fCatCustom.style.display = (fCat.value === 'custom') ? 'block' : 'none';
+    if (fCat.value !== 'custom') fCatCustom.value = '';
+  });
+  syncCats();
+
+  // ── Load municipalities from DB ───────────────────────────────────────
+  var _loadedMuns = ['bovec', 'kobarid', 'tolmin']; // fallback
+
+  function loadMunicipalities() {
+    sb.from('items')
+      .select('data_json')
+      .eq('section_key', 'municipalities')
+      .eq('item_key', 'list')
+      .is('tenant_id', null)
+      .maybeSingle()
+      .then(function(r) {
+        var slugs = (r.data && r.data.data_json && Array.isArray(r.data.data_json.slugs))
+          ? r.data.data_json.slugs
+          : _loadedMuns;
+        _loadedMuns = slugs;
+        renderMunChips(slugs);
+      })
+      .catch(function() { renderMunChips(_loadedMuns); });
+  }
+
+  function renderMunChips(slugs) {
+    fMunGrid.innerHTML = slugs.map(function(s) {
+      var label = s.charAt(0).toUpperCase() + s.slice(1);
+      return '<label class="mun-chip"><input type="checkbox" value="' + s + '"> ' + label + '</label>';
+    }).join('');
+  }
+
+  // ── Image upload ──────────────────────────────────────────────────────
+  function setupUpload(fileInput, hiddenInput, previewEl, statusEl, clearBtn, folder) {
+    fileInput.addEventListener('change', function() {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        previewEl.src = e.target.result;
+        previewEl.style.display = 'block';
+        clearBtn.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      statusEl.textContent = '⏳ Nalagam…';
+      statusEl.style.color = '#22d3ee';
+      statusEl.style.display = 'block';
+      var ext  = file.name.split('.').pop().toLowerCase();
+      var name = folder + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+      sb.storage.from('partner-images').upload(name, file, { upsert: true, contentType: file.type })
+        .then(function(r) {
+          fileInput.value = '';
+          if (r.error) { statusEl.textContent = '❌ ' + r.error.message; statusEl.style.color = '#f87171'; return; }
+          var pub = sb.storage.from('partner-images').getPublicUrl(name);
+          hiddenInput.value = pub.data && pub.data.publicUrl ? pub.data.publicUrl : '';
+          statusEl.textContent = '✓ Naloženo';
+          statusEl.style.color = '#4ade80';
+          setTimeout(function() { statusEl.style.display = 'none'; }, 2000);
+        }).catch(function(err) {
+          statusEl.textContent = '❌ ' + (err.message || err);
+          statusEl.style.color = '#f87171';
+        });
+    });
+    clearBtn.addEventListener('click', function() {
+      hiddenInput.value = '';
+      previewEl.src = '';
+      previewEl.style.display = 'none';
+      clearBtn.style.display = 'none';
+      fileInput.value = '';
+    });
+  }
+  setupUpload(fImgFile,  fImg,  fImgPreview, imgStatus,  btnImgClear,  'images');
+  setupUpload(fLogoFile, fLogo, fLogoPrev,   logoStatus, btnLogoClear, 'logos');
+
+  // ── Auth ──────────────────────────────────────────────────────────────
+  function showLogin() {
+    viewLogin.classList.remove('hidden');
+    viewForm.classList.add('hidden');
+  }
+  function showFormView(user) {
+    viewLogin.classList.add('hidden');
+    viewForm.classList.remove('hidden');
+    if (userDisp) userDisp.textContent = '👤 ' + (user.email || user.id);
+    loadMunicipalities();
+  }
+
+  sb.auth.getSession().then(function(r) {
+    var s = r.data && r.data.session;
+    if (s && s.user) showFormView(s.user);
+    else showLogin();
+  });
+
+  btnLogin.addEventListener('click', function() {
+    var email = document.getElementById('le').value.trim();
+    var pass  = document.getElementById('lp').value;
+    if (!email || !pass) { showMsg(loginMsg, 'Vnesite e-pošto in geslo.', 'error'); return; }
+    btnLogin.disabled = true; btnLogin.textContent = 'Prijavljam…';
+    sb.auth.signInWithPassword({ email: email, password: pass })
+      .then(function(r) {
+        btnLogin.disabled = false; btnLogin.textContent = 'Prijava';
+        if (r.error) { showMsg(loginMsg, 'Napaka: ' + r.error.message, 'error'); return; }
+        showFormView(r.data.user);
+      }).catch(function(err) {
+        btnLogin.disabled = false; btnLogin.textContent = 'Prijava';
+        showMsg(loginMsg, 'Napaka: ' + (err.message || err), 'error');
+      });
+  });
+  document.getElementById('lp').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') btnLogin.click();
+  });
+
+  btnLogout.addEventListener('click', function() {
+    sb.auth.signOut().then(showLogin);
+  });
+
+  // ── Reset form ────────────────────────────────────────────────────────
+  function doReset() {
+    fName.value = ''; fType.value = 'activities'; syncCats();
+    fTier.value = 'standard'; fDesc.value = '';
+    fPhone.value = ''; fWeb.value = ''; fBook.value = '';
+    fMunGrid.querySelectorAll('input[type=checkbox]').forEach(function(cb) { cb.checked = false; });
+    fImg.value  = ''; fImgPreview.src  = ''; fImgPreview.style.display  = 'none'; btnImgClear.style.display  = 'none';
+    fLogo.value = ''; fLogoPrev.src    = ''; fLogoPrev.style.display    = 'none'; btnLogoClear.style.display = 'none';
+    imgStatus.style.display = 'none'; logoStatus.style.display = 'none';
+    hideMsg(formMsg);
+    formSuccess.style.display = 'none';
+    fName.focus();
+  }
+
+  btnReset.addEventListener('click', function() {
+    showConfirm({
+      title:     'Počistiti obrazec?',
+      msg:       'Vsi vneseni podatki bodo izgubljeni. Ali ste prepričani?',
+      yesLabel:  'Da, počisti',
+      yesDanger: true,
+      onYes:     doReset
+    });
+  });
+
+  // ── Save partner ──────────────────────────────────────────────────────
+  function doSave() {
+    var name = fName.value.trim();
+    if (!name) { showMsg(formMsg, '⚠️ Ime podjetja je obvezno.', 'error'); fName.focus(); return; }
+
+    var catVal = fCat.value === 'custom'
+      ? (fCatCustom.value.trim() || 'other')
+      : fCat.value;
+
+    var muns = [];
+    fMunGrid.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { muns.push(cb.value); });
+
+    var payload = {
+      name:               name,
+      type:               fType.value,
+      category:           catVal,
+      tier:               fTier.value,
+      order_index:        100,
+      short_desc:         fDesc.value.trim()  || null,
+      image_url:          fImg.value.trim()   || null,
+      logo_url:           fLogo.value.trim()  || null,
+      phone:              fPhone.value.trim() || null,
+      website_url:        fWeb.value.trim()   || null,
+      booking_url:        fBook.value.trim()  || null,
+      municipalities:     muns.length ? muns : null,
+      all_municipalities: false,
+      is_active:          true,
+      updated_at:         new Date().toISOString()
+    };
+
+    btnSave.disabled = true; btnSave.textContent = 'Shranjujem…';
+    hideMsg(formMsg);
+    formSuccess.style.display = 'none';
+
+    sb.from('partners').insert(payload)
+      .then(function(r) {
+        btnSave.disabled = false; btnSave.textContent = '💾 Shrani partnerja';
+        if (r.error) { showMsg(formMsg, '❌ Napaka: ' + r.error.message, 'error'); return; }
+        formSuccess.style.display = 'block';
+        formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(doReset, 3000);
+      }).catch(function(err) {
+        btnSave.disabled = false; btnSave.textContent = '💾 Shrani partnerja';
+        showMsg(formMsg, '❌ Napaka: ' + (err.message || err), 'error');
+      });
+  }
+
+  btnSave.addEventListener('click', function() {
+    var name = fName.value.trim();
+    if (!name) { showMsg(formMsg, '⚠️ Ime podjetja je obvezno.', 'error'); fName.focus(); return; }
+    showConfirm({
+      title:    'Shraniti partnerja?',
+      msg:      'Partner "' + name + '" bo dodan v bazo. Ali ste prepričani?',
+      yesLabel: 'Da, shrani',
+      onYes:    doSave
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

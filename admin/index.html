@@ -218,6 +218,7 @@
               <button id="btn-partner-add" class="btn-sm" style="margin-left:auto">+ Dodaj partnera</button>
               <button id="btn-partner-csv-template" class="btn-secondary btn-sm" title="Preuzmi CSV template za uvoz">⬇️ Template</button>
               <button id="btn-partner-csv" class="btn-secondary btn-sm" title="Uvezi partnere iz CSV fajla">📥 Uvezi CSV</button>
+              <button id="btn-partner-field-link" class="btn-secondary btn-sm" title="Kopiraj link za unos partnera na terenu" style="white-space:nowrap">🔗 Teren</button>
               <input type="file" id="csv-import-input" accept=".csv,text/csv" style="display:none">
             </div>
 
@@ -271,27 +272,18 @@
                   <label for="pf-category" style="font-size:0.78rem;opacity:0.7">Kategorija *</label>
                   <select id="pf-category" style="width:100%">
                     <option value="rafting">Rafting</option>
-                    <option value="paragliding">Paragliding</option>
                     <option value="kayak">Kajak</option>
                     <option value="canyoning">Kanjoning</option>
-                    <option value="hiking">Planinarenje</option>
-                    <option value="cycling">Biciklizam</option>
-                    <option value="climbing">Penjanje</option>
                     <option value="zipline">Zipline</option>
-                    <option value="other_act">Ostalo</option>
-                    <option value="restaurant">Restoran</option>
-                    <option value="gostilna">Gostilna</option>
-                    <option value="cafe">Kafić</option>
-                    <option value="pizzeria">Pizzerija</option>
-                    <option value="bar">Bar</option>
-                    <option value="bistro">Bistro</option>
-                    <option value="brewery">Pivara</option>
+                    <option value="cycling">Kolesarstvo</option>
+                    <option value="paragliding">Paragliding</option>
+                    <option value="skydiving">Skydiving</option>
+                    <option value="cafe">Kavarna</option>
                     <option value="street_food">Street food</option>
-                    <option value="other_food">Ostalo</option>
-                    <option value="taxi">Taxi</option>
-                    <option value="transfer">Transfer</option>
-                    <option value="bus">Bus</option>
-                    <option value="other_taxi">Ostalo</option>
+                    <option value="gostilna">Gostilna</option>
+                    <option value="restaurant">Restavracija</option>
+                    <option value="pizzeria">Pizzerija</option>
+                    <option value="taxi">Taksi</option>
                     <option value="custom">✏️ Prilagođena…</option>
                   </select>
                   <input type="text" id="pf-category-custom" placeholder="Upiši naziv kategorije (npr. Wellness)" style="width:100%;box-sizing:border-box;display:none;margin-top:0.35rem">
@@ -367,10 +359,6 @@
                 <div>
                   <label for="pf-phone" style="font-size:0.78rem;opacity:0.7">📞 Telefon</label>
                   <input id="pf-phone" type="tel" placeholder="+386 41 123 456" style="width:100%;box-sizing:border-box">
-                </div>
-                <div>
-                  <label for="pf-whatsapp" style="font-size:0.78rem;opacity:0.7">💬 WhatsApp (broj)</label>
-                  <input id="pf-whatsapp" type="tel" placeholder="+386 41 123 456" style="width:100%;box-sizing:border-box">
                 </div>
                 <div style="grid-column:1/-1">
                   <label for="pf-website" style="font-size:0.78rem;opacity:0.7">🌐 Website URL</label>
@@ -905,7 +893,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="../assets/supabase-client.js?v=20260226-6"></script>
-  <script src="./admin.js?v=20260226-6"></script>
+  <script src="../assets/supabase-client.js?v=20260226-8"></script>
+  <script src="./admin.js?v=20260226-8"></script>
 </body>
 </html>
