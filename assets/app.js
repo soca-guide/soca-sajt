@@ -60,7 +60,7 @@
         setTimeout(initWelcomeScreen, 100);
         return;
       }
-      var WELCOME_DISPLAY_TIME = 3000;
+      var WELCOME_DISPLAY_TIME = 4000;
       if (!sessionStorage.getItem('welcomeShown')) {
         setTimeout(function() {
           forceEnterMain();
@@ -2650,39 +2650,49 @@
     const WEATHER_CACHE_KEY = 'weatherLocationCache';
     const WEATHER_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
     const WEATHER_REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
-    
-    // Default coordinates (Bovec, Slovenia)
-    const DEFAULT_COORDS = { lat: 46.3378, lon: 13.5528, city: 'Bovec' };
-    
-    // Get effective coordinates (from cache or geolocation or default)
+
+    // Coordinates per municipality — weather always shows host location, no geolocation needed
+    const MUNICIPALITY_COORDS = {
+      'bovec':   { lat: 46.3378, lon: 13.5528, city: 'Bovec' },
+      'kobarid': { lat: 46.2456, lon: 13.5817, city: 'Kobarid' },
+      'tolmin':  { lat: 46.1855, lon: 13.7323, city: 'Tolmin' }
+    };
+    const DEFAULT_COORDS = MUNICIPALITY_COORDS['bovec'];
+
+    // Returns coords for the current tenant's municipality (falls back to Bovec)
+    function getHostCoords() {
+      var mun = (window._appMunicipality || 'bovec').toLowerCase();
+      return MUNICIPALITY_COORDS[mun] || DEFAULT_COORDS;
+    }
+
+    // Get effective coordinates — always host location, no browser geolocation prompt
     async function getEffectiveCoords() {
-      // Check cache first
+      // Check cache — but only reuse if it matches the current municipality
+      var hostCoords = getHostCoords();
       try {
         const cached = localStorage.getItem(WEATHER_CACHE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
           const lat = parseFloat(parsed.lat);
           const lon = parseFloat(parsed.lon);
-          if (Date.now() - (parsed.timestamp || 0) < WEATHER_CACHE_TTL && !isNaN(lat) && !isNaN(lon)) {
-            return { lat, lon, city: parsed.city || DEFAULT_COORDS.city };
+          const ageOk = Date.now() - (parsed.timestamp || 0) < WEATHER_CACHE_TTL;
+          const sameLocation = Math.abs(lat - hostCoords.lat) < 0.01 && Math.abs(lon - hostCoords.lon) < 0.01;
+          if (ageOk && sameLocation && !isNaN(lat) && !isNaN(lon)) {
+            return { lat, lon, city: parsed.city || hostCoords.city };
           }
         }
-      } catch (e) {
-        // Cache invalid, continue
-      }
-      
-      // Use selected location (Bovec) only; no geolocation so temp matches displayed location
-      
-      // Cache default so next load is fast
+      } catch (e) {}
+
+      // Cache host coords so next load is instant
       try {
         localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({
-          lat: DEFAULT_COORDS.lat,
-          lon: DEFAULT_COORDS.lon,
-          city: DEFAULT_COORDS.city,
+          lat: hostCoords.lat,
+          lon: hostCoords.lon,
+          city: hostCoords.city,
           timestamp: Date.now()
         }));
       } catch (e) {}
-      return DEFAULT_COORDS;
+      return hostCoords;
     }
     
     // Fetch weather from Open-Meteo

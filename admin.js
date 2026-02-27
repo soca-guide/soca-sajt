@@ -3532,7 +3532,7 @@
     var rebookEmail   = ownerRebookEmailInput.value.trim();
     var rebookLink    = ownerRebookLinkInput.value.trim();
     var rebookInstr   = ownerRebookInstructionsArea.value.trim();
-    var maintVisible  = ownerMaintVisibleChk ? ownerMaintVisibleChk.checked : true;
+    var maintVisible  = true; // card always visible; only MASTER can control this
     var maintEmail    = ownerMaintEmailInput  ? ownerMaintEmailInput.value.trim()  : '';
     var maintW3f      = ownerMaintW3fInput    ? ownerMaintW3fInput.value.trim()    : '';
 
