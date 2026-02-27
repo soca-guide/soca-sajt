@@ -42,6 +42,15 @@
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     lockScroll(true);
+    // GA4: section_view for every modal open
+    var _sectionName = title.replace(/^SOČA\s*[•·]\s*/i,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    var _slug = (new URLSearchParams(window.location.search).get('t') || 'direct').toLowerCase();
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'section_view', { section: _sectionName, section_url: url, tenant_slug: _slug });
+    }
+    if (window.__DEBUG || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log('[GA4 📊] section_view', { section: _sectionName, url: url, tenant_slug: _slug });
+    }
     // Push history state only once per modal open (prevent duplicate)
     if (!modalHistoryPushed) {
       history.pushState({ __appModal: true, id: 'iframeModal' }, '', window.location.pathname + window.location.search + (window.location.hash || ''));

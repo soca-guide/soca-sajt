@@ -853,6 +853,12 @@
           biznisBtn.style.display = 'none';
         }
       }
+
+      // GA4: set tenant dimensions so all subsequent events include tenant context
+      var _aptName = (ov.config && (ov.config.apartment_name || ov.config.name)) || ov.slug || '';
+      if (typeof window.__GA4_TENANT_SET === 'function') {
+        window.__GA4_TENANT_SET(ov.tenant_id || null, ov.slug || null, _aptName);
+      }
     }
 
     // ── Apply quick action links (call / directions / rules) ──────────────────
