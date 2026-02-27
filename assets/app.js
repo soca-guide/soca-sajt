@@ -3960,19 +3960,19 @@
           function _doSendEmail(cfg) {
             var emailTo = cfg && cfg.email;
             if (!emailTo) { _showNoEmail(cfg); return; }
-            // Send via Resend Edge Function — best-effort, always show success
-            if (sb) {
-              sb.functions.invoke('send-email', {
-                body: {
-                  action:      'maintenance_notify',
-                  owner_email: emailTo,
-                  tenant_slug: slug   || '',
-                  category:    cat    || 'other',
-                  location:    loc    || '',
-                  description: desc   || ''
-                }
-              }).catch(function() {});
-            }
+            // Send maintenance notification to owner via Resend (best-effort)
+            fetch('/api/send-maintenance-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                owner_email:    emailTo,
+                tenant_slug:    slug           || '',
+                category:       cat            || 'other',
+                location:       loc            || '',
+                description:    desc           || '',
+                apartment_name: (cfg && cfg.aptName) || slug || ''
+              })
+            }).catch(function() {});
             _showSuccess();
           }
 

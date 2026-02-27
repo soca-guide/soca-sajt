@@ -454,18 +454,19 @@
 
   // ── MASTER: Send welcome email via send-email Edge Function ───────────────────
   function sendOwnerWelcomeEmail(ownerEmail, tenantName, tenantSlug) {
-    var base     = window.location.origin + window.location.pathname.replace(/\/admin\/[^/]*$/, '');
-    var guestUrl = base + '/index.html?t=' + encodeURIComponent(tenantSlug);
-    var adminUrl = window.location.origin + '/admin/';
-    sb.functions.invoke('send-email', {
-      body: {
-        action:       'owner_invite',
+    var origin   = window.location.origin;
+    var guestUrl = origin + '/index.html?t=' + encodeURIComponent(tenantSlug);
+    var adminUrl = origin + '/admin/';
+    fetch('/api/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         owner_email:  ownerEmail,
         tenant_name:  tenantName,
         tenant_slug:  tenantSlug,
         guest_url:    guestUrl,
         admin_url:    adminUrl
-      }
+      })
     }).catch(function () {}); // best-effort, greška ne blokira UI
   }
 

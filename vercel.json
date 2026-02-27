@@ -1,1 +1,8 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cleanup-lost-found",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

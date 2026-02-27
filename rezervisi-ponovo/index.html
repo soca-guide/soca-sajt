@@ -141,20 +141,20 @@
     mailtoEl.href = 'mailto:' + encodeURIComponent(rbData.owner_email)
       + '?subject=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
-    // Notify owner via Resend Edge Function (best-effort)
-    if (window.supabaseClient) {
-      window.supabaseClient.functions.invoke('send-email', {
-        body: {
-          action:         'rebook_notify',
-          owner_email:    rbData.owner_email,
-          guest_email:    userEmail,
-          apartment_name: aptName,
-          owner_phone:    rbData.owner_phone  || '',
-          rebook_link:    rbData.rebook_link  || '',
-          tenant_slug:    _rbSlug             || ''
-        }
-      }).catch(function() {});
-    }
+    // Send contact info email TO TOURIST via Resend (best-effort)
+    fetch('/api/send-booking-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tourist_email:  userEmail,
+        apartment_name: aptName,
+        owner_phone:    rbData.owner_phone  || '',
+        owner_email:    rbData.owner_email  || '',
+        rebook_link:    rbData.rebook_link  || '',
+        instructions:   rbData.instructions || '',
+        lang:           getSelectedLang()
+      })
+    }).catch(function() {});
   });
   document.getElementById('copy').addEventListener('click', async function() {
     try { await navigator.clipboard.writeText(msgEl.textContent); } catch(e) {}
