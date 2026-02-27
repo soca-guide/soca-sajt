@@ -59,6 +59,8 @@
   var ownerParkingTitleEnInput  = document.getElementById('owner-parking-title-en');
   var ownerParkingAddressInput  = document.getElementById('owner-parking-address');
   var ownerParkingMapsInput     = document.getElementById('owner-parking-maps');
+  var ownerParkingHoursInput    = document.getElementById('owner-parking-hours');
+  var ownerParkingPaidChk       = document.getElementById('owner-parking-paid');
   var ownerParkingNotesSlArea   = document.getElementById('owner-parking-notes-sl');
   var ownerParkingNotesEnArea   = document.getElementById('owner-parking-notes-en');
   var ownerSaveStatus          = document.getElementById('owner-save-status');
@@ -94,6 +96,8 @@
   var masterParkingTitleEnInput    = document.getElementById('master-parking-title-en');
   var masterParkingAddressInput    = document.getElementById('master-parking-address');
   var masterParkingMapsInput       = document.getElementById('master-parking-maps');
+  var masterParkingHoursInput      = document.getElementById('master-parking-hours');
+  var masterParkingPaidChk         = document.getElementById('master-parking-paid');
   var masterParkingNotesSlArea     = document.getElementById('master-parking-notes-sl');
   var masterParkingNotesEnArea     = document.getElementById('master-parking-notes-en');
   var masterRebookNameInput        = document.getElementById('master-rebook-name');
@@ -456,7 +460,7 @@
   function sendOwnerWelcomeEmail(ownerEmail, tenantName, tenantSlug) {
     var origin   = window.location.origin;
     var guestUrl = origin + '/index.html?t=' + encodeURIComponent(tenantSlug);
-    var adminUrl = origin + '/admin/';
+    var adminUrl = origin + '/admin/?t=' + encodeURIComponent(tenantSlug);
     fetch('/api/send-welcome-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -472,8 +476,10 @@
 
   // ── MASTER: Fallback invite (bez Edge Function) ──────────────────────────────
   // 1) pending_owner_invites + 2) signInWithOtp → trigger auto-kreira profile
-  function _inviteFallback(ownerEmail, tenantId, onSuccess, onError) {
-    var adminRedirect = window.location.origin + '/admin/';
+  // tenantSlug is optional — used to build a ?t= redirect so owner lands in their panel
+  function _inviteFallback(ownerEmail, tenantId, onSuccess, onError, tenantSlug) {
+    var adminBase     = window.location.origin + '/admin/';
+    var adminRedirect = tenantSlug ? adminBase + '?t=' + encodeURIComponent(tenantSlug) : adminBase;
     // Korak 1: upsert pending invite (ignoruje duplikat)
     sb.from('pending_owner_invites')
       .upsert({ email: ownerEmail.toLowerCase(), tenant_id: tenantId },
@@ -510,13 +516,15 @@
       // Edge Function nije deployovana → fallback
       _inviteFallback(ownerEmail, tenantId,
         function () { _done('Poslato ✓'); },
-        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); }
+        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); },
+        tenantSlug
       );
     }).catch(function () {
       // Edge Function nedostupna → fallback
       _inviteFallback(ownerEmail, tenantId,
         function () { _done('Poslato ✓'); },
-        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); }
+        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); },
+        tenantSlug
       );
     });
   }
@@ -771,6 +779,8 @@
         if (masterParkingTitleEnInput) masterParkingTitleEnInput.value = (typeof _pTitle === 'object' ? _pTitle.en : _pTitle) || '';
         masterParkingAddressInput.value = park.address  || '';
         masterParkingMapsInput.value    = park.mapsLink || '';
+        if (masterParkingHoursInput) masterParkingHoursInput.value = park.hours || '';
+        if (masterParkingPaidChk)    masterParkingPaidChk.checked  = park.paid === true;
         if (masterParkingNotesSlArea) masterParkingNotesSlArea.value = (typeof _pNotes === 'object' ? _pNotes.sl : _pNotes) || '';
         if (masterParkingNotesEnArea) masterParkingNotesEnArea.value = (typeof _pNotes === 'object' ? _pNotes.en : _pNotes) || '';
 
@@ -930,7 +940,8 @@
               setStatus(createTenantStatus, 'Apartman kreiran ✓, magic link nije poslan: ' + msg, 'warning');
               sendOwnerWelcomeEmail(email, name, slug);
               showOwnerWelcomeModal(name, slug, email, false);
-            }
+            },
+            slug // pass slug so magic link redirects to /admin/?t=slug
           );
         }
 
@@ -3422,10 +3433,12 @@
       upsertItem(_masterTenantId, 'info',        'default_config',      'config',  0, true, configData),
       upsertItem(_masterTenantId, 'house_rules', 'house_rules_private', 'rules',   0, true, { text: masterRulesTextArea.value }),
       upsertItem(_masterTenantId, 'parking',     'parking_recommended', 'parking', 0, true, {
-        title:   { sl: (masterParkingTitleSlInput ? masterParkingTitleSlInput.value.trim() : ''), en: (masterParkingTitleEnInput ? masterParkingTitleEnInput.value.trim() : '') },
-        address: masterParkingAddressInput.value.trim(),
+        title:    { sl: (masterParkingTitleSlInput ? masterParkingTitleSlInput.value.trim() : ''), en: (masterParkingTitleEnInput ? masterParkingTitleEnInput.value.trim() : '') },
+        address:  masterParkingAddressInput.value.trim(),
         mapsLink: parkMaps,
-        notes:   { sl: (masterParkingNotesSlArea ? masterParkingNotesSlArea.value.trim() : ''), en: (masterParkingNotesEnArea ? masterParkingNotesEnArea.value.trim() : '') }
+        hours:    masterParkingHoursInput    ? masterParkingHoursInput.value.trim()    : '',
+        paid:     masterParkingPaidChk       ? masterParkingPaidChk.checked            : null,
+        notes:    { sl: (masterParkingNotesSlArea ? masterParkingNotesSlArea.value.trim() : ''), en: (masterParkingNotesEnArea ? masterParkingNotesEnArea.value.trim() : '') }
       }),
       upsertItem(_masterTenantId, 'booking',     'rebook',              'config',  0, true, {
         apartment_name: masterRebookNameInput.value.trim(), owner_phone: masterRebookPhoneInput.value.trim(),
@@ -3511,6 +3524,8 @@
         if (ownerParkingTitleEnInput) ownerParkingTitleEnInput.value = (typeof _opTitle === 'object' ? _opTitle.en : _opTitle) || '';
         ownerParkingAddressInput.value = park.address  || '';
         ownerParkingMapsInput.value    = park.mapsLink || '';
+        if (ownerParkingHoursInput) ownerParkingHoursInput.value = park.hours || '';
+        if (ownerParkingPaidChk)    ownerParkingPaidChk.checked  = park.paid === true;
         if (ownerParkingNotesSlArea) ownerParkingNotesSlArea.value = (typeof _opNotes === 'object' ? _opNotes.sl : _opNotes) || '';
         if (ownerParkingNotesEnArea) ownerParkingNotesEnArea.value = (typeof _opNotes === 'object' ? _opNotes.en : _opNotes) || '';
 
@@ -3544,6 +3559,8 @@
     var parkTitleEn   = ownerParkingTitleEnInput ? ownerParkingTitleEnInput.value.trim() : '';
     var parkAddr      = ownerParkingAddressInput.value.trim();
     var parkMaps      = ownerParkingMapsInput.value.trim();
+    var parkHours     = ownerParkingHoursInput    ? ownerParkingHoursInput.value.trim()  : '';
+    var parkPaid      = ownerParkingPaidChk       ? ownerParkingPaidChk.checked          : null;
     var parkNotesSl   = ownerParkingNotesSlArea ? ownerParkingNotesSlArea.value.trim() : '';
     var parkNotesEn   = ownerParkingNotesEnArea ? ownerParkingNotesEnArea.value.trim() : '';
     var rebookName    = ownerRebookNameInput.value.trim();
@@ -3608,7 +3625,7 @@
     configData.quick_rules_url       = rulesUrl || './pravila/index.html';
 
     var houseRulesData = { text: rulesText };
-    var parkingData    = { title: { sl: parkTitleSl, en: parkTitleEn }, address: parkAddr, mapsLink: parkMaps, notes: { sl: parkNotesSl, en: parkNotesEn } };
+    var parkingData    = { title: { sl: parkTitleSl, en: parkTitleEn }, address: parkAddr, mapsLink: parkMaps, hours: parkHours, paid: parkPaid, notes: { sl: parkNotesSl, en: parkNotesEn } };
     var rebookData     = { apartment_name: rebookName, owner_phone: rebookPhone, owner_email: rebookEmail, rebook_link: rebookLink, instructions: rebookInstr };
     var maintData      = { visible: maintVisible, email: maintEmail };
 

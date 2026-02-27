@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Soča Sajt</title>
-  <link rel="stylesheet" href="/admin.css?v=20260227-5" />
+  <link rel="stylesheet" href="/admin.css?v=20260227-7" />
 </head>
 <body>
 
@@ -646,6 +646,12 @@
                   <input id="master-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8" />
                   <label for="master-parking-maps">Maps link</label>
                   <input id="master-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+                  <label for="master-parking-hours">Razpoložljivost / Delovni čas</label>
+                  <input id="master-parking-hours" type="text" placeholder="24/7" style="width:100%;box-sizing:border-box" />
+                  <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin:0.25rem 0">
+                    <input type="checkbox" id="master-parking-paid" />
+                    Parkirišče je plačljivo (prikaži oznako)
+                  </label>
                   <label>Napomena</label>
                   <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovenian</label>
                   <textarea id="master-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
@@ -859,6 +865,12 @@
             <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
             <label for="owner-parking-maps">Povezava do karte</label>
             <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
+            <label for="owner-parking-hours">Razpoložljivost / Delovni čas</label>
+            <input id="owner-parking-hours" type="text" placeholder="24/7" style="width:100%;box-sizing:border-box" />
+            <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin:0.25rem 0">
+              <input type="checkbox" id="owner-parking-paid" />
+              Parkirišče je plačljivo (prikaži oznako)
+            </label>
             <label>Opomba</label>
             <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovensko</label>
             <textarea id="owner-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
@@ -941,7 +953,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="/assets/supabase-client.js?v=20260227-5"></script>
-  <script src="/admin.js?v=20260227-5"></script>
+  <script src="/assets/supabase-client.js?v=20260227-7"></script>
+  <script src="/admin.js?v=20260227-7"></script>
 </body>
 </html>

@@ -1379,7 +1379,7 @@
         // Handle both old plain-string format and new {sl,en} object format
         var _tpoTitle = (typeof _tpo.title === 'object') ? _tpo.title : { sl: _tpo.title, en: _tpo.title };
         var _tpoNotes = _tpo.notes ? ((typeof _tpo.notes === 'object') ? _tpo.notes : { sl: _tpo.notes, en: _tpo.notes }) : null;
-        var _tpoC = { type: 'apartment', title: _tpoTitle, address: _tpo.address || '', mapsLink: _tpo.mapsLink || '', notes: _tpoNotes, paid: null, hours: null };
+        var _tpoC = { type: 'apartment', title: _tpoTitle, address: _tpo.address || '', mapsLink: _tpo.mapsLink || '', notes: _tpoNotes, paid: _tpo.paid !== undefined ? _tpo.paid : null, hours: _tpo.hours || null };
         recommended = [_tpoC].concat(recommended.slice(1));
       }
 
@@ -3966,7 +3966,7 @@
           function _doSendEmail(cfg) {
             var emailTo = cfg && cfg.email;
             if (!emailTo) { _showNoEmail(cfg); return; }
-            // Send maintenance notification to owner via Resend (best-effort)
+            // Send maintenance notification to owner via Resend
             fetch('/api/send-maintenance-email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3978,8 +3978,16 @@
                 description:    desc           || '',
                 apartment_name: (cfg && cfg.aptName) || slug || ''
               })
-            }).catch(function() {});
-            _showSuccess();
+            }).then(function(r) {
+              if (!r.ok) {
+                r.json().catch(function(){return{};}).then(function(err) {
+                  console.warn('[Maintenance] Email API error:', r.status, err.error || '');
+                });
+              }
+            }).catch(function(err) {
+              console.warn('[Maintenance] Email network error:', err && err.message);
+            });
+            _showSuccess(); // Always shown (best-effort — guest gets confirmation even if email fails)
           }
 
           function _showSuccess() {

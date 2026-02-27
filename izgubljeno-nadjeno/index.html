@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Izgubljeno / Nađeno</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260227-4"></script>
+  <script src="../assets/supabase-client.js?v=20260227-6"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
@@ -92,17 +92,29 @@
     });
   }
 
-  function render() {
+  // Wait for supabaseClient to be initialized (it loads its SDK asynchronously)
+  function waitForSB(cb, maxMs) {
+    if (window.supabaseClient) { cb(window.supabaseClient); return; }
+    var waited = 0, step = 100;
+    var timer = setInterval(function() {
+      if (window.supabaseClient) { clearInterval(timer); cb(window.supabaseClient); return; }
+      waited += step;
+      if (waited >= (maxMs || 8000)) { clearInterval(timer); cb(null); }
+    }, step);
+  }
+
+  function render(sb) {
     var t    = labelsByLang[getSelectedLang()] || labelsByLang.en;
     var list = document.getElementById('list');
     if (!list) return;
-    if (!window.supabaseClient) {
+    var client = sb || window.supabaseClient;
+    if (!client) {
       list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
       return;
     }
     list.innerHTML = '<div class="text-sm text-gray-400">\u2026</div>';
     var thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    window.supabaseClient
+    client
       .from('lost_found_posts')
       .select('id, created_at, email, message')
       .gte('created_at', thirtyDaysAgo)
@@ -137,34 +149,37 @@
     if (email.indexOf('@') < 0 || email.length > 100) {
       limitEl.classList.remove('hidden'); return;
     }
-    if (!window.supabaseClient) return;
     var slug    = new URLSearchParams(window.location.search).get('t') || null;
     var saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
-    window.supabaseClient
-      .rpc('create_lost_found_post', { p_email: email, p_message: msg, p_tenant_slug: slug })
-      .then(function(r) {
-        saveBtn.disabled = false;
-        if (r.error) {
-          var errMsg = r.error.message || '';
-          if (errMsg.indexOf('LIMIT_REACHED') >= 0 || errMsg.indexOf('Limit') >= 0) {
-            limitEl.classList.remove('hidden');
+    waitForSB(function(client) {
+      if (!client) { saveBtn.disabled = false; return; }
+      client
+        .rpc('create_lost_found_post', { p_email: email, p_message: msg, p_tenant_slug: slug })
+        .then(function(r) {
+          saveBtn.disabled = false;
+          if (r.error) {
+            var errMsg = r.error.message || '';
+            if (errMsg.indexOf('LIMIT_REACHED') >= 0 || errMsg.indexOf('Limit') >= 0) {
+              limitEl.classList.remove('hidden');
+            }
+            return;
           }
-          return;
-        }
-        limitEl.classList.add('hidden');
-        document.getElementById('msg').value = '';
-        render();
-      })
-      .catch(function() { saveBtn.disabled = false; });
+          limitEl.classList.add('hidden');
+          document.getElementById('msg').value = '';
+          render(client);
+        })
+        .catch(function() { saveBtn.disabled = false; });
+    }, 6000);
   });
 
-  // Non-blocking cleanup: keeps DB tidy (RLS already hides old rows for reads)
-  if (window.supabaseClient) {
-    window.supabaseClient.rpc('cleanup_lost_found_posts').catch(function(){});
-  }
-
-  render();
+  // Initial load — wait for Supabase then render
+  waitForSB(function(client) {
+    if (client) {
+      client.rpc('cleanup_lost_found_posts').catch(function(){});
+    }
+    render(client);
+  }, 6000);
 </script>
 <div id="footer-legal" style="text-align:center;padding:0.75rem 1rem 1.5rem;font-size:0.72rem;color:#a0b0a8;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 0.9rem"></div>
 <script>
