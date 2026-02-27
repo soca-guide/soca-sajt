@@ -1,0 +1,41 @@
+---
+description: PWA cache busting – bump APP_VERSION on every deploy
+globs: "**/*.html,sw.js"
+alwaysApply: false
+---
+
+# Cache Busting – Version Bumping Rule
+
+Every time you edit a CSS or JS file, you MUST bump the version string in ALL of these files before committing.
+
+## Version format
+
+`YYYYMMDD-N` where N starts at 1 and increments if multiple deploys happen on the same day.
+Today's date determines the prefix. Example: `20260227-1`, `20260227-2`, …
+
+## Files to update (always ALL at once)
+
+| File | What to change |
+|------|----------------|
+| `sw.js` | `const NEW_VERSION = '...'` + all `?v=` strings in STATIC_ASSETS |
+| `index.html` | all `?v=` on `<link>` and `<script>` tags |
+| `admin/index.html` | all `?v=` on `<script>` tags |
+| `partner-entry/index.html` | all `?v=` on `<script>` tags |
+| `taxi/index.html` | all `?v=` on `<script>` tags |
+| `restavracije/index.html` | all `?v=` on `<link>` and `<script>` tags |
+| `aktivnosti/index.html` | all `?v=` on `<link>` and `<script>` tags |
+| `izgubljeno-nadjeno/index.html` | all `?v=` on `<script>` tags |
+
+## Example
+
+Old: `<link rel="stylesheet" href="./assets/app.css?v=20260227-1">`
+New: `<link rel="stylesheet" href="./assets/app.css?v=20260228-1">`
+
+Old in sw.js: `const NEW_VERSION = '20260227-1';`
+New in sw.js: `const NEW_VERSION = '20260228-1';`
+
+## Why this matters
+
+The service worker caches files by exact URL (including `?v=`). Without bumping the version:
+- Users see old CSS/JS even after Vercel deploys the new version
+- PWA keš (cache) nikad ne osvježi automatski bez promjene URL-a

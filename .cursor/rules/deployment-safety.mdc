@@ -1,0 +1,27 @@
+---
+description: Deployment safety rules and project context for Soča Guide
+alwaysApply: true
+---
+
+# Soča Guide — Deployment & Safety Rules
+
+## Deployment Context
+
+- **Production** is live on **Vercel** via the **`Vujos1` branch**
+- Every push to `Vujos1` deploys to production — treat all changes as production-grade
+- **Do NOT push to `main`** without explicit user confirmation
+
+## Patch Safety Rules
+
+- **DO NOT change build structure** — no new folders at root, no changes to `vercel.json`, `package.json`, or any config files
+- **DO NOT change root files** — `index.html`, `sw.js` and other root-level files are sensitive; only patch them when the user explicitly requests it
+- **SAFE PATCH only** — surgical, minimal edits; never refactor working code unless asked
+- Always bump JS/CSS version query strings (e.g. `?v=YYYYMMDD-N`) when editing cached assets so Vercel CDN invalidates correctly
+- Never rename or move files that are referenced by existing HTML `<script src>` or `<link href>` tags
+
+## Tech Stack Reminder
+
+- Static site (no build step) — plain HTML + vanilla JS
+- Supabase (Postgres + Storage + Edge Functions + Auth)
+- Resend for transactional email via Edge Function `send-email`
+- No npm, no bundler, no framework
