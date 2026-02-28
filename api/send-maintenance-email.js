@@ -60,7 +60,14 @@ module.exports = async function handler(req, res) {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` },
-      body: JSON.stringify({ from: 'Soča Guide <noreply@revantora.com>', to: [owner_email], subject, html })
+      body: JSON.stringify({
+        from:     'Soča Guide <noreply@revantora.com>',
+        reply_to: 'noreply@revantora.com',
+        to:       [owner_email],
+        subject,
+        html,
+        headers:  { 'X-Entity-Ref-ID': `maint-${Date.now()}` }
+      })
     });
     const data = await r.json();
     if (!r.ok) return res.status(r.status).json({ error: data.message || 'Resend error' });

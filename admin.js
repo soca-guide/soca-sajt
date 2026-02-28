@@ -55,6 +55,7 @@
   var ownerDirectionsLinkInput = document.getElementById('owner-directions-link');
   var ownerRulesUrlInput       = document.getElementById('owner-rules-url');
   var ownerRulesTextArea       = document.getElementById('owner-rules-text');
+  var PARK_LANGS = ['sl','en','de','pl','cs','it'];
   var ownerParkingTitleSlInput  = document.getElementById('owner-parking-title-sl');
   var ownerParkingTitleEnInput  = document.getElementById('owner-parking-title-en');
   var ownerParkingAddressInput  = document.getElementById('owner-parking-address');
@@ -129,6 +130,8 @@
   var btnMbImageClear              = document.getElementById('btn-mb-image-clear');
   var mbUploadStatus               = document.getElementById('mb-upload-status');
   var btnMasterSave                = document.getElementById('btn-master-save');
+  var btnLoadSporocila             = document.getElementById('btn-load-sporocila');
+  var sporocilaList                = document.getElementById('sporocila-list');
 
   // Quick-add refs
   var quickSocaIdInput    = document.getElementById('quick-soca-id');
@@ -296,12 +299,9 @@
       return;
     }
 
-    // Build absolute guest URL: we're at /admin/, guest site is one level up
-    var baseUrl = window.location.origin +
-      window.location.pathname.replace(/\/admin\/[^/]*$/, '');
-
     tenantsTbody.innerHTML = filtered.map(function (t) {
-      var guestUrl  = baseUrl + '/index.html?t=' + encodeURIComponent(t.slug);
+      // Always use origin so the link works regardless of trailing-slash variations in /admin URL
+      var guestUrl  = window.location.origin + '/index.html?t=' + encodeURIComponent(t.slug);
       var isActive  = t.status === 'active';
       var toggleLbl = isActive ? 'Isključi' : 'Aktiviraj';
       var toggleSt  = isActive ? 'inactive' : 'active';
@@ -3520,14 +3520,17 @@
         _ownerData.parkingRecommended = park;
         var _opTitle = park.title || {};
         var _opNotes = park.notes || {};
-        if (ownerParkingTitleSlInput) ownerParkingTitleSlInput.value = (typeof _opTitle === 'object' ? _opTitle.sl : _opTitle) || '';
-        if (ownerParkingTitleEnInput) ownerParkingTitleEnInput.value = (typeof _opTitle === 'object' ? _opTitle.en : _opTitle) || '';
+        // Load all 6 language tabs for title and notes
+        PARK_LANGS.forEach(function(lng) {
+          var ti = document.getElementById('owner-parking-title-' + lng);
+          var ni = document.getElementById('owner-parking-notes-' + lng);
+          if (ti) ti.value = (typeof _opTitle === 'object' ? _opTitle[lng] : (lng === 'sl' ? _opTitle : '')) || '';
+          if (ni) ni.value = (typeof _opNotes === 'object' ? _opNotes[lng] : (lng === 'sl' ? _opNotes : '')) || '';
+        });
         ownerParkingAddressInput.value = park.address  || '';
         ownerParkingMapsInput.value    = park.mapsLink || '';
         if (ownerParkingHoursInput) ownerParkingHoursInput.value = park.hours || '';
         if (ownerParkingPaidChk)    ownerParkingPaidChk.checked  = park.paid === true;
-        if (ownerParkingNotesSlArea) ownerParkingNotesSlArea.value = (typeof _opNotes === 'object' ? _opNotes.sl : _opNotes) || '';
-        if (ownerParkingNotesEnArea) ownerParkingNotesEnArea.value = (typeof _opNotes === 'object' ? _opNotes.en : _opNotes) || '';
 
         // rebook
         var rebook = byKey['rebook'] || {};
@@ -3555,14 +3558,17 @@
     var dirLink  = ownerDirectionsLinkInput.value.trim();
     var rulesUrl = ownerRulesUrlInput.value.trim();
     var rulesText     = ownerRulesTextArea.value;
-    var parkTitleSl   = ownerParkingTitleSlInput ? ownerParkingTitleSlInput.value.trim() : '';
-    var parkTitleEn   = ownerParkingTitleEnInput ? ownerParkingTitleEnInput.value.trim() : '';
+    var _parkTitleObj = {}, _parkNotesObj = {};
+    PARK_LANGS.forEach(function(lng) {
+      var ti = document.getElementById('owner-parking-title-' + lng);
+      var ni = document.getElementById('owner-parking-notes-' + lng);
+      _parkTitleObj[lng] = ti ? ti.value.trim() : '';
+      _parkNotesObj[lng] = ni ? ni.value.trim() : '';
+    });
     var parkAddr      = ownerParkingAddressInput.value.trim();
     var parkMaps      = ownerParkingMapsInput.value.trim();
     var parkHours     = ownerParkingHoursInput    ? ownerParkingHoursInput.value.trim()  : '';
     var parkPaid      = ownerParkingPaidChk       ? ownerParkingPaidChk.checked          : null;
-    var parkNotesSl   = ownerParkingNotesSlArea ? ownerParkingNotesSlArea.value.trim() : '';
-    var parkNotesEn   = ownerParkingNotesEnArea ? ownerParkingNotesEnArea.value.trim() : '';
     var rebookName    = ownerRebookNameInput.value.trim();
     var rebookPhone   = ownerRebookPhoneInput.value.trim();
     var rebookEmail   = ownerRebookEmailInput.value.trim();
@@ -3625,7 +3631,7 @@
     configData.quick_rules_url       = rulesUrl || './pravila/index.html';
 
     var houseRulesData = { text: rulesText };
-    var parkingData    = { title: { sl: parkTitleSl, en: parkTitleEn }, address: parkAddr, mapsLink: parkMaps, hours: parkHours, paid: parkPaid, notes: { sl: parkNotesSl, en: parkNotesEn } };
+    var parkingData    = { title: _parkTitleObj, address: parkAddr, mapsLink: parkMaps, hours: parkHours, paid: parkPaid, notes: _parkNotesObj };
     var rebookData     = { apartment_name: rebookName, owner_phone: rebookPhone, owner_email: rebookEmail, rebook_link: rebookLink, instructions: rebookInstr };
     var maintData      = { visible: maintVisible, email: maintEmail };
 
@@ -4003,6 +4009,45 @@
 
   // Expose so quickAddTenant can call it
   window._showOwnerWelcomeModal = showOwnerWelcomeModal;
+
+  // ── Sporočila (Lost & Found) — master only ───────────────────────────────────
+  function loadSporocila() {
+    if (!sporocilaList) return;
+    sporocilaList.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>';
+    var thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    sb.from('lost_found_posts')
+      .select('id, created_at, email, message, tenant_slug')
+      .gte('created_at', thirtyDaysAgo)
+      .order('created_at', { ascending: false })
+      .limit(200)
+      .then(function(r) {
+        if (r.error || !r.data || !r.data.length) {
+          sporocilaList.innerHTML = '<span style="color:#9ca3af">Ni sporočil v zadnjih 30 dneh.</span>';
+          return;
+        }
+        sporocilaList.innerHTML = r.data.map(function(x) {
+          var d = new Date(x.created_at).toLocaleString('sl-SI');
+          return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
+            '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(x.email) + '</span>' +
+            '<span style="color:#9ca3af;font-size:0.72rem">' + d + (x.tenant_slug ? ' · ' + esc(x.tenant_slug) : '') + '</span>' +
+            '</div>' +
+            '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
+            '</div>';
+        }).join('');
+      })
+      .catch(function() {
+        sporocilaList.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>';
+      });
+  }
+  if (btnLoadSporocila) {
+    btnLoadSporocila.addEventListener('click', loadSporocila);
+    // Auto-load when section is opened
+    var _sporocilaDetails = document.getElementById('sporocila-section');
+    if (_sporocilaDetails) _sporocilaDetails.addEventListener('toggle', function() {
+      if (_sporocilaDetails.open && sporocilaList && !sporocilaList.innerHTML) loadSporocila();
+    });
+  }
 
   // ── Master global + tenant editor events ─────────────────────────────────────
   btnGlobalSave.addEventListener('click', saveGlobalData);

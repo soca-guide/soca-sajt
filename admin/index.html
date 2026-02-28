@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Soča Sajt</title>
-  <link rel="stylesheet" href="/admin.css?v=20260227-7" />
+  <link rel="stylesheet" href="/admin.css?v=20260227-8" />
 </head>
 <body>
 
@@ -822,6 +822,16 @@
           </div>
         </details>
 
+      <!-- ── SPOROČILA (Izgubljeno/Najdeno) — master only ── -->
+      <details class="admin-section" id="sporocila-section" style="margin-top:1.5rem">
+        <summary class="admin-section-title">💬 Sporočila — Izgubljeno / Najdeno</summary>
+        <div class="admin-section-body">
+          <p style="font-size:0.8rem;color:#9ca3af;margin-bottom:0.75rem">Vse objave iz vseh apartmanov (zadnjih 30 dni).</p>
+          <button id="btn-load-sporocila" style="margin-bottom:0.75rem;padding:4px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e5e7eb;cursor:pointer;font-size:0.82rem">🔄 Osveži</button>
+          <div id="sporocila-list" style="font-size:0.82rem"></div>
+        </div>
+      </details>
+
       </div><!-- /#master-panel -->
 
       <!-- ── OWNER PANEL ── -->
@@ -850,18 +860,23 @@
         <details class="admin-section">
           <summary class="admin-section-title">🅿️ Parkiranje — priporočeno</summary>
           <div class="admin-section-body">
-            <label>Ime parkirišča</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
-              <div>
-                <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovensko</label>
-                <input id="owner-parking-title-sl" type="text" placeholder="Parkirišče Bovec" style="width:100%;box-sizing:border-box" />
-              </div>
-              <div>
-                <label style="font-size:0.72rem;opacity:0.6">🇬🇧 Angleško</label>
-                <input id="owner-parking-title-en" type="text" placeholder="Bovec Parking" style="width:100%;box-sizing:border-box" />
-              </div>
+            <label>Ime parkirišča (po jeziku)</label>
+            <div id="park-title-tabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+              <button type="button" class="park-title-tab active" data-lang="sl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.15);color:#e5e7eb;font-size:0.75rem;cursor:pointer">🇸🇮 SL</button>
+              <button type="button" class="park-title-tab" data-lang="en" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇬🇧 EN</button>
+              <button type="button" class="park-title-tab" data-lang="de" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇩🇪 DE</button>
+              <button type="button" class="park-title-tab" data-lang="pl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇵🇱 PL</button>
+              <button type="button" class="park-title-tab" data-lang="cs" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇨🇿 CS</button>
+              <button type="button" class="park-title-tab" data-lang="it" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇮🇹 IT</button>
             </div>
-            <label for="owner-parking-address">Naslov (enak za vse jezike)</label>
+            <input id="owner-parking-title-sl" type="text" placeholder="Parkirišče Bovec" style="width:100%;box-sizing:border-box" />
+            <input id="owner-parking-title-en" type="text" placeholder="Bovec Parking"    style="width:100%;box-sizing:border-box;display:none" />
+            <input id="owner-parking-title-de" type="text" placeholder="Bovec Parkplatz"  style="width:100%;box-sizing:border-box;display:none" />
+            <input id="owner-parking-title-pl" type="text" placeholder="Parking Bovec"    style="width:100%;box-sizing:border-box;display:none" />
+            <input id="owner-parking-title-cs" type="text" placeholder="Parkoviště Bovec" style="width:100%;box-sizing:border-box;display:none" />
+            <input id="owner-parking-title-it" type="text" placeholder="Parcheggio Bovec" style="width:100%;box-sizing:border-box;display:none" />
+
+            <label for="owner-parking-address" style="margin-top:0.5rem">Naslov (enak za vse jezike)</label>
             <input id="owner-parking-address" type="text" placeholder="Trg Golobarskih žrtev 8, Bovec" />
             <label for="owner-parking-maps">Povezava do karte</label>
             <input id="owner-parking-maps" type="text" placeholder="https://maps.google.com/..." />
@@ -871,11 +886,49 @@
               <input type="checkbox" id="owner-parking-paid" />
               Parkirišče je plačljivo (prikaži oznako)
             </label>
-            <label>Opomba</label>
-            <label style="font-size:0.72rem;opacity:0.6">🇸🇮 Slovensko</label>
-            <textarea id="owner-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…" style="width:100%;box-sizing:border-box"></textarea>
-            <label style="font-size:0.72rem;opacity:0.6">🇬🇧 Angleško</label>
-            <textarea id="owner-parking-notes-en" rows="2" placeholder="Free up to 2h…" style="width:100%;box-sizing:border-box"></textarea>
+
+            <label style="margin-top:0.5rem">Opomba (po jeziku)</label>
+            <div id="park-notes-tabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+              <button type="button" class="park-notes-tab active" data-lang="sl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.15);color:#e5e7eb;font-size:0.75rem;cursor:pointer">🇸🇮 SL</button>
+              <button type="button" class="park-notes-tab" data-lang="en" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇬🇧 EN</button>
+              <button type="button" class="park-notes-tab" data-lang="de" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇩🇪 DE</button>
+              <button type="button" class="park-notes-tab" data-lang="pl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇵🇱 PL</button>
+              <button type="button" class="park-notes-tab" data-lang="cs" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇨🇿 CS</button>
+              <button type="button" class="park-notes-tab" data-lang="it" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇮🇹 IT</button>
+            </div>
+            <textarea id="owner-parking-notes-sl" rows="2" placeholder="Brezplačno do 2h…"      style="width:100%;box-sizing:border-box"></textarea>
+            <textarea id="owner-parking-notes-en" rows="2" placeholder="Free up to 2h…"          style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-parking-notes-de" rows="2" placeholder="Kostenlos bis 2 Std.…"   style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-parking-notes-pl" rows="2" placeholder="Bezpłatnie do 2 godz.…"  style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-parking-notes-cs" rows="2" placeholder="Zdarma do 2 hod.…"       style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-parking-notes-it" rows="2" placeholder="Gratuito fino a 2 ore…"  style="width:100%;box-sizing:border-box;display:none"></textarea>
+
+            <script>
+            (function(){
+              function setupParkTabs(groupId, inputPrefix) {
+                var tabs = document.querySelectorAll('#' + groupId + ' button');
+                tabs.forEach(function(btn) {
+                  btn.addEventListener('click', function() {
+                    var lang = btn.getAttribute('data-lang');
+                    tabs.forEach(function(b) {
+                      b.style.background = 'transparent';
+                      b.style.color = '#9ca3af';
+                      b.style.borderColor = 'rgba(255,255,255,0.1)';
+                      var el = document.getElementById(inputPrefix + b.getAttribute('data-lang'));
+                      if (el) el.style.display = 'none';
+                    });
+                    btn.style.background = 'rgba(255,255,255,0.15)';
+                    btn.style.color = '#e5e7eb';
+                    btn.style.borderColor = 'rgba(255,255,255,0.2)';
+                    var active = document.getElementById(inputPrefix + lang);
+                    if (active) active.style.display = '';
+                  });
+                });
+              }
+              setupParkTabs('park-title-tabs', 'owner-parking-title-');
+              setupParkTabs('park-notes-tabs',  'owner-parking-notes-');
+            })();
+            </script>
           </div>
         </details>
 
@@ -953,7 +1006,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="/assets/supabase-client.js?v=20260227-7"></script>
-  <script src="/admin.js?v=20260227-7"></script>
+  <script src="/assets/supabase-client.js?v=20260227-8"></script>
+  <script src="/admin.js?v=20260227-8"></script>
 </body>
 </html>

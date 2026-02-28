@@ -1406,8 +1406,18 @@
     
     function renderParkingCard(opt, isRecommended) {
       const trans = translations[currentLang];
-      const title = opt.title[currentLang] || opt.title.sl || opt.title.en;
-      const notes = opt.notes ? (opt.notes[currentLang] || opt.notes.sl || opt.notes.en) : null;
+      // Defensive extraction: title and notes can be plain strings or {sl,en,...} objects
+      var _rawTitle = opt.title;
+      var title = (_rawTitle && typeof _rawTitle === 'object')
+        ? (_rawTitle[currentLang] || _rawTitle.sl || _rawTitle.en || '')
+        : String(_rawTitle || '');
+      var _rawNotes = opt.notes;
+      var notes = null;
+      if (_rawNotes && typeof _rawNotes === 'object') {
+        notes = _rawNotes[currentLang] || _rawNotes.sl || _rawNotes.en || null;
+      } else if (_rawNotes) {
+        notes = String(_rawNotes);
+      }
       
       // Use directions link instead of search
       const mapsLink = opt.mapsLink || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(opt.mapsQuery || opt.address)}`;
@@ -1454,7 +1464,10 @@
       // Tenant override: replace first recommended card only
       var _tpo2 = window.__TENANT_OVERRIDES && window.__TENANT_OVERRIDES.parkingRecommended;
       if (_tpo2 && _tpo2.title) {
-        var _tpoC2 = { type: 'apartment', title: { sl: _tpo2.title, en: _tpo2.title }, address: _tpo2.address || '', mapsLink: _tpo2.mapsLink || '', notes: _tpo2.notes ? { sl: _tpo2.notes, en: _tpo2.notes } : null, paid: null, hours: null };
+        // Handle both old plain-string and new {sl,en,...} object format (same as renderParkingPanel)
+        var _tpoTitle2 = (typeof _tpo2.title === 'object') ? _tpo2.title : { sl: _tpo2.title, en: _tpo2.title };
+        var _tpoNotes2 = _tpo2.notes ? ((typeof _tpo2.notes === 'object') ? _tpo2.notes : { sl: _tpo2.notes, en: _tpo2.notes }) : null;
+        var _tpoC2 = { type: 'apartment', title: _tpoTitle2, address: _tpo2.address || '', mapsLink: _tpo2.mapsLink || '', notes: _tpoNotes2, paid: _tpo2.paid !== undefined ? _tpo2.paid : null, hours: _tpo2.hours || null };
         recommended = [_tpoC2].concat(recommended.slice(1));
       }
 

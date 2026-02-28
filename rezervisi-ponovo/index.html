@@ -105,18 +105,32 @@
   var mailtoEl = document.getElementById('mailto');
   var statusEl = document.getElementById('demoNote'); // repurposed as inline status
 
-  (function _fetchRebook() {
-    if (!_rbSlug || !window.supabaseClient) return;
-    window.supabaseClient
-      .rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
-      .then(function(r) {
-        if (r.error || !r.data) return;
-        var rebookRow = r.data.find(function(x) {
-          return x.section_key === 'booking' && x.item_key === 'rebook';
-        });
-        if (rebookRow && rebookRow.data_json) rbData = rebookRow.data_json;
-      }).catch(function(){});
-  })();
+  // Poll until supabaseClient is ready (it loads its SDK asynchronously)
+  function _waitForSBrb(cb, maxMs) {
+    if (window.supabaseClient) { cb(window.supabaseClient); return; }
+    var waited = 0, step = 100;
+    var t = setInterval(function() {
+      if (window.supabaseClient) { clearInterval(t); cb(window.supabaseClient); return; }
+      waited += step;
+      if (waited >= (maxMs || 8000)) { clearInterval(t); cb(null); }
+    }, step);
+  }
+
+  function _fetchRebook() {
+    if (!_rbSlug) return;
+    _waitForSBrb(function(sb) {
+      if (!sb) return;
+      sb.rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
+        .then(function(r) {
+          if (r.error || !r.data) return;
+          var rebookRow = r.data.find(function(x) {
+            return x.section_key === 'booking' && x.item_key === 'rebook';
+          });
+          if (rebookRow && rebookRow.data_json) rbData = rebookRow.data_json;
+        }).catch(function(){});
+    }, 8000);
+  }
+  _fetchRebook();
 
   document.getElementById('send').addEventListener('click', function() {
     var userEmail = (emailEl.value || '').trim();

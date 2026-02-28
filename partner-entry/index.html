@@ -474,11 +474,12 @@
     var muns = [];
     fMunGrid.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { muns.push(cb.value); });
 
+    var _now = new Date().toISOString();
     var payload = {
       name:               name,
-      type:               fType.value,
-      category:           catVal,
-      tier:               fTier.value,
+      type:               fType.value   || 'activity',
+      category:           catVal        || 'other',
+      tier:               fTier.value   || 'free',
       order_index:        100,
       short_desc:         fDesc.value.trim()  || null,
       image_url:          fImg.value.trim()   || null,
@@ -489,7 +490,8 @@
       municipalities:     muns.length ? muns : null,
       all_municipalities: false,
       is_active:          true,
-      updated_at:         new Date().toISOString()
+      created_at:         _now,
+      updated_at:         _now
     };
 
     btnSave.disabled = true; btnSave.textContent = 'Shranjujem…';

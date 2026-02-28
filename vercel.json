@@ -1,4 +1,8 @@
 {
+  "rewrites": [
+    { "source": "/admin/partner-entry",  "destination": "/partner-entry/index.html" },
+    { "source": "/admin/partner-entry/", "destination": "/partner-entry/index.html" }
+  ],
   "crons": [
     {
       "path": "/api/cleanup-lost-found",
