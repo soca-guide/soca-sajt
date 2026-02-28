@@ -8,6 +8,7 @@
 //   WEBHOOK_SECRET          — Tajni token za verifikaciju webhook poziva
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -154,6 +155,57 @@ function templateRebook(payload: Record<string, unknown>): { subject: string; ht
   };
 }
 
+function templateBookingAgainTourist(payload: {
+  tourist_email: string;
+  apartment_name: string;
+  owner_phone: string;
+  owner_email: string;
+  rebook_link: string;
+  instructions: string;
+  lang: string;
+}): { subject: string; html: string; text: string } {
+  const labels: Record<string, Record<string, string>> = {
+    sl: { subject: 'Rezervacija', greeting: 'Pozdravljeni!', intro: 'Tukaj so kontaktni podatki lastnika apartmaja:', apt: 'Apartma', phone: 'Telefon', email: 'E-pošta', link: 'Rezervacijska povezava', instr: 'Navodila', note: 'To sporočilo ste prejeli, ker ste zaprosili za podatke za rezervacijo.' },
+    en: { subject: 'Booking', greeting: 'Hello!', intro: "Here are your host's contact details:", apt: 'Apartment', phone: 'Phone', email: 'E-mail', link: 'Booking link', instr: 'Instructions', note: 'You received this email because you requested booking information.' },
+  };
+  const t = labels[payload.lang] || labels.sl;
+  const apt = payload.apartment_name || 'apartma';
+  const subject = `${t.subject} – ${apt}`;
+  const html = `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:12px">
+      <h2 style="margin-top:0;color:#0f766e">${subject}</h2>
+      <p>${t.greeting}</p>
+      <p style="color:#475569">${t.intro}</p>
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:6px 0;color:#64748b;width:140px">${t.apt}</td><td style="padding:6px 0;font-weight:600">${apt}</td></tr>
+        ${payload.owner_phone ? `<tr><td style="padding:6px 0;color:#64748b">${t.phone}</td><td style="padding:6px 0">${payload.owner_phone}</td></tr>` : ''}
+        ${payload.owner_email ? `<tr><td style="padding:6px 0;color:#64748b">${t.email}</td><td style="padding:6px 0">${payload.owner_email}</td></tr>` : ''}
+        ${payload.rebook_link ? `<tr><td style="padding:6px 0;color:#64748b">${t.link}</td><td style="padding:6px 0"><a href="${payload.rebook_link}" style="color:#0ea5e9">${payload.rebook_link}</a></td></tr>` : ''}
+      </table>
+      ${payload.instructions ? `<div style="margin-top:16px;padding:12px;border-left:3px solid #22c55e;background:#f0fdf4;white-space:pre-wrap">${payload.instructions}</div>` : ''}
+      <p style="font-size:12px;color:#94a3b8;margin-top:20px">${t.note}</p>
+    </div>`;
+  const text = [
+    subject,
+    '',
+    t.intro,
+    `${t.apt}: ${apt}`,
+    payload.owner_phone ? `${t.phone}: ${payload.owner_phone}` : '',
+    payload.owner_email ? `${t.email}: ${payload.owner_email}` : '',
+    payload.rebook_link ? `${t.link}: ${payload.rebook_link}` : '',
+    payload.instructions ? `${t.instr}: ${payload.instructions}` : '',
+  ].filter(Boolean).join('\n');
+  return { subject, html, text };
+}
+
+function maskEmail(email: string): string {
+  const parts = String(email || '').split('@');
+  if (parts.length !== 2) return email || '';
+  const local = parts[0];
+  if (local.length <= 2) return `${local.charAt(0)}*@${parts[1]}`;
+  return `${local.slice(0, 2)}***@${parts[1]}`;
+}
+
 function templateLostFound(row: Record<string, unknown>): { subject: string; html: string } {
   const typeLabel = row.post_type === 'found' ? '✅ Pronađeno' : '🔍 Izgubljeno';
   return {
@@ -185,14 +237,25 @@ async function sendViaResend(
   subject: string,
   html: string,
   from: string,
+  text?: string,
+  replyTo?: string,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
+  console.log('[send-email] resend request', { from, to, subject, reply_to: replyTo || null });
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html }),
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      html,
+      text: text || subject,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
   if (!res.ok) { const err = await res.text(); return { ok: false, error: err }; }
   const data = await res.json();
+  console.log('[send-email] resend response', { id: data.id, to, subject });
   return { ok: true, id: data.id };
 }
 
@@ -210,17 +273,8 @@ serve(async (req: Request) => {
     const anonKey     = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 
     // ── FROM address — use verified domain in prod, fallback in dev ──────────
-    const env         = (Deno.env.get('ENV') ?? Deno.env.get('NODE_ENV') ?? 'dev').toLowerCase();
-    const fromEmail   = Deno.env.get('FROM_EMAIL') ?? '';
-    const fallbackFrom = 'Soča Guide <onboarding@resend.dev>';
-    const finalFrom   = fromEmail || (env === 'production' ? '' : fallbackFrom);
-
-    if (env === 'production' && !finalFrom) {
-      console.error('send-email: FROM_EMAIL secret is required in production');
-      return new Response(JSON.stringify({ error: 'Missing FROM_EMAIL secret' }), {
-        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
+    const fromEmail   = Deno.env.get('RESEND_FROM') ?? Deno.env.get('FROM_EMAIL') ?? '';
+    const finalFrom   = fromEmail || 'Soča Guide <noreply@revantora.com>';
 
     if (!resendKey) {
       return new Response(JSON.stringify({ error: 'Missing RESEND_API_KEY' }), {
@@ -277,7 +331,6 @@ serve(async (req: Request) => {
         });
       }
 
-      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
       const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
       });
@@ -297,7 +350,7 @@ serve(async (req: Request) => {
         email: ownerEmail, tenant_name: tenantName, tenant_slug: tenantSlug,
         guest_url: guestUrl, admin_url: adminUrl || fallbackAdmin, action_link: actionLink,
       });
-      const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom);
+      const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom, 'Welcome to Soča Guide');
       return new Response(JSON.stringify(result), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
@@ -318,7 +371,7 @@ serve(async (req: Request) => {
         tenant_slug: payload.tenant_slug ?? '',
       };
       const tpl = templateMaintenance(row);
-      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom);
+      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom, 'Maintenance report received', ownerEmail);
       return new Response(JSON.stringify(result), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
@@ -333,7 +386,7 @@ serve(async (req: Request) => {
         });
       }
       const tpl = templateRebook(payload);
-      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom);
+      const result = await sendViaResend(resendKey, ownerEmail, tpl.subject, tpl.html, finalFrom, 'Rebook request received');
       return new Response(JSON.stringify(result), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
@@ -350,12 +403,6 @@ serve(async (req: Request) => {
       }
     }
 
-    if (!notifyEmail) {
-      return new Response(JSON.stringify({ error: 'Missing NOTIFY_EMAIL' }), {
-        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
     // Webhook payload from Supabase Database Webhook
     const table: string = payload.table || '';
     const row: Record<string, unknown> = payload.record || {};
@@ -366,6 +413,63 @@ serve(async (req: Request) => {
     if (table === 'pending_owner_invites') {
       // Welcome email direktno vlasniku (ne NOTIFY_EMAIL)
       template = templateOwnerWelcome(row);
+    } else if (table === 'booking_again_requests') {
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      if (!supabaseUrl || !serviceKey) {
+        return new Response(JSON.stringify({ ok: false, error: 'Missing SUPABASE_SERVICE_ROLE_KEY for booking_again_requests' }), {
+          status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+      const reqId = String(row.id || '');
+      const tenantId = String(row.tenant_id || '');
+      const tenantSlug = String(row.tenant_slug || '');
+      const touristEmail = String(row.tourist_email || '').trim().toLowerCase();
+      const lang = String(row.lang || 'en');
+      console.log('[send-email] booking_again_requests webhook', {
+        id: reqId || null,
+        tenant_id: tenantId || null,
+        tenant_slug: tenantSlug || null,
+        tourist_email: maskEmail(touristEmail),
+      });
+      const admin = createClient(supabaseUrl, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: itemsRows } = await admin
+        .from('items')
+        .select('item_key,data_json')
+        .eq('tenant_id', tenantId)
+        .in('item_key', ['rebook', 'default_config']);
+      const rebookRow = (itemsRows || []).find((x: Record<string, unknown>) => x.item_key === 'rebook');
+      const cfgRow = (itemsRows || []).find((x: Record<string, unknown>) => x.item_key === 'default_config');
+      const rebook = (rebookRow?.data_json as Record<string, unknown>) || {};
+      const cfg = (cfgRow?.data_json as Record<string, unknown>) || {};
+      const tpl = templateBookingAgainTourist({
+        tourist_email: touristEmail,
+        apartment_name: String(rebook.apartment_name || cfg.apartment_name || tenantSlug || 'apartma'),
+        owner_phone: String(rebook.owner_phone || cfg.owner_phone || ''),
+        owner_email: String(rebook.owner_email || cfg.owner_email || ''),
+        rebook_link: String(rebook.rebook_link || ''),
+        instructions: String(rebook.instructions || ''),
+        lang,
+      });
+      const result = await sendViaResend(
+        resendKey,
+        touristEmail,
+        tpl.subject,
+        tpl.html,
+        finalFrom,
+        tpl.text,
+        String(rebook.owner_email || cfg.owner_email || '') || undefined,
+      );
+      if (reqId) {
+        await admin.from('booking_again_requests').update({
+          status: result.ok ? 'sent' : 'error',
+          error_message: result.ok ? null : (result.error || 'unknown'),
+        }).eq('id', reqId);
+      }
+      return new Response(JSON.stringify(result), {
+        status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
     } else if (table === 'suggestions') {
       template = templateSuggestion(row);
     } else if (table === 'maintenance_reports') {
@@ -382,6 +486,11 @@ serve(async (req: Request) => {
 
     // owner welcome ide na owner email; sve ostalo ide na notifyEmail
     const sendTo = (template as { to?: string }).to || notifyEmail;
+    if (!(template as { to?: string }).to && !notifyEmail) {
+      return new Response(JSON.stringify({ error: 'Missing NOTIFY_EMAIL' }), {
+        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
     if (!sendTo || !sendTo.includes('@')) {
       console.log('send-email: no valid recipient, skipping');
       return new Response(JSON.stringify({ ok: true, skipped: true }), {
@@ -389,7 +498,7 @@ serve(async (req: Request) => {
       });
     }
 
-    const result = await sendViaResend(resendKey, sendTo, template.subject, template.html, finalFrom);
+    const result = await sendViaResend(resendKey, sendTo, template.subject, template.html, finalFrom, template.subject);
     if (!result.ok) {
       console.error('Resend error:', result.error);
       return new Response(JSON.stringify({ ok: false, email_error: result.error }), {

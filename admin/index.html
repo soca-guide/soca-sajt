@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Soča Sajt</title>
-  <link rel="stylesheet" href="/admin.css?v=20260227-9" />
+  <link rel="stylesheet" href="/admin.css?v=20260228-1" />
 </head>
 <body>
 
@@ -367,6 +367,10 @@
                 <div style="grid-column:1/-1">
                   <label for="pf-booking" style="font-size:0.78rem;opacity:0.7">📅 Booking / rezervacija URL <span style="opacity:0.5;font-size:0.72rem">(ako se razlikuje od websitea)</span></label>
                   <input id="pf-booking" type="url" placeholder="https://booking.biznis.si" style="width:100%;box-sizing:border-box">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label for="pf-cover-youtube-url" style="font-size:0.78rem;opacity:0.7">🎬 Cover YouTube URL <span style="opacity:0.5;font-size:0.72rem">(premium/featured)</span></label>
+                  <input id="pf-cover-youtube-url" type="url" placeholder="https://www.youtube.com/watch?v=..." style="width:100%;box-sizing:border-box">
                 </div>
               </div>
 
@@ -1036,7 +1040,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="/assets/supabase-client.js?v=20260227-12"></script>
-  <script src="/admin.js?v=20260227-12"></script>
+  <script src="/assets/supabase-client.js?v=20260228-1"></script>
+  <script src="/admin.js?v=20260228-1"></script>
 </body>
 </html>

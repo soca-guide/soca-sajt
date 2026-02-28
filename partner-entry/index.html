@@ -204,6 +204,9 @@
     <label for="f-book">Rezervacijska povezava</label>
     <input id="f-book" type="url" placeholder="https://rezervacije.si" />
 
+    <label for="f-cover-youtube-url">Cover YouTube URL</label>
+    <input id="f-cover-youtube-url" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+
     <!-- Območja -->
     <div class="section-title">🌍 Območja prikaza</div>
     <p style="font-size:0.78rem;color:#6b7280;margin-bottom:0.25rem">Izberite občine, v katerih bo partner prikazan gostom.</p>
@@ -218,7 +221,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../assets/supabase-client.js?v=20260227-2"></script>
+<script src="../assets/supabase-client.js?v=20260228-1"></script>
 <script>
 (function() {
   'use strict';
@@ -274,6 +277,7 @@
   var fPhone       = document.getElementById('f-phone');
   var fWeb         = document.getElementById('f-web');
   var fBook        = document.getElementById('f-book');
+  var fCoverYoutube= document.getElementById('f-cover-youtube-url');
   var fMunGrid     = document.getElementById('f-mun-grid');
   var fImg         = document.getElementById('f-img');
   var fImgFile     = document.getElementById('f-img-file');
@@ -443,6 +447,7 @@
     fName.value = ''; fType.value = 'activities'; syncCats();
     fTier.value = 'standard'; fDesc.value = '';
     fPhone.value = ''; fWeb.value = ''; fBook.value = '';
+    if (fCoverYoutube) fCoverYoutube.value = '';
     fMunGrid.querySelectorAll('input[type=checkbox]').forEach(function(cb) { cb.checked = false; });
     fImg.value  = ''; fImgPreview.src  = ''; fImgPreview.style.display  = 'none'; btnImgClear.style.display  = 'none';
     fLogo.value = ''; fLogoPrev.src    = ''; fLogoPrev.style.display    = 'none'; btnLogoClear.style.display = 'none';
@@ -475,6 +480,12 @@
     fMunGrid.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { muns.push(cb.value); });
 
     var _now = new Date().toISOString();
+    var ytCover = fCoverYoutube ? fCoverYoutube.value.trim() : '';
+    if (ytCover && !/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(ytCover)) {
+      showMsg(formMsg, '⚠️ Vnesite veljaven YouTube URL (youtube.com ali youtu.be).', 'error');
+      if (fCoverYoutube) fCoverYoutube.focus();
+      return;
+    }
     var payload = {
       name:               name,
       type:               fType.value   || 'activity',
@@ -487,6 +498,7 @@
       phone:              fPhone.value.trim() || null,
       website_url:        fWeb.value.trim()   || null,
       booking_url:        fBook.value.trim()  || null,
+      cover_youtube_url:  ytCover || null,
       municipalities:     muns.length ? muns : null,
       all_municipalities: false,
       is_active:          true,

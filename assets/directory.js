@@ -291,10 +291,41 @@
       (p.name ? _esc(p.name.charAt(0).toUpperCase()) : '?') + '</div>';
   }
 
+  function _ytIdFromUrl(url) {
+    if (!url) return '';
+    var raw = String(url).trim();
+    var m = raw.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (m && m[1]) return m[1];
+    m = raw.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (m && m[1]) return m[1];
+    m = raw.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+    if (m && m[1]) return m[1];
+    m = raw.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    if (m && m[1]) return m[1];
+    return '';
+  }
+
+  function _coverMediaHtml(p, variant) {
+    var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
+    var ytId = _ytIdFromUrl(p.cover_youtube_url);
+    if (ytId) {
+      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) + '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId);
+      var thumb = 'https://img.youtube.com/vi/' + _esc(ytId) + '/hqdefault.jpg';
+      return '<div class="' + cls + ' dir-video-wrap">' +
+        '<iframe src="' + embed + '" title="' + _esc(p.name) + ' video cover" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
+        '<a href="' + _esc(p.cover_youtube_url) + '" class="dir-video-fallback" target="_blank" rel="noopener" onclick="event.stopPropagation()">' +
+          '<img src="' + thumb + '" alt="' + _esc(p.name) + ' video thumbnail">' +
+          '<span>▶</span>' +
+        '</a>' +
+      '</div>';
+    }
+    return p.image_url
+      ? '<div class="' + cls + '" style="background-image:url(' + _esc(p.image_url) + ')"></div>'
+      : '<div class="' + cls + ' ' + cls + '--placeholder"></div>';
+  }
+
   function _cardPremium(p) {
-    var heroHtml = p.image_url
-      ? '<div class="dir-card-img" style="background-image:url(' + _esc(p.image_url) + ')"></div>'
-      : '<div class="dir-card-img dir-card-img--placeholder"></div>';
+    var heroHtml = _coverMediaHtml(p, 'premium');
     return '<article class="dir-card dir-card--premium" data-pid="' + _esc(p.id) + '">' +
       heroHtml +
       '<div class="dir-card-body">' +
@@ -312,9 +343,7 @@
   }
 
   function _cardFeatured(p) {
-    var heroHtml = p.image_url
-      ? '<div class="dir-feat-img" style="background-image:url(' + _esc(p.image_url) + ')"></div>'
-      : '<div class="dir-feat-img dir-feat-img--placeholder"></div>';
+    var heroHtml = _coverMediaHtml(p, 'featured');
     return '<article class="dir-feat-card" data-pid="' + _esc(p.id) + '">' +
       heroHtml +
       '<div class="dir-feat-body">' +

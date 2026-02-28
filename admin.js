@@ -526,19 +526,31 @@
       body: { action: 'invite_owner', owner_email: ownerEmail, tenant_id: tenantId, tenant_slug: tenantSlug }
     }).then(function (r) {
       if (!r.error) { _done('Poslato! ✓'); return; }
-      // Edge Function nije deployovana → fallback
-      _inviteFallback(ownerEmail, tenantId,
-        function () { _done('Poslato ✓'); },
-        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); },
-        tenantSlug
-      );
+      // master_admin fallback: use send-owner-invite (Resend-only path)
+      return sb.functions.invoke('send-owner-invite', {
+        body: {
+          tenant_id: tenantId,
+          tenant_slug: tenantSlug,
+          tenant_name: tenantSlug || 'apartma',
+          owner_email: ownerEmail,
+          locale: 'sl',
+          admin_url: window.location.origin + '/admin',
+          site_url: window.location.origin
+        }
+      }).then(function (r2) {
+        if (r2.error || !(r2.data && r2.data.ok)) {
+          _done('Greška!');
+          setStatus(tenantsStatus, 'Greška: ' + ((r2.data && r2.data.error) || r2.error || 'unknown'), 'error');
+          return;
+        }
+        _done('Poslato ✓');
+      }).catch(function (err2) {
+        _done('Greška!');
+        setStatus(tenantsStatus, 'Greška: ' + (err2 && err2.message ? err2.message : 'network'), 'error');
+      });
     }).catch(function () {
-      // Edge Function nedostupna → fallback
-      _inviteFallback(ownerEmail, tenantId,
-        function () { _done('Poslato ✓'); },
-        function (msg) { _done('Greška!'); setStatus(tenantsStatus, 'Greška: ' + msg, 'error'); },
-        tenantSlug
-      );
+      _done('Greška!');
+      setStatus(tenantsStatus, 'Greška: master_admin nedostupan.', 'error');
     });
   }
 
@@ -935,6 +947,11 @@
 
         // Pozovi send-owner-invite Edge Function — ona generiše magic link i šalje email
         setStatus(createTenantStatus, 'Šaljem pozivnicu ' + email + '…', 'info');
+        console.log('[Admin Save+Send] invoke start', {
+          tenant_id: newId,
+          tenant_slug: slug,
+          owner_email: email
+        });
 
         function _afterInvite(sent) {
           unlockButtons();
@@ -955,9 +972,20 @@
             site_url:    window.location.origin
           }
         }).then(function (fnResult) {
+          console.log('[Admin Save+Send] invoke end', {
+            ok: !fnResult.error && !!(fnResult.data && fnResult.data.ok),
+            tenant_id: newId,
+            owner_email: email,
+            response: fnResult.data || null,
+            error: fnResult.error || null
+          });
           var ok = !fnResult.error && fnResult.data && fnResult.data.ok;
           _afterInvite(!!ok);
         }).catch(function () {
+          console.error('[Admin Save+Send] invoke error', {
+            tenant_id: newId,
+            owner_email: email
+          });
           unlockButtons(); clearForm(); loadTenants();
           setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana (network).', 'warning');
           showOwnerWelcomeModal(name, slug, email, false);
@@ -1465,6 +1493,7 @@
   var pfWhatsapp          = document.getElementById('pf-whatsapp');
   var pfWebsite           = document.getElementById('pf-website');
   var pfBooking           = document.getElementById('pf-booking');
+  var pfCoverYoutubeUrl   = document.getElementById('pf-cover-youtube-url');
   var pfAllMun            = document.getElementById('pf-all-mun');
   var pfMunWrap           = document.getElementById('pf-mun-wrap');
   var pfActive            = document.getElementById('pf-active');
@@ -1761,6 +1790,7 @@
     if (pfWhatsapp) pfWhatsapp.value = p ? (p.whatsapp || '') : '';
     if (pfWebsite)  pfWebsite.value  = p ? (p.website_url || '') : '';
     if (pfBooking)  pfBooking.value  = p ? (p.booking_url || '') : '';
+    if (pfCoverYoutubeUrl) pfCoverYoutubeUrl.value = p ? (p.cover_youtube_url || '') : '';
     if (pfAllMun)   pfAllMun.checked = p ? !!p.all_municipalities : false;
     if (pfActive)   pfActive.checked = p ? !!p.is_active : true;
     _buildPartnerMunHtml(p ? (p.municipalities || []) : []);
@@ -1771,6 +1801,14 @@
   function _savePartner() {
     var name = pfName ? pfName.value.trim() : '';
     if (!name) { if (partnerFormStatus) { partnerFormStatus.textContent = 'Naziv je obavezan.'; partnerFormStatus.className = 'msg msg--error'; } return; }
+    var ytCover = pfCoverYoutubeUrl ? pfCoverYoutubeUrl.value.trim() : '';
+    if (ytCover && !/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(ytCover)) {
+      if (partnerFormStatus) {
+        partnerFormStatus.textContent = 'YouTube cover mora biti validan youtube.com/youtu.be URL.';
+        partnerFormStatus.className = 'msg msg--error';
+      }
+      return;
+    }
     var id       = pfId      ? pfId.value.trim() : '';
     var allMun   = pfAllMun  ? pfAllMun.checked  : false;
     var muns     = allMun    ? null : _getPartnerMunSelected();
@@ -1793,6 +1831,7 @@
       phone:             pfPhone    ? pfPhone.value.trim()   || null : null,
       website_url:       pfWebsite  ? pfWebsite.value.trim() || null : null,
       booking_url:       pfBooking  ? pfBooking.value.trim() || null : null,
+      cover_youtube_url: ytCover || null,
       municipalities:    muns && muns.length ? muns : null,
       all_municipalities:allMun,
       is_active:         pfActive   ? pfActive.checked : true,
@@ -3949,6 +3988,7 @@
       var _ioTid  = btn.getAttribute('data-tid');
       var _ioSlug = btn.getAttribute('data-slug');
       var _ioName = btn.getAttribute('data-name');
+      console.log('[Admin InviteOwner] invoke start', { tenant_id: _ioTid, tenant_slug: _ioSlug, owner_email: _ioEmail });
       sb.functions.invoke('send-owner-invite', {
         body: {
           tenant_id:   _ioTid,
@@ -3960,6 +4000,13 @@
           site_url:    window.location.origin
         }
       }).then(function (r) {
+        console.log('[Admin InviteOwner] invoke end', {
+          tenant_id: _ioTid,
+          owner_email: _ioEmail,
+          ok: !r.error && !!(r.data && r.data.ok),
+          response: r.data || null,
+          error: r.error || null
+        });
         if (r.error || !(r.data && r.data.ok)) {
           btn.disabled    = false;
           btn.textContent = '+ Poveži vlasnika';

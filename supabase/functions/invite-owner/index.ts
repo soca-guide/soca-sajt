@@ -80,15 +80,16 @@ serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // ── Step 1: Invite or find existing auth user ─────────────────────────────────
+  // ── Step 1: Create invite link or find existing auth user ─────────────────────
   let userId: string;
   let invited = false;
 
   const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
-  const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    owner_email,
-    redirectTo ? { redirectTo } : undefined,
-  );
+  const { data: inviteData, error: inviteError } = await admin.auth.admin.generateLink({
+    type: 'invite',
+    email: owner_email,
+    options: redirectTo ? { redirectTo } : undefined,
+  });
 
   if (inviteError) {
     // User may already exist — find them in the users list
@@ -96,7 +97,7 @@ serve(async (req) => {
       perPage: 1000,
     });
     if (listError) {
-      return json({ error: 'Invite failed and could not list users: ' + inviteError.message }, 500);
+      return json({ error: 'Invite-link failed and could not list users: ' + inviteError.message }, 500);
     }
     const existing = (listData?.users ?? []).find((u) => u.email === owner_email);
     if (!existing) {

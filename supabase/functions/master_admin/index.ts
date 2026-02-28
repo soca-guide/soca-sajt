@@ -83,9 +83,10 @@ serve(async (req) => {
       return json({ error: 'Invalid owner_email' }, 400);
     }
 
-    // Step 1: find existing user or invite
+    // Step 1: find existing user or create invite link (without Supabase auto-email)
     let userId: string;
     let invited = false;
+    let sent = false;
 
     const { data: listData } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const existing = (listData?.users ?? []).find((u) => u.email === owner_email);
@@ -94,26 +95,29 @@ serve(async (req) => {
       userId = existing.id;
     } else {
       const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
-      const { data: invData, error: invErr } = await admin.auth.admin.inviteUserByEmail(
-        owner_email,
-        redirectTo ? { redirectTo } : undefined,
-      );
+      const { data: invData, error: invErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
+        email: owner_email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
       if (invErr || !invData?.user) {
-        return json({ error: 'Could not create user: ' + (invErr?.message ?? '?') }, 500);
+        return json({ error: 'Could not create user/link: ' + (invErr?.message ?? '?') }, 500);
       }
       userId  = invData.user.id;
       invited = true;
+      sent = !!((invData as { properties?: { action_link?: string } }).properties?.action_link);
     }
 
-    // Step 2: send magic link (re-send even if user already existed, so they always get a fresh link)
-    const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
-    const { error: linkErr } = await admin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: owner_email,
-      options: redirectTo ? { redirectTo } : undefined,
-    });
-    // Non-fatal: if generateLink fails (e.g. new user already received invite email), continue
-    const sent = !linkErr;
+    // Step 2: generate magic-link for existing users (still no Supabase auto-email)
+    if (existing) {
+      const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: owner_email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
+      sent = !linkErr && !!((linkData as { properties?: { action_link?: string } } | null)?.properties?.action_link);
+    }
 
     // Step 3: upsert user_profiles with email + disabled=false
     const { error: profErr1 } = await admin

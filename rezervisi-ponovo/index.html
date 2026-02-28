@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Rezerviši ponovo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260219-1"></script>
+  <script src="../assets/supabase-client.js?v=20260228-1"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
@@ -99,6 +99,10 @@
   // ── Tenant rebook data (fetched from Supabase if ?t= present) ─────────
   var rbData   = null;
   var _rbSlug  = new URLSearchParams(window.location.search).get('t') || null;
+  var _rbTenantId = null;
+  var _isSubmitting = false;
+  var _fetchInFlight = false;
+  var _lastFetchError = '';
   var emailEl  = document.getElementById('email');
   var result   = document.getElementById('result');
   var msgEl    = document.getElementById('msg');
@@ -116,79 +120,163 @@
     }, step);
   }
 
-  function _fetchRebook() {
-    if (!_rbSlug) return;
-    _waitForSBrb(function(sb) {
-      if (!sb) return;
-      sb.rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
-        .then(function(r) {
-          if (r.error || !r.data) return;
-          var rebookRow = r.data.find(function(x) {
-            return x.section_key === 'booking' && x.item_key === 'rebook';
-          });
-          if (rebookRow && rebookRow.data_json) rbData = rebookRow.data_json;
-        }).catch(function(){});
-    }, 8000);
+  function _maskEmail(email) {
+    var parts = String(email || '').split('@');
+    if (parts.length !== 2) return email || '';
+    var local = parts[0];
+    var domain = parts[1];
+    if (local.length <= 2) return local.charAt(0) + '*@' + domain;
+    return local.slice(0, 2) + '***@' + domain;
   }
-  _fetchRebook();
+
+  function _setInlineStatus(text, isError) {
+    if (!statusEl) return;
+    statusEl.textContent = text || '';
+    statusEl.style.color = isError ? '#fca5a5' : '#9ca3af';
+  }
+
+  function _withTimeout(promise, ms, label) {
+    return new Promise(function(resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function() {
+        if (done) return;
+        done = true;
+        reject(new Error(label || 'TIMEOUT'));
+      }, ms);
+      promise.then(function(v) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(v);
+      }).catch(function(err) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
+  function _fetchRebookOnce(opts) {
+    opts = opts || {};
+    if (!_rbSlug) return Promise.resolve({ ok: false, reason: 'NO_SLUG' });
+    if (_fetchInFlight) return Promise.resolve({ ok: false, reason: 'IN_FLIGHT' });
+    _fetchInFlight = true;
+    console.log('[Rebook] start request', { slug: _rbSlug, reason: opts.reason || 'unknown' });
+    _setInlineStatus('Učitavam podatke…', false);
+    return new Promise(function(resolve) {
+      _waitForSBrb(function(sb) {
+        if (!sb) {
+          _lastFetchError = 'SUPABASE_NOT_READY';
+          console.error('[Rebook] error', _lastFetchError);
+          resolve({ ok: false, reason: _lastFetchError });
+          return;
+        }
+        _withTimeout(sb.rpc('get_guest_items_by_slug', { p_slug: _rbSlug }), 9000, 'REBOOK_FETCH_TIMEOUT')
+          .then(function(r) {
+            if (r.error || !r.data || !r.data.length) {
+              _lastFetchError = (r.error && r.error.message) || 'NO_REBOOK_DATA';
+              console.error('[Rebook] error', _lastFetchError);
+              resolve({ ok: false, reason: _lastFetchError });
+              return;
+            }
+            var rebookRow = r.data.find(function(x) {
+              return x.section_key === 'booking' && x.item_key === 'rebook';
+            });
+            if (!rebookRow || !rebookRow.data_json) {
+              _lastFetchError = 'REBOOK_ROW_MISSING';
+              console.error('[Rebook] error', _lastFetchError);
+              resolve({ ok: false, reason: _lastFetchError });
+              return;
+            }
+            rbData = rebookRow.data_json;
+            _rbTenantId = rebookRow.tenant_id || (r.data[0] && r.data[0].tenant_id) || null;
+            _lastFetchError = '';
+            resolve({ ok: true });
+          })
+          .catch(function(err) {
+            _lastFetchError = (err && err.message) || 'REBOOK_FETCH_FAILED';
+            console.error('[Rebook] error', _lastFetchError);
+            resolve({ ok: false, reason: _lastFetchError });
+          });
+      }, 8000);
+    }).finally(function() {
+      _fetchInFlight = false;
+      console.log('[Rebook] end request', {
+        slug: _rbSlug,
+        has_data: !!rbData,
+        tenant_id: _rbTenantId || null
+      });
+      if (_lastFetchError) {
+        _setInlineStatus('Greška pri učitavanju podataka. Pokušaj ponovo.', true);
+      } else {
+        _setInlineStatus('', false);
+      }
+    });
+  }
+  _fetchRebookOnce({ reason: 'initial_load' });
 
   document.getElementById('send').addEventListener('click', function() {
-    var userEmail = (emailEl.value || '').trim();
-    if (!userEmail || userEmail.indexOf('@') < 0 || userEmail.length > 100) { emailEl.focus(); return; }
+    var userEmail = (emailEl.value || '').trim().toLowerCase();
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail);
+    if (!userEmail || !emailOk || userEmail.length > 120) {
+      _setInlineStatus('Unesi ispravan email.', true);
+      emailEl.focus();
+      return;
+    }
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+    var sendBtn = document.getElementById('send');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Pošiljam…'; }
+    _setInlineStatus('Učitavam podatke…', false);
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
-    // Race condition guard: if rbData not loaded yet but SB is ready, try one more fetch
-    if (!rbData && _rbSlug && window.supabaseClient) {
-      if (statusEl) statusEl.textContent = 'Nalagam…';
-      window.supabaseClient
-        .rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
-        .then(function(r) {
-          if (!r.error && r.data) {
-            var row = r.data.find(function(x) { return x.section_key === 'booking' && x.item_key === 'rebook'; });
-            if (row && row.data_json) rbData = row.data_json;
-          }
-          if (statusEl) statusEl.textContent = '';
-          document.getElementById('send').click();
-        }).catch(function() {
-          if (statusEl) statusEl.textContent = '';
-          if (!rbData || !rbData.owner_email) {
-            if (statusEl) statusEl.textContent = 'Vlasnik još nije uneo podatke za rezervaciju.';
-          }
-        });
-      return;
-    }
-    if (!rbData || !rbData.owner_email) {
-      if (statusEl) statusEl.textContent = 'Vlasnik još nije uneo podatke za rezervaciju.';
-      return;
-    }
-    if (statusEl) statusEl.textContent = '';
-    var aptName = rbData.apartment_name || '';
-    var body = t.mailIntro
-      + 'Apartman: ' + aptName + '\n'
-      + (t.l2 || 'Telefon') + ': ' + (rbData.owner_phone || '') + '\n'
-      + (t.l3 || 'Email') + ': ' + rbData.owner_email + '\n'
-      + (rbData.rebook_link ? (t.l4 || 'Link') + ': ' + rbData.rebook_link + '\n' : '')
-      + (rbData.instructions ? '\n' + rbData.instructions : '')
-      + t.mailOutro;
-    var subject = t.subjectPrefix + aptName + ' (' + userEmail + ')';
-    msgEl.textContent = body;
-    result.classList.remove('hidden');
-    mailtoEl.href = 'mailto:' + encodeURIComponent(rbData.owner_email)
-      + '?subject=' + encodeURIComponent(subject)
-      + '&body=' + encodeURIComponent(body);
-    // Send contact info email TO TOURIST via Resend (best-effort)
-    fetch('/api/send-booking-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tourist_email:  userEmail,
-        apartment_name: aptName,
-        owner_phone:    rbData.owner_phone  || '',
-        owner_email:    rbData.owner_email  || '',
-        rebook_link:    rbData.rebook_link  || '',
-        instructions:   rbData.instructions || '',
-        lang:           getSelectedLang()
+    Promise.resolve()
+      .then(function() {
+        if (rbData && _rbTenantId) return { ok: true };
+        return _fetchRebookOnce({ reason: 'submit_refresh' });
       })
-    }).catch(function() {});
+      .then(function() {
+        if (!rbData || !_rbTenantId) {
+          throw new Error(_lastFetchError || 'MISSING_REBOOK_CONFIG');
+        }
+        console.log('[Rebook] submit start', {
+          tenant_id: _rbTenantId,
+          tourist_email: _maskEmail(userEmail),
+          lang: getSelectedLang()
+        });
+        var sb = window.supabaseClient || window.SB;
+        if (!sb) throw new Error('SUPABASE_NOT_READY');
+        return _withTimeout(
+          sb.from('booking_again_requests').insert({
+            tenant_id: _rbTenantId,
+            tenant_slug: _rbSlug || '',
+            tourist_email: userEmail,
+            lang: getSelectedLang(),
+            status: 'new'
+          }),
+          10000,
+          'BOOKING_REQUEST_TIMEOUT'
+        );
+      })
+      .then(function(r) {
+        if (r.error) throw new Error(r.error.message || 'INSERT_FAILED');
+        console.log('[Rebook] submit end', { ok: true, tenant_id: _rbTenantId });
+        if (result) result.classList.add('hidden');
+        emailEl.value = '';
+        _setInlineStatus('Sent. Proveri email za detalje rezervacije.', false);
+        if (sendBtn) sendBtn.textContent = '✓ Sent';
+        setTimeout(function() {
+          if (sendBtn) sendBtn.textContent = t.send;
+        }, 2200);
+      })
+      .catch(function(err) {
+        console.error('[Rebook] submit error', err && err.message ? err.message : err);
+        _setInlineStatus('Greška pri slanju. Pokušaj ponovo.', true);
+      })
+      .finally(function() {
+        _isSubmitting = false;
+        if (sendBtn) sendBtn.disabled = false;
+      });
   });
   document.getElementById('copy').addEventListener('click', async function() {
     try { await navigator.clipboard.writeText(msgEl.textContent); } catch(e) {}

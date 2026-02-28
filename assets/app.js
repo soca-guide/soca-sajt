@@ -3998,27 +3998,35 @@
           function _doSendEmail(cfg) {
             var emailTo = cfg && cfg.email;
             if (!emailTo) { _showNoEmail(cfg); return; }
-            // Send maintenance notification to owner via Resend
-            fetch('/api/send-maintenance-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                owner_email:    emailTo,
-                tenant_slug:    slug           || '',
-                category:       cat            || 'other',
-                location:       loc            || '',
-                description:    desc           || '',
-                apartment_name: (cfg && cfg.aptName) || slug || ''
-              })
-            }).then(function(r) {
-              if (!r.ok) {
-                r.json().catch(function(){return{};}).then(function(err) {
-                  console.warn('[Maintenance] Email API error:', r.status, err.error || '');
-                });
-              }
-            }).catch(function(err) {
-              console.warn('[Maintenance] Email network error:', err && err.message);
+            console.log('[Maintenance] start email request', {
+              tenant_slug: slug || null,
+              owner_email_masked: String(emailTo).replace(/(^.{2}).*(@.*$)/, '$1***$2'),
+              category: cat || 'other'
             });
+            var sbLocal = window.supabaseClient || window.SB;
+            if (sbLocal && sbLocal.functions && typeof sbLocal.functions.invoke === 'function') {
+              sbLocal.functions.invoke('send-email', {
+                body: {
+                  action:         'maintenance_notify',
+                  owner_email:    emailTo,
+                  tenant_slug:    slug           || '',
+                  category:       cat            || 'other',
+                  location:       loc            || '',
+                  description:    desc           || '',
+                  apartment_name: (cfg && cfg.aptName) || slug || ''
+                }
+              }).then(function(resp) {
+                console.log('[Maintenance] end email request', {
+                  ok: !resp.error && !!(resp.data && resp.data.ok !== false),
+                  resend_id: resp.data && (resp.data.id || resp.data.email_id || null)
+                });
+                if (resp.error) console.warn('[Maintenance] Email invoke error:', resp.error);
+              }).catch(function(err) {
+                console.warn('[Maintenance] Email invoke network error:', err && err.message);
+              });
+            } else {
+              console.warn('[Maintenance] Supabase client unavailable for send-email invoke');
+            }
             _showSuccess(); // Always shown (best-effort — guest gets confirmation even if email fails)
           }
 
@@ -4044,18 +4052,46 @@
             if (_maintPhoneDisp) _maintPhoneDisp.textContent = phone || '—';
           }
 
+          function _withTimeout(promise, ms, label) {
+            return new Promise(function(resolve, reject) {
+              var done = false;
+              var timer = setTimeout(function() {
+                if (done) return;
+                done = true;
+                reject(new Error(label || 'TIMEOUT'));
+              }, ms);
+              promise.then(function(v) {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                resolve(v);
+              }).catch(function(err) {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                reject(err);
+              });
+            });
+          }
+
           // Save to DB then send email
           if (sb && slug) {
             if (_maintSubmit) { _maintSubmit.disabled = true; _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_sending || 'Pošiljam…'; }
-            sb.rpc('create_maintenance_report', {
+            console.log('[Maintenance] start DB insert', { tenant_slug: slug, category: cat || 'other' });
+            _withTimeout(sb.rpc('create_maintenance_report', {
               p_tenant_slug: slug, p_category: cat,
               p_location: loc || null, p_description: desc || null
-            }).then(function(r) {
-              if (_maintSubmit) { _maintSubmit.disabled = false; _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_submit || 'Pošlji'; }
+            }), 10000, 'MAINTENANCE_DB_TIMEOUT').then(function(r) {
+              console.log('[Maintenance] end DB insert', { ok: !r.error, tenant_slug: slug });
               _getOwnerConfig(_doSendEmail);
-            }).catch(function() {
-              if (_maintSubmit) { _maintSubmit.disabled = false; }
+            }).catch(function(err) {
+              console.error('[Maintenance] DB insert error', err && err.message ? err.message : err);
               _getOwnerConfig(_doSendEmail);
+            }).finally(function() {
+              if (_maintSubmit) {
+                _maintSubmit.disabled = false;
+                _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_submit || 'Pošlji';
+              }
             });
           } else {
             _getOwnerConfig(_doSendEmail);

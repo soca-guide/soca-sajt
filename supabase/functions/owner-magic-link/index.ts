@@ -65,7 +65,7 @@ serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // ── Step 1: Find or create the auth user ─────────────────────────────────────
+  // ── Step 1: Find or create the auth user (without Supabase auto-email) ───────
   let userId: string;
   let invited = false;
 
@@ -76,12 +76,13 @@ serve(async (req) => {
   if (existing) {
     userId = existing.id;
   } else {
-    // Create via invite (sends set-password email, but we'll override with magic link)
+    // Create via invite link generation (no automatic email send)
     const redirectTo = siteUrl ? `${siteUrl.replace(/\/$/, '')}/admin/` : undefined;
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-      owner_email,
-      redirectTo ? { redirectTo } : undefined,
-    );
+    const { data: inviteData, error: inviteError } = await admin.auth.admin.generateLink({
+      type: 'invite',
+      email: owner_email,
+      options: redirectTo ? { redirectTo } : undefined,
+    });
     if (inviteError || !inviteData?.user) {
       return json({ error: 'Could not create user: ' + (inviteError?.message ?? '?') }, 500);
     }
@@ -89,8 +90,7 @@ serve(async (req) => {
     invited = true;
   }
 
-  // ── Step 2: Send magic link (OTP) ────────────────────────────────────────────
-  // generateLink creates a magic link without requiring the user to initiate it.
+  // ── Step 2: Generate magic link ───────────────────────────────────────────────
   const redirectTo = siteUrl ? `${siteUrl.replace(/\/$/, '')}/admin/` : undefined;
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
@@ -105,9 +105,7 @@ serve(async (req) => {
     }, 500);
   }
 
-  // The actual magic link is in linkData.properties.action_link
-  // Supabase automatically sends the email when using generateLink with type='magiclink'
-  // (Supabase sends the email on your behalf via its SMTP / sendgrid integration)
+  // The actual magic link is in linkData.properties.action_link.
 
   // ── Step 3: Ensure user_profiles row exists with disabled=false ───────────────
   const { error: profileErr1 } = await admin

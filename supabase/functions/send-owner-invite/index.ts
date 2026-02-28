@@ -131,7 +131,7 @@ serve(async (req) => {
   const anonKey     = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   const resendKey   = Deno.env.get('RESEND_API_KEY') ?? '';
   const fromName    = Deno.env.get('FROM_NAME')  ?? 'Revantora';
-  const fromEmail   = Deno.env.get('FROM_EMAIL') ?? 'noreply@revantora.com';
+  const fromEmail   = Deno.env.get('RESEND_FROM') ?? Deno.env.get('FROM_EMAIL') ?? 'noreply@revantora.com';
   const adminUrlEnv = (Deno.env.get('ADMIN_URL') ?? 'https://revantora.com/admin').replace(/\/$/, '');
   const siteUrlEnv  = (Deno.env.get('SITE_URL')  ?? 'https://revantora.com').replace(/\/$/, '');
 
@@ -260,13 +260,14 @@ serve(async (req) => {
 
   const fromAddr = `${fromName} <${fromEmail}>`;
 
+  console.log('[send-owner-invite] resend request', { from: fromAddr, to: owner_email, subject, tenant_id, tenant_slug });
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${resendKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: fromAddr, to: [owner_email], subject, html }),
+    body: JSON.stringify({ from: fromAddr, to: [owner_email], subject, html, text: `Owner invite for ${tenant_name}` }),
   });
 
   if (!resendRes.ok) {
