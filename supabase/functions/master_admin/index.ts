@@ -60,11 +60,11 @@ serve(async (req) => {
     return json({ error: 'Invalid JSON body' }, 400);
   }
 
-  const action      = (body.action      || '').trim();
-  const tenant_id   = (body.tenant_id   || '').trim();
-  const tenant_slug = (body.tenant_slug  || '').trim();
-  const owner_email = (body.owner_email  || '').trim().toLowerCase();
-  const status      = (body.status       || '').trim();
+  const action      = String(body.action ?? '').trim();
+  const tenant_id   = String(body.tenant_id ?? body.tenantId ?? '').trim();
+  const tenant_slug = String(body.tenant_slug ?? body.tenantSlug ?? '').trim();
+  const owner_email = String(body.owner_email ?? body.ownerEmail ?? '').trim().toLowerCase();
+  const status      = String(body.status ?? '').trim();
 
   // ── Service-role client ───────────────────────────────────────────────────────
   const admin = createClient(supabaseUrl, serviceKey, {
@@ -76,6 +76,11 @@ serve(async (req) => {
   // Find or create auth user → send magic link → upsert user_profiles → permissions
   // ═══════════════════════════════════════════════════════════════════════════════
   if (action === 'invite_owner') {
+    console.log('[master_admin] invite_owner payload', {
+      tenant_id,
+      tenant_slug,
+      owner_email_masked: owner_email ? owner_email.replace(/(^.{2}).*(@.*$)/, '$1***$2') : null,
+    });
     if (!owner_email || !tenant_id) {
       return json({ error: 'Missing owner_email or tenant_id' }, 400);
     }
