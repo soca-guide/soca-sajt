@@ -322,6 +322,9 @@
           '<a href="../admin/" target="_blank" rel="noopener" ' +
              'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
                     'background:#1a2a3a;color:#93c5fd;font-size:0.75rem;text-decoration:none">Admin</a>' +
+          '<a href="' + window.location.origin + '/admin/?t=' + encodeURIComponent(t.slug) + '" target="_blank" rel="noopener" ' +
+             'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
+                    'background:#2a1a3a;color:#c4b5fd;font-size:0.75rem;text-decoration:none">🔧 Owner</a>' +
           '<button class="btn-sm btn-copy-link" data-url="' + esc(guestUrl) + '">Kopiraj</button>' +
           '<button class="btn-sm btn-edit-tenant"' +
             ' data-tid="'    + esc(t.tenant_id)   + '"' +

@@ -161,12 +161,19 @@
           if (r.error) {
             var errMsg = r.error.message || '';
             if (errMsg.indexOf('LIMIT_REACHED') >= 0 || errMsg.indexOf('Limit') >= 0) {
-              limitEl.classList.remove('hidden');
+              var _tl = labelsByLang[getSelectedLang()] || labelsByLang.en;
+              limitEl.textContent = _tl.limitReached;
+            } else {
+              limitEl.textContent = '❌ ' + (errMsg || 'Napaka. Poskusi znova.');
             }
+            limitEl.classList.remove('hidden');
             return;
           }
           limitEl.classList.add('hidden');
           document.getElementById('msg').value = '';
+          var _ts = labelsByLang[getSelectedLang()] || labelsByLang.en;
+          saveBtn.textContent = '✓ Sačuvano.';
+          setTimeout(function() { saveBtn.textContent = _ts.publish; }, 2500);
           render(client);
         })
         .catch(function() { saveBtn.disabled = false; });

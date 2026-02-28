@@ -136,6 +136,26 @@
     var userEmail = (emailEl.value || '').trim();
     if (!userEmail || userEmail.indexOf('@') < 0 || userEmail.length > 100) { emailEl.focus(); return; }
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
+    // Race condition guard: if rbData not loaded yet but SB is ready, try one more fetch
+    if (!rbData && _rbSlug && window.supabaseClient) {
+      if (statusEl) statusEl.textContent = 'Nalagam…';
+      window.supabaseClient
+        .rpc('get_guest_items_by_slug', { p_slug: _rbSlug })
+        .then(function(r) {
+          if (!r.error && r.data) {
+            var row = r.data.find(function(x) { return x.section_key === 'booking' && x.item_key === 'rebook'; });
+            if (row && row.data_json) rbData = row.data_json;
+          }
+          if (statusEl) statusEl.textContent = '';
+          document.getElementById('send').click();
+        }).catch(function() {
+          if (statusEl) statusEl.textContent = '';
+          if (!rbData || !rbData.owner_email) {
+            if (statusEl) statusEl.textContent = 'Vlasnik još nije uneo podatke za rezervaciju.';
+          }
+        });
+      return;
+    }
     if (!rbData || !rbData.owner_email) {
       if (statusEl) statusEl.textContent = 'Vlasnik još nije uneo podatke za rezervaciju.';
       return;
