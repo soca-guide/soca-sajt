@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Izgubljeno / Nađeno</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260228-1"></script>
+  <script src="../assets/supabase-client.js?v=20260228-2"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
   <div class="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur">
@@ -140,6 +140,28 @@
       });
   }
 
+  function _withTimeout(promise, ms, label) {
+    return new Promise(function(resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function() {
+        if (done) return;
+        done = true;
+        reject(new Error(label || 'TIMEOUT'));
+      }, ms);
+      promise.then(function(v) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(v);
+      }).catch(function(err) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
   document.getElementById('save').addEventListener('click', function() {
     var email   = (document.getElementById('email').value || '').trim().toLowerCase();
     var msg     = (document.getElementById('msg').value   || '').trim();
@@ -151,13 +173,23 @@
     var slug    = new URLSearchParams(window.location.search).get('t') || null;
     var saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
+    var _origBtnTxt = saveBtn.textContent;
+    saveBtn.textContent = 'Pošiljam…';
     waitForSB(function(client) {
-      if (!client) { saveBtn.disabled = false; return; }
+      if (!client) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = _origBtnTxt;
+        limitEl.textContent = '❌ Supabase nije dostupan. Pokušaj ponovo.';
+        limitEl.classList.remove('hidden');
+        return;
+      }
       console.log('[LostFound] insert start', { tenant_slug: slug || null, email_masked: email.replace(/(^.{2}).*(@.*$)/, '$1***$2') });
-      client
-        .rpc('create_lost_found_post', { p_email: email, p_message: msg, p_tenant_slug: slug })
+      _withTimeout(
+        client.rpc('create_lost_found_post_v1', { p_email: email, p_message: msg, p_tenant_slug: slug }),
+        10000,
+        'LOST_FOUND_SUBMIT_TIMEOUT'
+      )
         .then(function(r) {
-          saveBtn.disabled = false;
           console.log('[LostFound] insert end', { ok: !r.error, tenant_slug: slug || null });
           if (r.error) {
             var errMsg = r.error.message || '';
@@ -178,8 +210,13 @@
           render(client);
         })
         .catch(function(err) {
-          saveBtn.disabled = false;
           console.error('[LostFound] insert error', err && err.message ? err.message : err);
+          limitEl.textContent = '❌ Greška pri slanju. Pokušaj ponovo.';
+          limitEl.classList.remove('hidden');
+        })
+        .finally(function() {
+          saveBtn.disabled = false;
+          if (saveBtn.textContent === 'Pošiljam…') saveBtn.textContent = _origBtnTxt;
         });
     }, 6000);
   });

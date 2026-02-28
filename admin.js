@@ -3561,10 +3561,17 @@
         // house_rules_private
         var rules = byKey['house_rules_private'] || {};
         _ownerData.houseRulesPrivate = rules;
-        var _rulesText = rules.text || {};
+        var _rulesI18n = rules.text_i18n || {};
+        var _rulesText = (typeof rules.text === 'string') ? rules.text : (rules.text || {});
         LANG_LIST.forEach(function(lng) {
           var el = document.getElementById('owner-rules-text-' + lng);
-          if (el) el.value = (typeof _rulesText === 'object' ? _rulesText[lng] : (lng === 'sl' ? _rulesText : '')) || '';
+          if (el) {
+            var v = '';
+            if (typeof _rulesI18n === 'object' && _rulesI18n && _rulesI18n[lng]) v = _rulesI18n[lng];
+            else if (typeof _rulesText === 'object' && _rulesText && _rulesText[lng]) v = _rulesText[lng];
+            else if (lng === 'sl' && typeof _rulesText === 'string') v = _rulesText;
+            el.value = v || '';
+          }
         });
 
         // parking_recommended
@@ -3680,10 +3687,18 @@
     configData.quick_call_phone      = phone;
     configData.quick_directions_link = dirLink;
 
-    var houseRulesData = { text: _rulesTextObj };
+    var _rulesDefault = (_rulesTextObj.sl || _rulesTextObj.en || _rulesTextObj.de || _rulesTextObj.it || _rulesTextObj.pl || _rulesTextObj.cs || '').trim();
+    var houseRulesData = { text: _rulesDefault, text_i18n: _rulesTextObj };
     var parkingData    = { title: _parkTitleObj, address: parkAddr, mapsLink: parkMaps, hours: parkHours, paid: parkPaid, notes: _parkNotesObj };
     var rebookData     = { apartment_name: rebookName, owner_phone: rebookPhone, owner_email: rebookEmail, rebook_link: rebookLink, instructions: rebookInstr };
     var maintData      = { visible: maintVisible, email: maintEmail };
+
+    console.log('[Owner Save] house rules start', {
+      tenant_id: _ownerTenantId,
+      item_key: 'house_rules_private',
+      lang: 'sl',
+      has_text: !!_rulesDefault
+    });
 
     Promise.all([
       upsertItem(_ownerTenantId, 'info',        'default_config',       'config',  0, true, configData),
@@ -3707,9 +3722,20 @@
       _ownerData.parkingRecommended = parkingData;
       _ownerData.rebook             = rebookData;
       _ownerData.maintConfig        = maintData;
+      console.log('[Owner Save] house rules success', {
+        tenant_id: _ownerTenantId,
+        item_key: 'house_rules_private',
+        lang: 'sl'
+      });
       setStatus(ownerSaveStatus, 'Sačuvano! ✓', 'info');
     }).catch(function (err) {
       btnOwnerSave.disabled = false;
+      console.error('[Owner Save] house rules error', {
+        tenant_id: _ownerTenantId,
+        item_key: 'house_rules_private',
+        lang: 'sl',
+        error: err && err.message ? err.message : err
+      });
       setStatus(ownerSaveStatus, 'Neočekivana greška: ' + (err && err.message), 'error');
     });
   }

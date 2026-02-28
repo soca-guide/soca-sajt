@@ -4083,10 +4083,16 @@
               p_location: loc || null, p_description: desc || null
             }), 10000, 'MAINTENANCE_DB_TIMEOUT').then(function(r) {
               console.log('[Maintenance] end DB insert', { ok: !r.error, tenant_slug: slug });
+              if (r && r.error) {
+                throw new Error(r.error.message || 'MAINTENANCE_DB_ERROR');
+              }
               _getOwnerConfig(_doSendEmail);
             }).catch(function(err) {
               console.error('[Maintenance] DB insert error', err && err.message ? err.message : err);
-              _getOwnerConfig(_doSendEmail);
+              if (_maintError) {
+                _maintError.style.display = 'block';
+                _maintError.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_error || 'Greška pri slanju. Pokušaj ponovo.';
+              }
             }).finally(function() {
               if (_maintSubmit) {
                 _maintSubmit.disabled = false;
@@ -4094,7 +4100,15 @@
               }
             });
           } else {
-            _getOwnerConfig(_doSendEmail);
+            console.error('[Maintenance] Missing supabase client or tenant slug', { has_sb: !!sb, tenant_slug: slug || null });
+            if (_maintError) {
+              _maintError.style.display = 'block';
+              _maintError.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_error || 'Greška pri slanju. Pokušaj ponovo.';
+            }
+            if (_maintSubmit) {
+              _maintSubmit.disabled = false;
+              _maintSubmit.textContent = (((window.APP || {}).translations || {})[currentLang] || {}).maint_submit || 'Pošlji';
+            }
           }
         });
       }
