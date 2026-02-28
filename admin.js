@@ -352,7 +352,12 @@
                     ' style="color:#f87171"' +
                     '>Ukloni vlasnika</button>'
                 : '')
-            : '') +
+            : '<button class="btn-sm btn-invite-owner"' +
+                ' data-tid="'  + esc(t.tenant_id) + '"' +
+                ' data-slug="' + esc(t.slug)      + '"' +
+                ' data-name="' + esc(t.name)      + '"' +
+                ' title="Poveži vlasnika sa ovim apartmanom"' +
+                ' style="color:#fbbf24">+ Poveži vlasnika</button>') +
           '<button class="btn-sm btn-delete-tenant"' +
             ' data-tid="'  + esc(t.tenant_id) + '"' +
             ' data-name="' + esc(t.name)      + '"' +
@@ -483,18 +488,24 @@
   function _inviteFallback(ownerEmail, tenantId, onSuccess, onError, tenantSlug) {
     var adminBase     = window.location.origin + '/admin/';
     var adminRedirect = tenantSlug ? adminBase + '?t=' + encodeURIComponent(tenantSlug) : adminBase;
-    // Korak 1: upsert pending invite (ignoruje duplikat)
+    // Korak 1: upsert pending invite — OBAVEZNO provjeri rezultat
     sb.from('pending_owner_invites')
       .upsert({ email: ownerEmail.toLowerCase(), tenant_id: tenantId },
                { onConflict: 'email' })
-      .then(function () {
-        // Korak 2: pošalji magic link (radi sa anon key, bez Edge Function)
+      .then(function (upsertRes) {
+        if (upsertRes && upsertRes.error) {
+          // RLS blokira ili tabela ne postoji — prijavi grešku, ne nastavljaj
+          onError('pending_owner_invites: ' + upsertRes.error.message);
+          return;
+        }
+        // Korak 2: pošalji magic link
         return sb.auth.signInWithOtp({
           email: ownerEmail,
           options: { shouldCreateUser: true, emailRedirectTo: adminRedirect }
         });
       })
       .then(function (r) {
+        if (!r) return; // early return from error branch above
         if (r && r.error) { onError(r.error.message); return; }
         onSuccess();
       })
@@ -3900,6 +3911,33 @@
         ownerEmail:  btn.getAttribute('data-owner'),
         status:      btn.getAttribute('data-status')
       });
+      return;
+    }
+
+    // ── Invite owner for tenant without owner ("—") ──
+    if (btn.classList.contains('btn-invite-owner')) {
+      var _ioEmail = prompt('E-mail vlasnika za "' + btn.getAttribute('data-name') + '":');
+      if (!_ioEmail || _ioEmail.indexOf('@') < 0) return;
+      _ioEmail = _ioEmail.trim().toLowerCase();
+      btn.disabled    = true;
+      btn.textContent = 'Šaljem…';
+      var _ioTid  = btn.getAttribute('data-tid');
+      var _ioSlug = btn.getAttribute('data-slug');
+      var _ioName = btn.getAttribute('data-name');
+      _inviteFallback(
+        _ioEmail, _ioTid,
+        function () {
+          setStatus(tenantsStatus, 'Pozivnica poslata na ' + _ioEmail + ' ✓', 'info');
+          sendOwnerWelcomeEmail(_ioEmail, _ioName, _ioSlug);
+          loadTenants();
+        },
+        function (msg) {
+          btn.disabled    = false;
+          btn.textContent = '+ Poveži vlasnika';
+          setStatus(tenantsStatus, 'Greška: ' + msg + ' — Provjeri RLS politike (pogledaj SQL ispod).', 'error');
+        },
+        _ioSlug
+      );
       return;
     }
 
