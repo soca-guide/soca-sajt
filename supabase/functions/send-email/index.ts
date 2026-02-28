@@ -20,12 +20,27 @@ function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; 
   const ownerEmail  = String(row.email        || '');
   const tenantName  = String(row.tenant_name  || 'apartma');
   const tenantSlug  = String(row.tenant_slug  || '');
+  const actionLink  = String(row.action_link || '');
   const siteUrl     = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
   // Prefer directly-passed URLs (direct call), fall back to SITE_URL + slug (webhook)
   const guestUrl    = String(row.guest_url || '') ||
     (siteUrl ? `${siteUrl}/index.html?t=${encodeURIComponent(tenantSlug)}` : `?t=${tenantSlug}`);
   const adminUrl    = String(row.admin_url || '') ||
     (siteUrl ? `${siteUrl}/admin/` : '/admin/');
+
+  const ctaBlock = actionLink
+    ? `
+        <div style="text-align:center;margin:24px 0 28px">
+          <a href="${actionLink}" style="display:inline-block;background:#22d3ee;color:#0a1612;font-weight:700;font-size:1.05rem;padding:14px 32px;border-radius:10px;text-decoration:none">Prijavi se v panel</a>
+        </div>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0 0 24px">Klik na gumb vas prijavi in odpre admin ploščo brez dodatnega vnosa.</p>`
+    : `
+        <div style="background:#0a2e1f;border:1px solid #059669;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 6px;font-size:13px;color:#4ade80;font-weight:600">🔑 Skrbniška plošča:</p>
+          <a href="${adminUrl}" style="color:#22d3ee;word-break:break-all">${adminUrl}</a>
+          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Odprite povezavo in se prijavite z možnostjo &bdquo;Pošlji čarobno povezavo&ldquo;.</p>
+        </div>`;
+
   return {
     to: ownerEmail,
     subject: `🏡 Dobrodošli v Soča Guide — "${tenantName}"`,
@@ -33,19 +48,12 @@ function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; 
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1f1a;border-radius:16px;color:#e5e7eb">
         <h2 style="color:#22d3ee;margin-top:0">🏡 Vaš apartma je pripravljen!</h2>
         <p style="color:#a7f3d0">Pozdravljeni!<br><br>Ustvarjen je bil vaš apartma <strong style="color:#fff">»${tenantName}«</strong> na platformi Soča Guide.</p>
-
-        <div style="background:#0a2e1f;border:1px solid #059669;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:0 0 6px;font-size:13px;color:#4ade80;font-weight:600">🔑 Skrbniška plošča — upravljajte z apartmajem:</p>
-          <a href="${adminUrl}" style="color:#22d3ee;word-break:break-all">${adminUrl}</a>
-          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Odprite skrbniško ploščo in se prijavite z e-poštnim naslovom prek možnosti <strong style="color:#e5e7eb">»Pošlji čarobno povezavo«</strong>. Na vaš e-naslov boste prejeli neposredno prijavno povezavo.</p>
-        </div>
-
+        ${ctaBlock}
         <div style="background:#0a1e2e;border:1px solid #0369a1;border-radius:12px;padding:16px;margin:20px 0">
           <p style="margin:0 0 6px;font-size:13px;color:#38bdf8;font-weight:600">🔗 Povezava za goste — delite z gosti:</p>
           <a href="${guestUrl}" style="color:#7dd3fc;word-break:break-all">${guestUrl}</a>
           <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Gostje odprejo to povezavo in vidijo vodič za vaš apartma.</p>
         </div>
-
         <div style="background:#1a1a0f;border:1px solid #a16207;border-radius:12px;padding:16px;margin:20px 0">
           <p style="margin:0 0 8px;font-size:13px;color:#fbbf24;font-weight:600">📋 Kaj lahko nastavite na skrbniški plošči:</p>
           <ul style="margin:0;padding-left:18px;color:#d1d5db;font-size:13px;line-height:1.8">
@@ -56,7 +64,6 @@ function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; 
             <li>Povezava za ponovne rezervacije</li>
           </ul>
         </div>
-
         <p style="font-size:12px;color:#4b5563;margin-top:24px">Soča Guide — digitalni vodič za turiste v dolini Soče</p>
       </div>`,
   };
@@ -225,14 +232,19 @@ serve(async (req: Request) => {
 
     // ── Direct call: action=owner_invite (MASTER JWT required) ────────────────
     if (payload.action === 'owner_invite') {
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      if (!supabaseUrl || !serviceKey) {
+        return new Response(JSON.stringify({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' }), {
+          status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
       // Verify caller is MASTER via JWT → user_id → user_profiles
       const authHeader = req.headers.get('authorization') ?? '';
-      if (supabaseUrl && anonKey && authHeader) {
+      if (authHeader && anonKey) {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
         const caller = createClient(supabaseUrl, anonKey, {
           global: { headers: { Authorization: authHeader } },
         });
-        // Get user_id from JWT first, then filter profile by user_id
         const { data: userData } = await caller.auth.getUser();
         const userId = userData?.user?.id;
         if (!userId) {
@@ -251,17 +263,40 @@ serve(async (req: Request) => {
           });
         }
       }
-      const ownerEmail  = String(payload.owner_email  || '');
-      const tenantName  = String(payload.tenant_name  || 'vaš apartman');
-      const guestUrl    = String(payload.guest_url    || '');
-      const adminUrl    = String(payload.admin_url    || '');
+      const ownerEmail = String(payload.owner_email || '').trim().toLowerCase();
+      const tenantName = String(payload.tenant_name || 'vaš apartman');
+      const tenantSlug = String(payload.tenant_slug || '');
+      const guestUrl   = String(payload.guest_url   || '');
+      const adminUrl  = String(payload.admin_url   || '').replace(/\/$/, '') || (supabaseUrl ? '' : '');
+      const siteUrl   = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
+      const fallbackAdmin = siteUrl ? `${siteUrl}/admin` : '/admin';
+
       if (!ownerEmail || !ownerEmail.includes('@')) {
         return new Response(JSON.stringify({ error: 'Missing owner_email' }), {
           status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
         });
       }
-      const tpl = templateOwnerWelcome({ email: ownerEmail, tenant_name: tenantName,
-                                         guest_url: guestUrl, admin_url: adminUrl });
+
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const redirectTo = adminUrl || fallbackAdmin;
+      const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: ownerEmail,
+        options: { redirectTo },
+      });
+
+      let actionLink = '';
+      if (!linkErr && linkData && (linkData as { properties?: { action_link?: string } }).properties?.action_link) {
+        actionLink = (linkData as { properties: { action_link: string } }).properties.action_link;
+      }
+
+      const tpl = templateOwnerWelcome({
+        email: ownerEmail, tenant_name: tenantName, tenant_slug: tenantSlug,
+        guest_url: guestUrl, admin_url: adminUrl || fallbackAdmin, action_link: actionLink,
+      });
       const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom);
       return new Response(JSON.stringify(result), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
