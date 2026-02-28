@@ -3762,6 +3762,24 @@
                 } else {
                   ownerPanel.classList.remove('hidden');
                   loadOwnerEditableData(tr.data.tenant_id);
+                  // Sakrij ulogu/tenant_id kao za pravog OWNER-a; prikaži samo email VLASNIKA
+                  var _rblk = document.getElementById('info-block-role');
+                  if (_rblk) _rblk.style.display = 'none';
+                  sb.from('user_profiles').select('email').eq('tenant_id', tr.data.tenant_id).eq('role', 'OWNER').maybeSingle()
+                    .then(function(pr) {
+                      var ownerEmail = (pr.data && pr.data.email) ? pr.data.email : null;
+                      if (!ownerEmail) {
+                        return sb.from('pending_owner_invites').select('email').eq('tenant_id', tr.data.tenant_id).maybeSingle();
+                      }
+                      return { data: { email: ownerEmail } };
+                    })
+                    .then(function(r) {
+                      var email = (r && r.data && r.data.email) ? r.data.email : '—';
+                      var lbl = document.querySelector('#info-block-email .label');
+                      if (lbl) lbl.textContent = 'Vlasnik: ';
+                      dashEmail.textContent = email;
+                    })
+                    .catch(function() {});
                 }
               }).catch(function() { masterPanel.classList.remove('hidden'); });
           } else {
