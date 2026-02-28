@@ -322,7 +322,7 @@
           '<a href="../admin/" target="_blank" rel="noopener" ' +
              'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
                     'background:#1a2a3a;color:#93c5fd;font-size:0.75rem;text-decoration:none">Admin</a>' +
-          '<a href="' + window.location.origin + '/admin/?t=' + encodeURIComponent(t.slug) + '" target="_blank" rel="noopener" ' +
+          '<a href="' + window.location.origin + '/admin/?view=owner&t=' + encodeURIComponent(t.slug) + '" target="_blank" rel="noopener" ' +
              'style="display:inline-block;padding:2px 8px;border-radius:4px;' +
                     'background:#2a1a3a;color:#c4b5fd;font-size:0.75rem;text-decoration:none">🔧 Owner</a>' +
           '<button class="btn-sm btn-copy-link" data-url="' + esc(guestUrl) + '">Kopiraj</button>' +
@@ -3737,7 +3737,24 @@
         hideDashStatus();
 
         if (data.role === 'MASTER') {
-          masterPanel.classList.remove('hidden');
+          // If URL has ?view=owner&t=slug, master previews owner panel for that tenant
+          var _urlParams  = new URLSearchParams(window.location.search);
+          var _viewParam  = _urlParams.get('view');
+          var _slugParam  = _urlParams.get('t');
+          if (_viewParam === 'owner' && _slugParam) {
+            // Fetch tenant_id for slug, then load owner panel
+            sb.from('tenants').select('tenant_id').eq('slug', _slugParam).maybeSingle()
+              .then(function(tr) {
+                if (tr.error || !tr.data) {
+                  masterPanel.classList.remove('hidden');
+                } else {
+                  ownerPanel.classList.remove('hidden');
+                  loadOwnerEditableData(tr.data.tenant_id);
+                }
+              }).catch(function() { masterPanel.classList.remove('hidden'); });
+          } else {
+            masterPanel.classList.remove('hidden');
+          }
           loadTenants();
           loadGlobalData();
           loadAnalytics();
