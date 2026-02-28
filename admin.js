@@ -933,7 +933,7 @@
           return;
         }
 
-        // Pozovi Edge Function (ako je deployovana) ili koristi fallback
+        // Pozovi send-owner-invite Edge Function — ona generiše magic link i šalje email
         setStatus(createTenantStatus, 'Šaljem pozivnicu ' + email + '…', 'info');
 
         function _afterInvite(sent) {
@@ -941,30 +941,26 @@
           setStatus(createTenantStatus, 'Apartman "' + name + '" kreiran! ✓', 'info');
           loadTenants();
           clearForm();
-          sendOwnerWelcomeEmail(email, name, slug); // best-effort custom email via Resend
           showOwnerWelcomeModal(name, slug, email, sent);
         }
 
-        function _inviteFallbackFlow() {
-          _inviteFallback(email, newId,
-            function ()    { _afterInvite(true); },
-            function (msg) {
-              unlockButtons(); clearForm(); loadTenants();
-              setStatus(createTenantStatus, 'Apartman kreiran ✓, magic link nije poslan: ' + msg, 'warning');
-              sendOwnerWelcomeEmail(email, name, slug);
-              showOwnerWelcomeModal(name, slug, email, false);
-            },
-            slug // pass slug so magic link redirects to /admin/?t=slug
-          );
-        }
-
-        sb.functions.invoke('master_admin', {
-          body: { action: 'invite_owner', owner_email: email, tenant_id: newId, tenant_slug: slug }
+        sb.functions.invoke('send-owner-invite', {
+          body: {
+            tenant_id:   newId,
+            tenant_slug: slug,
+            tenant_name: name,
+            owner_email: email,
+            locale:      'sl',
+            admin_url:   window.location.origin + '/admin',
+            site_url:    window.location.origin
+          }
         }).then(function (fnResult) {
-          if (!fnResult.error) { _afterInvite(true); return; }
-          _inviteFallbackFlow();
+          var ok = !fnResult.error && fnResult.data && fnResult.data.ok;
+          _afterInvite(!!ok);
         }).catch(function () {
-          _inviteFallbackFlow();
+          unlockButtons(); clearForm(); loadTenants();
+          setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana (network).', 'warning');
+          showOwnerWelcomeModal(name, slug, email, false);
         });
       });
   }
@@ -3695,8 +3691,12 @@
     dashStatus.className = 'msg ' + (type || 'info');
   }
 
+  // Timeout handle — set in boot section, cleared when dashboard fully loads
+  var _loaderTimeout = null;
+
   function hideDashStatus() {
     dashStatus.className = 'msg hidden';
+    if (_loaderTimeout) { clearTimeout(_loaderTimeout); _loaderTimeout = null; }
   }
 
   // ── Fetch role from user_profiles ────────────────────────────────────────────
@@ -3789,6 +3789,8 @@
           if (data.disabled) {
             showDashStatus(
               'Dostop je onemogočen. Kontaktirajte administratorja.', 'warning');
+          } else if (!data.tenant_id) {
+            showDashStatus('Nalog još nije povezan sa apartmanom. Kontaktiraj podršku.', 'warning');
           } else {
             ownerPanel.classList.remove('hidden');
             loadOwnerEditableData(data.tenant_id);
@@ -3929,20 +3931,30 @@
       var _ioTid  = btn.getAttribute('data-tid');
       var _ioSlug = btn.getAttribute('data-slug');
       var _ioName = btn.getAttribute('data-name');
-      _inviteFallback(
-        _ioEmail, _ioTid,
-        function () {
-          setStatus(tenantsStatus, 'Pozivnica poslata na ' + _ioEmail + ' ✓', 'info');
-          sendOwnerWelcomeEmail(_ioEmail, _ioName, _ioSlug);
-          loadTenants();
-        },
-        function (msg) {
+      sb.functions.invoke('send-owner-invite', {
+        body: {
+          tenant_id:   _ioTid,
+          tenant_slug: _ioSlug,
+          tenant_name: _ioName,
+          owner_email: _ioEmail,
+          locale:      'sl',
+          admin_url:   window.location.origin + '/admin',
+          site_url:    window.location.origin
+        }
+      }).then(function (r) {
+        if (r.error || !(r.data && r.data.ok)) {
           btn.disabled    = false;
           btn.textContent = '+ Poveži vlasnika';
-          setStatus(tenantsStatus, 'Greška: ' + msg + ' — Provjeri RLS politike (pogledaj SQL ispod).', 'error');
-        },
-        _ioSlug
-      );
+          setStatus(tenantsStatus, 'Greška: ' + ((r.data && r.data.error) || r.error || 'unknown'), 'error');
+          return;
+        }
+        setStatus(tenantsStatus, 'Pozivnica poslata na ' + _ioEmail + ' ✓', 'info');
+        loadTenants();
+      }).catch(function (err) {
+        btn.disabled    = false;
+        btn.textContent = '+ Poveži vlasnika';
+        setStatus(tenantsStatus, 'Greška: ' + (err && err.message ? err.message : 'network'), 'error');
+      });
       return;
     }
 
@@ -4331,14 +4343,52 @@
     });
   }
 
-  // ── Boot: check existing session ─────────────────────────────────────────────
-  sb.auth.getSession().then(function (result) {
-    var session = result.data && result.data.session;
-    if (session && session.user) {
-      enterDashboard(session.user);
-    } else {
-      showView('login');
-    }
-  });
+  // ── Boot: check existing session (PKCE-aware, with loader timeout) ───────────
+  (function () {
+    // After 8 s on dashboard with still-active status → show "Osveži" button
+    _loaderTimeout = setTimeout(function () {
+      if (viewDashboard && !viewDashboard.classList.contains('hidden') &&
+          dashStatus && !dashStatus.classList.contains('hidden')) {
+        dashStatus.innerHTML =
+          'Učitavanje traje duže.' +
+          '<button onclick="location.reload()" ' +
+          'style="background:none;border:1px solid #22d3ee;color:#22d3ee;' +
+          'border-radius:6px;padding:2px 10px;cursor:pointer;font-size:0.9rem;margin-left:8px">' +
+          'Osveži</button>';
+        dashStatus.className = 'msg';
+      }
+    }, 8000);
+
+    sb.auth.getSession().then(function (result) {
+      var session = result.data && result.data.session;
+      if (session && session.user) {
+        clearTimeout(_loaderTimeout); _loaderTimeout = null;
+        enterDashboard(session.user);
+        return;
+      }
+      // No session — check for PKCE auth code in URL (magic link / invite redirect)
+      var urlCode = new URLSearchParams(window.location.search).get('code');
+      if (urlCode) {
+        showView('dashboard');
+        showDashStatus('Prijavljujem…', 'info');
+        sb.auth.exchangeCodeForSession(window.location.href).then(function (ex) {
+          if (ex.data && ex.data.session && ex.data.session.user) {
+            history.replaceState({}, document.title, window.location.pathname);
+            clearTimeout(_loaderTimeout); _loaderTimeout = null;
+            enterDashboard(ex.data.session.user);
+          } else {
+            clearTimeout(_loaderTimeout); _loaderTimeout = null;
+            showView('login');
+          }
+        }).catch(function () {
+          clearTimeout(_loaderTimeout); _loaderTimeout = null;
+          showView('login');
+        });
+      } else {
+        clearTimeout(_loaderTimeout); _loaderTimeout = null;
+        showView('login');
+      }
+    });
+  }());
 
 })();
