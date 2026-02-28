@@ -79,13 +79,13 @@
 
         // Step 1 — resolve tenant_id
         return sb.from('tenants')
-          .select('tenant_id, municipality_slug')
+          .select('tenant_id, municipality_slug, status')
           .eq('slug', slug)
-          .eq('status', 'active')
           .limit(1)
           .maybeSingle()
           .then(function (r1) {
             if (r1.error || !r1.data) return _errOv(slug, 'TENANT_NOT_FOUND');
+            if (r1.data.status !== 'active') return _errOv(slug, 'SUSPENDED');
             var tenantId = r1.data.tenant_id;
             window._appMunicipality = r1.data.municipality_slug || 'bovec';
 

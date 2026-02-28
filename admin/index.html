@@ -32,11 +32,11 @@
         <h1>Admin panel</h1>
         <button id="btn-logout" class="btn-secondary">Odjava</button>
       </div>
-      <div class="info-block">
+      <div class="info-block" id="info-block-email">
         <span class="label">Ulogovan kao:</span>
         <span id="dash-email" class="value">—</span>
       </div>
-      <div class="info-block">
+      <div class="info-block" id="info-block-role">
         <span class="label">Uloga:</span>
         <span id="dash-role" class="value">—</span>
         <span class="label" style="margin-left:1.5rem;">tenant_id:</span>
@@ -844,16 +844,46 @@
             <input id="owner-call-phone" type="text" placeholder="+386 31 123 456" />
             <label for="owner-directions-link">🗺️ Do apartmaja (povezava)</label>
             <input id="owner-directions-link" type="text" placeholder="https://maps.google.com/..." />
-            <label for="owner-rules-url">📋 Hišni red (povezava)</label>
-            <input id="owner-rules-url" type="text" placeholder="./pravila/index.html" />
           </div>
         </details>
 
         <details class="admin-section">
           <summary class="admin-section-title">📋 Hišni red (zasebno)</summary>
           <div class="admin-section-body">
-            <label for="owner-rules-text">Besedilo / vsebina</label>
-            <textarea id="owner-rules-text" rows="8" placeholder="Vnesite zasebna pravila stanovalcev…"></textarea>
+            <label>Besedilo / vsebina (po jeziku)</label>
+            <div id="rules-tabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+              <button type="button" class="rules-tab active" data-lang="sl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.15);color:#e5e7eb;font-size:0.75rem;cursor:pointer">🇸🇮 SL</button>
+              <button type="button" class="rules-tab" data-lang="en" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇬🇧 EN</button>
+              <button type="button" class="rules-tab" data-lang="de" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇩🇪 DE</button>
+              <button type="button" class="rules-tab" data-lang="pl" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇵🇱 PL</button>
+              <button type="button" class="rules-tab" data-lang="cs" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇨🇿 CS</button>
+              <button type="button" class="rules-tab" data-lang="it" style="padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#9ca3af;font-size:0.75rem;cursor:pointer">🇮🇹 IT</button>
+            </div>
+            <textarea id="owner-rules-text-sl" rows="7" placeholder="Pravila za goste…"           style="width:100%;box-sizing:border-box"></textarea>
+            <textarea id="owner-rules-text-en" rows="7" placeholder="House rules for guests…"     style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-rules-text-de" rows="7" placeholder="Hausordnung für Gäste…"      style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-rules-text-pl" rows="7" placeholder="Zasady dla gości…"           style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-rules-text-cs" rows="7" placeholder="Domácí řád pro hosty…"      style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <textarea id="owner-rules-text-it" rows="7" placeholder="Regole della casa…"          style="width:100%;box-sizing:border-box;display:none"></textarea>
+            <script>
+              (function(){
+                document.querySelectorAll('.rules-tab').forEach(function(btn){
+                  btn.addEventListener('click',function(){
+                    var l=btn.dataset.lang;
+                    document.querySelectorAll('.rules-tab').forEach(function(b){
+                      b.style.background='transparent';b.style.color='#9ca3af';
+                      b.style.borderColor='rgba(255,255,255,0.1)';b.classList.remove('active');
+                    });
+                    btn.style.background='rgba(255,255,255,0.15)';btn.style.color='#e5e7eb';
+                    btn.style.borderColor='rgba(255,255,255,0.2)';btn.classList.add('active');
+                    ['sl','en','de','pl','cs','it'].forEach(function(x){
+                      var el=document.getElementById('owner-rules-text-'+x);
+                      if(el) el.style.display=(x===l?'':'none');
+                    });
+                  });
+                });
+              })();
+            </script>
           </div>
         </details>
 
@@ -1006,7 +1036,7 @@
   <!-- Supabase v2 UMD (exposes window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
-  <script src="/assets/supabase-client.js?v=20260227-11"></script>
-  <script src="/admin.js?v=20260227-11"></script>
+  <script src="/assets/supabase-client.js?v=20260227-12"></script>
+  <script src="/admin.js?v=20260227-12"></script>
 </body>
 </html>

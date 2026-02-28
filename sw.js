@@ -1,5 +1,5 @@
 /* Service Worker - cache version; bump on deploy for instant updates */
-const NEW_VERSION = '20260227-11';
+const NEW_VERSION = '20260227-12';
 const CACHE_NAME = 'app-cache-' + NEW_VERSION;
 var BASE = self.location.pathname.replace(/\/[^/]*$/, '') || '/';
 if (BASE !== '/') BASE += '/';

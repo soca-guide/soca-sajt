@@ -150,6 +150,25 @@
         applyQuickActions(null, _slug);
         window.TenantLoader.loadOverrides(_slug).then(function (ov) {
           if (window.__DEBUG) console.log('[TENANT]', ov && (ov.__health || ov));
+          if (ov && ov.__health && ov.__health.reason === 'SUSPENDED') {
+            // Tenant is inactive — show suspension banner and stop
+            var _banner = document.createElement('div');
+            _banner.id = 'tenant-suspended-banner';
+            _banner.setAttribute('style',
+              'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;' +
+              'align-items:center;justify-content:center;background:#0a1612;color:#e5e7eb;' +
+              'font-family:system-ui,sans-serif;text-align:center;padding:2rem;');
+            _banner.innerHTML =
+              '<div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>' +
+              '<div style="font-size:1.15rem;font-weight:700;margin-bottom:0.5rem;color:#f87171">' +
+                'Service temporarily unavailable' +
+              '</div>' +
+              '<div style="font-size:0.9rem;color:#9ca3af;max-width:320px">' +
+                'The owner has temporarily suspended this service. Please try again later.' +
+              '</div>';
+            document.body.appendChild(_banner);
+            return;
+          }
           if (ov && ov.__health && ov.__health.ok) applyTenantOverrides(ov);
         }).catch(function () {});
       }

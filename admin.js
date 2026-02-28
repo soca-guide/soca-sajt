@@ -53,9 +53,8 @@
   // Owner panel refs
   var ownerCallPhoneInput      = document.getElementById('owner-call-phone');
   var ownerDirectionsLinkInput = document.getElementById('owner-directions-link');
-  var ownerRulesUrlInput       = document.getElementById('owner-rules-url');
-  var ownerRulesTextArea       = document.getElementById('owner-rules-text');
-  var PARK_LANGS = ['sl','en','de','pl','cs','it'];
+  var LANG_LIST = ['sl','en','de','pl','cs','it'];
+  var PARK_LANGS = LANG_LIST;
   var ownerParkingTitleSlInput  = document.getElementById('owner-parking-title-sl');
   var ownerParkingTitleEnInput  = document.getElementById('owner-parking-title-en');
   var ownerParkingAddressInput  = document.getElementById('owner-parking-address');
@@ -3527,7 +3526,11 @@
         // house_rules_private
         var rules = byKey['house_rules_private'] || {};
         _ownerData.houseRulesPrivate = rules;
-        ownerRulesTextArea.value = rules.text || '';
+        var _rulesText = rules.text || {};
+        LANG_LIST.forEach(function(lng) {
+          var el = document.getElementById('owner-rules-text-' + lng);
+          if (el) el.value = (typeof _rulesText === 'object' ? _rulesText[lng] : (lng === 'sl' ? _rulesText : '')) || '';
+        });
 
         // parking_recommended
         var park = byKey['parking_recommended'] || {};
@@ -3570,8 +3573,11 @@
   function saveOwnerData() {
     var phone    = ownerCallPhoneInput.value.trim();
     var dirLink  = ownerDirectionsLinkInput.value.trim();
-    var rulesUrl = ownerRulesUrlInput.value.trim();
-    var rulesText     = ownerRulesTextArea.value;
+    var _rulesTextObj = {};
+    LANG_LIST.forEach(function(lng) {
+      var el = document.getElementById('owner-rules-text-' + lng);
+      _rulesTextObj[lng] = el ? el.value.trim() : '';
+    });
     var _parkTitleObj = {}, _parkNotesObj = {};
     PARK_LANGS.forEach(function(lng) {
       var ti = document.getElementById('owner-parking-title-' + lng);
@@ -3598,10 +3604,6 @@
     }
     if (!isValidLink(dirLink)) {
       setStatus(ownerSaveStatus, 'Link za navigaciju nije validan (http://, https:// ili ./).', 'error');
-      return;
-    }
-    if (!isValidLink(rulesUrl)) {
-      setStatus(ownerSaveStatus, 'Link za hišni red nije validan (http://, https:// ili ./).', 'error');
       return;
     }
     if (!isValidLink(parkMaps)) {
@@ -3642,9 +3644,8 @@
     var configData = Object.assign({}, _ownerData.defaultConfig || {});
     configData.quick_call_phone      = phone;
     configData.quick_directions_link = dirLink;
-    configData.quick_rules_url       = rulesUrl || './pravila/index.html';
 
-    var houseRulesData = { text: rulesText };
+    var houseRulesData = { text: _rulesTextObj };
     var parkingData    = { title: _parkTitleObj, address: parkAddr, mapsLink: parkMaps, hours: parkHours, paid: parkPaid, notes: _parkNotesObj };
     var rebookData     = { apartment_name: rebookName, owner_phone: rebookPhone, owner_email: rebookEmail, rebook_link: rebookLink, instructions: rebookInstr };
     var maintData      = { visible: maintVisible, email: maintEmail };
@@ -3780,10 +3781,14 @@
           loadLegalPages();
           loadCardLabels();
         } else if (data.role === 'OWNER') {
+          // Hide email + role/tenant_id info blocks from owners
+          var _eblk = document.getElementById('info-block-email');
+          var _rblk = document.getElementById('info-block-role');
+          if (_eblk) _eblk.style.display = 'none';
+          if (_rblk) _rblk.style.display = 'none';
           if (data.disabled) {
             showDashStatus(
               'Dostop je onemogočen. Kontaktirajte administratorja.', 'warning');
-            dashRole.textContent = 'OWNER (onemogočen)';
           } else {
             ownerPanel.classList.remove('hidden');
             loadOwnerEditableData(data.tenant_id);
