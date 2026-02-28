@@ -522,11 +522,39 @@
       if (label !== 'Greška!') setTimeout(function () { btn.textContent = 'Login link'; }, 3000);
     }
 
+    console.log('[Admin LoginLink] invoke start', {
+      function_name: 'master_admin',
+      action: 'invite_owner',
+      tenant_id: tenantId,
+      tenant_slug: tenantSlug,
+      owner_email: ownerEmail
+    });
     sb.functions.invoke('master_admin', {
       body: { action: 'invite_owner', owner_email: ownerEmail, tenant_id: tenantId, tenant_slug: tenantSlug }
     }).then(function (r) {
-      if (!r.error) { _done('Poslato! ✓'); return; }
+      if (!r.error) {
+        console.log('[Admin LoginLink] invoke end', {
+          function_name: 'master_admin',
+          action: 'invite_owner',
+          ok: true,
+          response: r.data || null
+        });
+        _done('Poslato! ✓');
+        return;
+      }
+      console.error('[Admin LoginLink] invoke error', {
+        function_name: 'master_admin',
+        action: 'invite_owner',
+        response: r.data || null,
+        error: r.error || null
+      });
       // master_admin fallback: use send-owner-invite (Resend-only path)
+      console.log('[Admin LoginLink] invoke start', {
+        function_name: 'send-owner-invite',
+        tenant_id: tenantId,
+        tenant_slug: tenantSlug,
+        owner_email: ownerEmail
+      });
       return sb.functions.invoke('send-owner-invite', {
         body: {
           tenant_id: tenantId,
@@ -538,6 +566,12 @@
           site_url: window.location.origin
         }
       }).then(function (r2) {
+        console.log('[Admin LoginLink] invoke end', {
+          function_name: 'send-owner-invite',
+          ok: !r2.error && !!(r2.data && r2.data.ok),
+          response: r2.data || null,
+          error: r2.error || null
+        });
         if (r2.error || !(r2.data && r2.data.ok)) {
           _done('Greška!');
           setStatus(tenantsStatus, 'Greška: ' + ((r2.data && r2.data.error) || r2.error || 'unknown'), 'error');
@@ -545,10 +579,21 @@
         }
         _done('Poslato ✓');
       }).catch(function (err2) {
+        console.error('[Admin LoginLink] invoke error', {
+          function_name: 'send-owner-invite',
+          error_message: err2 && err2.message ? err2.message : null,
+          error: err2 || null
+        });
         _done('Greška!');
         setStatus(tenantsStatus, 'Greška: ' + (err2 && err2.message ? err2.message : 'network'), 'error');
       });
-    }).catch(function () {
+    }).catch(function (err) {
+      console.error('[Admin LoginLink] invoke error', {
+        function_name: 'master_admin',
+        action: 'invite_owner',
+        error_message: err && err.message ? err.message : null,
+        error: err || null
+      });
       _done('Greška!');
       setStatus(tenantsStatus, 'Greška: master_admin nedostupan.', 'error');
     });
@@ -948,6 +993,7 @@
         // Pozovi send-owner-invite Edge Function — ona generiše magic link i šalje email
         setStatus(createTenantStatus, 'Šaljem pozivnicu ' + email + '…', 'info');
         console.log('[Admin Save+Send] invoke start', {
+          function_name: 'send-owner-invite',
           tenant_id: newId,
           tenant_slug: slug,
           owner_email: email
@@ -981,10 +1027,13 @@
           });
           var ok = !fnResult.error && fnResult.data && fnResult.data.ok;
           _afterInvite(!!ok);
-        }).catch(function () {
+        }).catch(function (err) {
           console.error('[Admin Save+Send] invoke error', {
+            function_name: 'send-owner-invite',
             tenant_id: newId,
-            owner_email: email
+            owner_email: email,
+            error_message: err && err.message ? err.message : null,
+            error: err || null
           });
           unlockButtons(); clearForm(); loadTenants();
           setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana (network).', 'warning');
@@ -4014,7 +4063,7 @@
       var _ioTid  = btn.getAttribute('data-tid');
       var _ioSlug = btn.getAttribute('data-slug');
       var _ioName = btn.getAttribute('data-name');
-      console.log('[Admin InviteOwner] invoke start', { tenant_id: _ioTid, tenant_slug: _ioSlug, owner_email: _ioEmail });
+      console.log('[Admin InviteOwner] invoke start', { function_name: 'send-owner-invite', tenant_id: _ioTid, tenant_slug: _ioSlug, owner_email: _ioEmail });
       sb.functions.invoke('send-owner-invite', {
         body: {
           tenant_id:   _ioTid,
@@ -4042,6 +4091,13 @@
         setStatus(tenantsStatus, 'Pozivnica poslata na ' + _ioEmail + ' ✓', 'info');
         loadTenants();
       }).catch(function (err) {
+        console.error('[Admin InviteOwner] invoke error', {
+          function_name: 'send-owner-invite',
+          tenant_id: _ioTid,
+          owner_email: _ioEmail,
+          error_message: err && err.message ? err.message : null,
+          error: err || null
+        });
         btn.disabled    = false;
         btn.textContent = '+ Poveži vlasnika';
         setStatus(tenantsStatus, 'Greška: ' + (err && err.message ? err.message : 'network'), 'error');
