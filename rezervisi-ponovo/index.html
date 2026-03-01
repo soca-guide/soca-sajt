@@ -102,6 +102,7 @@
   var _rbTenantId = null;
   var _isSubmitting = false;
   var _fetchInFlight = false;
+  var _fetchPromise = null;
   var _lastFetchError = '';
   var emailEl  = document.getElementById('email');
   var result   = document.getElementById('result');
@@ -159,12 +160,25 @@
 
   function _fetchRebookOnce(opts) {
     opts = opts || {};
-    if (!_rbSlug) return Promise.resolve({ ok: false, reason: 'NO_SLUG' });
-    if (_fetchInFlight) return Promise.resolve({ ok: false, reason: 'IN_FLIGHT' });
+    if (!_rbSlug) {
+      _lastFetchError = 'NO_SLUG';
+      console.error('[Rebook] error', _lastFetchError, {
+        reason: opts.reason || 'unknown',
+        search: window.location.search || ''
+      });
+      return Promise.resolve({ ok: false, reason: _lastFetchError });
+    }
+    if (_fetchPromise) {
+      console.warn('[Rebook] fetch already running, waiting for existing request', {
+        slug: _rbSlug,
+        reason: opts.reason || 'unknown'
+      });
+      return _fetchPromise;
+    }
     _fetchInFlight = true;
     console.log('[Rebook] start request', { slug: _rbSlug, reason: opts.reason || 'unknown' });
     _setInlineStatus('Učitavam podatke…', false);
-    return new Promise(function(resolve) {
+    _fetchPromise = new Promise(function(resolve) {
       _waitForSBrb(function(sb) {
         if (!sb) {
           _lastFetchError = 'SUPABASE_NOT_READY';
@@ -177,15 +191,34 @@
             if (r.error || !r.data || !r.data.length) {
               _lastFetchError = (r.error && r.error.message) || 'NO_REBOOK_DATA';
               console.error('[Rebook] error', _lastFetchError);
+              console.log('[Rebook] rpc response details', {
+                has_error: !!r.error,
+                row_count: Array.isArray(r.data) ? r.data.length : 0
+              });
               resolve({ ok: false, reason: _lastFetchError });
               return;
             }
+            console.log('[Rebook] rpc rows received', {
+              row_count: r.data.length,
+              section_item_keys: r.data.map(function(x) { return (x.section_key || '') + ':' + (x.item_key || ''); })
+            });
             var rebookRow = r.data.find(function(x) {
               return x.section_key === 'booking' && x.item_key === 'rebook';
             });
             if (!rebookRow || !rebookRow.data_json) {
               _lastFetchError = 'REBOOK_ROW_MISSING';
               console.error('[Rebook] error', _lastFetchError);
+              console.log('[Rebook] rebook row debug', {
+                found_row: !!rebookRow,
+                has_data_json: !!(rebookRow && rebookRow.data_json),
+                available_rows: r.data.map(function(x) {
+                  return {
+                    section_key: x.section_key || null,
+                    item_key: x.item_key || null,
+                    has_data_json: !!x.data_json
+                  };
+                })
+              });
               resolve({ ok: false, reason: _lastFetchError });
               return;
             }
@@ -202,6 +235,7 @@
       }, 8000);
     }).finally(function() {
       _fetchInFlight = false;
+      _fetchPromise = null;
       console.log('[Rebook] end request', {
         slug: _rbSlug,
         has_data: !!rbData,
@@ -213,6 +247,7 @@
         _setInlineStatus('', false);
       }
     });
+    return _fetchPromise;
   }
   _fetchRebookOnce({ reason: 'initial_load' });
 
@@ -230,14 +265,16 @@
     if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Pošiljam…'; }
     _setInlineStatus('Učitavam podatke…', false);
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
+    var _lastFetchResult = null;
     Promise.resolve()
       .then(function() {
         if (rbData) return { ok: true };
         return _fetchRebookOnce({ reason: 'submit_refresh' });
       })
-      .then(function() {
+      .then(function(fetchResult) {
+        _lastFetchResult = fetchResult || null;
         if (!rbData) {
-          throw new Error(_lastFetchError || 'MISSING_REBOOK_CONFIG');
+          throw new Error((_lastFetchError || 'MISSING_REBOOK_CONFIG') + ' | slug=' + (_rbSlug || 'null') + ' | fetch_reason=' + ((_lastFetchResult && _lastFetchResult.reason) || 'none'));
         }
         console.log('[Rebook] submit start', {
           tenant_slug: _rbSlug || null,
