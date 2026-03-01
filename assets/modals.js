@@ -98,7 +98,11 @@
   window.addEventListener('pageshow', panicUnlockIfModalClosed);
 
   btnLive?.addEventListener('click', () => openModal('SOČA • Soča Live', './soca-live/index.html'));
-  btnRez?.addEventListener('click', () => openModal('SOČA • Rezerviraj znova', './rezervisi-ponovo/index.html'));
+  btnRez?.addEventListener('click', () => {
+    var slug = (new URLSearchParams(window.location.search).get('t') || '').toLowerCase().trim();
+    var url = './rezervisi-ponovo/index.html' + (slug ? ('?t=' + encodeURIComponent(slug)) : '');
+    openModal('SOČA • Rezerviraj znova', url);
+  });
   btnLF?.addEventListener('click', () => openModal('SOČA • Izgubljeno / Najdeno', './izgubljeno-nadjeno/index.html'));
   btnRestavracije?.addEventListener('click', () => openModal('SOČA • Restavracije & Kavarne', './restavracije/index.html'));
 
