@@ -1007,6 +1007,39 @@
           showOwnerWelcomeModal(name, slug, email, sent);
         }
 
+        function _fallbackInvite(reason) {
+          console.warn('[Admin Save+Send] fallback invite start', {
+            function_name: '_inviteFallback',
+            reason: reason || 'unknown',
+            tenant_id: newId,
+            tenant_slug: slug,
+            owner_email: email
+          });
+          _inviteFallback(
+            email,
+            newId,
+            function () {
+              console.log('[Admin Save+Send] fallback invite end', {
+                ok: true,
+                tenant_id: newId,
+                owner_email: email
+              });
+              _afterInvite(true);
+            },
+            function (errMsg) {
+              console.error('[Admin Save+Send] fallback invite error', {
+                tenant_id: newId,
+                owner_email: email,
+                error_message: errMsg || null
+              });
+              unlockButtons(); clearForm(); loadTenants();
+              setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana: ' + (errMsg || 'unknown'), 'warning');
+              showOwnerWelcomeModal(name, slug, email, false);
+            },
+            slug
+          );
+        }
+
         sb.functions.invoke('send-owner-invite', {
           body: {
             tenant_id:   newId,
@@ -1025,8 +1058,11 @@
             response: fnResult.data || null,
             error: fnResult.error || null
           });
-          var ok = !fnResult.error && fnResult.data && fnResult.data.ok;
-          _afterInvite(!!ok);
+          if (fnResult.error || !(fnResult.data && fnResult.data.ok)) {
+            _fallbackInvite((fnResult.error && fnResult.error.message) || (fnResult.data && fnResult.data.error) || 'edge_function_failed');
+            return;
+          }
+          _afterInvite(true);
         }).catch(function (err) {
           console.error('[Admin Save+Send] invoke error', {
             function_name: 'send-owner-invite',
@@ -1035,9 +1071,7 @@
             error_message: err && err.message ? err.message : null,
             error: err || null
           });
-          unlockButtons(); clearForm(); loadTenants();
-          setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana (network).', 'warning');
-          showOwnerWelcomeModal(name, slug, email, false);
+          _fallbackInvite((err && err.message) || 'network');
         });
       });
   }
