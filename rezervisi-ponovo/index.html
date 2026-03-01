@@ -164,7 +164,8 @@
       _lastFetchError = 'NO_SLUG';
       console.error('[Rebook] error', _lastFetchError, {
         reason: opts.reason || 'unknown',
-        search: window.location.search || ''
+        search: window.location.search || '',
+        location: window.location
       });
       return Promise.resolve({ ok: false, reason: _lastFetchError });
     }
