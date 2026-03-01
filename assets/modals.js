@@ -101,6 +101,7 @@
   btnRez?.addEventListener('click', () => {
     var slug = (new URLSearchParams(window.location.search).get('t') || '').toLowerCase().trim();
     var url = './rezervisi-ponovo/index.html' + (slug ? ('?t=' + encodeURIComponent(slug)) : '');
+    console.log(url);
     openModal('SOČA • Rezerviraj znova', url);
   });
   btnLF?.addEventListener('click', () => openModal('SOČA • Izgubljeno / Najdeno', './izgubljeno-nadjeno/index.html'));
