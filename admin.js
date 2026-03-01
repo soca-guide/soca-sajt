@@ -4509,8 +4509,30 @@
     sb.auth.getSession().then(function (result) {
       var session = result.data && result.data.session;
       if (session && session.user) {
-        clearTimeout(_loaderTimeout); _loaderTimeout = null;
-        enterDashboard(session.user);
+        // Session may exist in local storage but token can be invalid/expired.
+        // Validate with getUser(); on 401/403 clear local session and return to login.
+        sb.auth.getUser().then(function (uRes) {
+          if (uRes && uRes.error) {
+            console.warn('[Admin Auth] Invalid stored session', {
+              message: uRes.error.message || '',
+              status: uRes.error.status || null
+            });
+            sb.auth.signOut({ scope: 'local' }).finally(function () {
+              clearTimeout(_loaderTimeout); _loaderTimeout = null;
+              showView('login');
+              showLoginError('Sesija je nevažeća. Prijavite se ponovo.');
+            });
+            return;
+          }
+          clearTimeout(_loaderTimeout); _loaderTimeout = null;
+          enterDashboard((uRes && uRes.data && uRes.data.user) || session.user);
+        }).catch(function () {
+          sb.auth.signOut({ scope: 'local' }).finally(function () {
+            clearTimeout(_loaderTimeout); _loaderTimeout = null;
+            showView('login');
+            showLoginError('Sesija je istekla. Prijavite se ponovo.');
+          });
+        });
         return;
       }
       // No session — check for PKCE auth code in URL (magic link / invite redirect)
