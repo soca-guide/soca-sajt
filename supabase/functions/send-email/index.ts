@@ -164,37 +164,60 @@ function templateBookingAgainTourist(payload: {
   instructions: string;
   lang: string;
 }): { subject: string; html: string; text: string } {
-  const labels: Record<string, Record<string, string>> = {
-    sl: { subject: 'Rezervacija', greeting: 'Pozdravljeni!', intro: 'Tukaj so kontaktni podatki lastnika apartmaja:', apt: 'Apartma', phone: 'Telefon', email: 'E-pošta', link: 'Rezervacijska povezava', instr: 'Navodila', note: 'To sporočilo ste prejeli, ker ste zaprosili za podatke za rezervacijo.' },
-    en: { subject: 'Booking', greeting: 'Hello!', intro: "Here are your host's contact details:", apt: 'Apartment', phone: 'Phone', email: 'E-mail', link: 'Booking link', instr: 'Instructions', note: 'You received this email because you requested booking information.' },
-  };
-  const t = labels[payload.lang] || labels.sl;
-  const apt = payload.apartment_name || 'apartma';
-  const subject = `${t.subject} – ${apt}`;
+  // Always send this template in English for consistent guest communication.
+  function esc(value: string): string {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  const apt = String(payload.apartment_name || '').trim() || 'Apartment';
+  const ownerPhone = String(payload.owner_phone || '').trim();
+  const ownerEmail = String(payload.owner_email || '').trim();
+  const rebookLink = String(payload.rebook_link || '').trim();
+  const instructions = String(payload.instructions || '').trim();
+  const requestedBy = String(payload.tourist_email || '').trim();
+
+  const subject = `Booking details – ${apt}`;
   const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:12px">
-      <h2 style="margin-top:0;color:#0f766e">${subject}</h2>
-      <p>${t.greeting}</p>
-      <p style="color:#475569">${t.intro}</p>
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+      <h2 style="margin:0 0 12px 0;color:#0f766e">${esc(subject)}</h2>
+      <p style="margin:0 0 12px 0;color:#334155">Hello,</p>
+      <p style="margin:0 0 16px 0;color:#475569">
+        Here are the rebooking details saved by the property owner.
+      </p>
       <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:6px 0;color:#64748b;width:140px">${t.apt}</td><td style="padding:6px 0;font-weight:600">${apt}</td></tr>
-        ${payload.owner_phone ? `<tr><td style="padding:6px 0;color:#64748b">${t.phone}</td><td style="padding:6px 0">${payload.owner_phone}</td></tr>` : ''}
-        ${payload.owner_email ? `<tr><td style="padding:6px 0;color:#64748b">${t.email}</td><td style="padding:6px 0">${payload.owner_email}</td></tr>` : ''}
-        ${payload.rebook_link ? `<tr><td style="padding:6px 0;color:#64748b">${t.link}</td><td style="padding:6px 0"><a href="${payload.rebook_link}" style="color:#0ea5e9">${payload.rebook_link}</a></td></tr>` : ''}
+        <tr><td style="padding:8px 0;color:#64748b;width:180px">Apartment</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${esc(apt)}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Owner phone</td><td style="padding:8px 0;color:#0f172a">${esc(ownerPhone || 'Not provided')}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Owner email</td><td style="padding:8px 0;color:#0f172a">${esc(ownerEmail || 'Not provided')}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Booking link</td><td style="padding:8px 0;color:#0f172a">${rebookLink ? `<a href="${esc(rebookLink)}" style="color:#0ea5e9">${esc(rebookLink)}</a>` : 'Not provided'}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b;vertical-align:top">Instructions</td><td style="padding:8px 0;color:#0f172a;white-space:pre-wrap">${esc(instructions || 'Not provided')}</td></tr>
       </table>
-      ${payload.instructions ? `<div style="margin-top:16px;padding:12px;border-left:3px solid #22c55e;background:#f0fdf4;white-space:pre-wrap">${payload.instructions}</div>` : ''}
-      <p style="font-size:12px;color:#94a3b8;margin-top:20px">${t.note}</p>
+      <p style="font-size:12px;color:#94a3b8;margin:18px 0 0 0">
+        Requested by: ${esc(requestedBy || 'Unknown')}
+      </p>
+      <p style="font-size:12px;color:#94a3b8;margin:6px 0 0 0">
+        You received this email because a rebooking request was submitted on Soča Guest Guide.
+      </p>
     </div>`;
+
   const text = [
     subject,
     '',
-    t.intro,
-    `${t.apt}: ${apt}`,
-    payload.owner_phone ? `${t.phone}: ${payload.owner_phone}` : '',
-    payload.owner_email ? `${t.email}: ${payload.owner_email}` : '',
-    payload.rebook_link ? `${t.link}: ${payload.rebook_link}` : '',
-    payload.instructions ? `${t.instr}: ${payload.instructions}` : '',
-  ].filter(Boolean).join('\n');
+    'Here are the rebooking details saved by the property owner.',
+    '',
+    `Apartment: ${apt}`,
+    `Owner phone: ${ownerPhone || 'Not provided'}`,
+    `Owner email: ${ownerEmail || 'Not provided'}`,
+    `Booking link: ${rebookLink || 'Not provided'}`,
+    `Instructions: ${instructions || 'Not provided'}`,
+    '',
+    `Requested by: ${requestedBy || 'Unknown'}`,
+    'You received this email because a rebooking request was submitted on Soča Guest Guide.',
+  ].join('\n');
   return { subject, html, text };
 }
 

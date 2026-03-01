@@ -1040,38 +1040,52 @@
           );
         }
 
-        sb.functions.invoke('send-owner-invite', {
-          body: {
-            tenant_id:   newId,
-            tenant_slug: slug,
-            tenant_name: name,
-            owner_email: email,
-            locale:      'sl',
-            admin_url:   window.location.origin + '/admin',
-            site_url:    window.location.origin
-          }
-        }).then(function (fnResult) {
-          console.log('[Admin Save+Send] invoke end', {
-            ok: !fnResult.error && !!(fnResult.data && fnResult.data.ok),
-            tenant_id: newId,
-            owner_email: email,
-            response: fnResult.data || null,
-            error: fnResult.error || null
-          });
-          if (fnResult.error || !(fnResult.data && fnResult.data.ok)) {
-            _fallbackInvite((fnResult.error && fnResult.error.message) || (fnResult.data && fnResult.data.error) || 'edge_function_failed');
+        sb.auth.getSession().then(function (sessionResult) {
+          var session = sessionResult && sessionResult.data && sessionResult.data.session;
+          if (!session || !session.access_token) {
+            console.error('[Admin Save+Send] no active session, cannot invoke edge function');
+            _fallbackInvite('no_session');
             return;
           }
-          _afterInvite(true);
-        }).catch(function (err) {
-          console.error('[Admin Save+Send] invoke error', {
-            function_name: 'send-owner-invite',
-            tenant_id: newId,
-            owner_email: email,
-            error_message: err && err.message ? err.message : null,
-            error: err || null
+          sb.functions.invoke('send-owner-invite', {
+            headers: { Authorization: 'Bearer ' + session.access_token },
+            body: {
+              tenant_id:   newId,
+              tenant_slug: slug,
+              tenant_name: name,
+              owner_email: email,
+              locale:      'sl',
+              admin_url:   window.location.origin + '/admin',
+              site_url:    window.location.origin
+            }
+          }).then(function (fnResult) {
+            console.log('[Admin Save+Send] invoke end', {
+              ok: !fnResult.error && !!(fnResult.data && fnResult.data.ok),
+              tenant_id: newId,
+              owner_email: email,
+              response: fnResult.data || null,
+              error: fnResult.error || null
+            });
+            if (fnResult.error || !(fnResult.data && fnResult.data.ok)) {
+              _fallbackInvite((fnResult.error && fnResult.error.message) || (fnResult.data && fnResult.data.error) || 'edge_function_failed');
+              return;
+            }
+            _afterInvite(true);
+          }).catch(function (err) {
+            console.error('[Admin Save+Send] invoke error', {
+              function_name: 'send-owner-invite',
+              tenant_id: newId,
+              owner_email: email,
+              error_message: err && err.message ? err.message : null,
+              error: err || null
+            });
+            _fallbackInvite((err && err.message) || 'network');
           });
-          _fallbackInvite((err && err.message) || 'network');
+        }).catch(function (sessionErr) {
+          console.error('[Admin Save+Send] getSession error', {
+            error_message: sessionErr && sessionErr.message ? sessionErr.message : null
+          });
+          _fallbackInvite('session_error');
         });
       });
   }
