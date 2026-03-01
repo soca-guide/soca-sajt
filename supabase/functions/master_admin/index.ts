@@ -45,8 +45,13 @@ serve(async (req) => {
   const callerClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
+  const { data: callerUser, error: callerUserErr } = await callerClient.auth.getUser();
+  const callerId = callerUser?.user?.id ?? '';
+  if (callerUserErr || !callerId) {
+    return json({ error: 'Unauthorized' }, 401);
+  }
   const { data: callerProfile } = await callerClient
-    .from('user_profiles').select('role').maybeSingle();
+    .from('user_profiles').select('role').eq('user_id', callerId).maybeSingle();
 
   if (!callerProfile || callerProfile.role !== 'MASTER') {
     return json({ error: 'Forbidden — MASTER only' }, 403);
