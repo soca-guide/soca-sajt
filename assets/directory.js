@@ -282,12 +282,12 @@
   }
 
   function _logoEl(p, size) {
-    // size: 'sm' (36px) | 'md' (48px)
-    var px = size === 'md' ? '48' : '36';
+    // size: 'sm' (52px) | 'md' (60px)
+    var px = size === 'md' ? '60' : '52';
     if (p.logo_url) {
-      return '<img src="' + _esc(p.logo_url) + '" alt="' + _esc(p.name) + ' logo" class="dir-logo" style="width:' + px + 'px;height:' + px + 'px">';
+      return '<img src="' + _esc(p.logo_url) + '" alt="' + _esc(p.name) + ' logo" class="dir-logo" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;flex-shrink:0;">';
     }
-    return '<div class="dir-logo dir-logo--placeholder" style="width:' + px + 'px;height:' + px + 'px">' +
+    return '<div class="dir-logo dir-logo--placeholder" style="width:' + px + 'px;height:' + px + 'px;flex-shrink:0;">' +
       (p.name ? _esc(p.name.charAt(0).toUpperCase()) : '?') + '</div>';
   }
 

@@ -1271,18 +1271,7 @@
     }
     
     #attractions-back {
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      line-height: 1;
-      transition: transform 0.2s ease;
-    }
-    
-    #attractions-back:active {
-      transform: scale(0.9);
+      /* styles inherited from .screen-back-btn */
     }
     
     #trip-ideas-back {
@@ -1301,22 +1290,28 @@
     }
     
     .screen-back-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      line-height: 1;
-      min-width: 2.5rem;
-      min-height: 2.5rem;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.15);
+      background-color: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .screen-back-btn:hover {
+      background-color: rgba(255,255,255,0.10);
     }
     .screen-back-btn:active {
-      transform: scale(0.9);
+      transform: scale(0.95);
+    }
+    .screen-back-btn span[aria-hidden="true"] {
+      margin-right: 0.5rem;
     }
     
     #quick-help-back {
