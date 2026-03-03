@@ -95,7 +95,7 @@
   // Wait for supabaseClient to be initialized (it loads its SDK asynchronously)
   function waitForSB(cb, maxMs) {
     if (window.supabaseClient) { cb(window.supabaseClient); return; }
-    var waited = 0, step = 100;
+    var waited = 0, step = 50;
     var timer = setInterval(function() {
       if (window.supabaseClient) { clearInterval(timer); cb(window.supabaseClient); return; }
       waited += step;
@@ -121,9 +121,15 @@
         console.log('[LostFound] list fetch end', { ok: !r.error, count: (r.data || []).length, tenant_slug: slug || null });
         var items = (!r.error && r.data) ? r.data : [];
         if (!items.length) {
-          list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
+          if (!render._retried) {
+            render._retried = true;
+            setTimeout(function() { render._retried = false; render(client); }, 1000);
+          } else {
+            list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
+          }
           return;
         }
+        render._retried = false;
         list.innerHTML = items.map(function(x) {
           return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4">' +
             '<div class="flex items-center justify-between">' +
@@ -228,6 +234,8 @@
     }
     render(client);
   }, 6000);
+
+  window.addEventListener('load', function() { waitForSB(render, 5000); });
 </script>
 <div id="footer-legal" style="text-align:center;padding:0.75rem 1rem 1.5rem;font-size:0.72rem;color:#a0b0a8;display:flex;flex-wrap:wrap;justify-content:center;gap:0.3rem 0.9rem"></div>
 <script>
