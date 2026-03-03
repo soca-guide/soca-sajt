@@ -1557,7 +1557,8 @@
   var pfId                = document.getElementById('pf-id');
   var pfName              = document.getElementById('pf-name');
   var pfTypeSel           = document.getElementById('pf-type-sel');
-  var pfCategory          = document.getElementById('pf-category');
+  var pfCategory          = null; // replaced by multi-checkbox system; kept null for safe fallback
+  var pfCategoriesWrap    = document.getElementById('pf-categories-wrap');
   var pfTierSel           = document.getElementById('pf-tier-sel');
   var pfOrder             = document.getElementById('pf-order');
   var pfDesc              = document.getElementById('pf-desc');
@@ -1708,46 +1709,47 @@
     });
   }
 
-  // Sync category dropdown based on type
+  // Sync category checkboxes based on type
   var CAT_BY_TYPE = {
-    activities: ['rafting','kayak','canyoning','zipline','cycling','paragliding','skydiving','custom'],
-    food:       ['cafe','street_food','gostilna','restaurant','pizzeria','custom'],
-    taxi:       ['taxi','custom']
+    activities: ['rafting','kayak','canyoning','zipline','cycling','paragliding','skydiving'],
+    food:       ['cafe','street_food','gostilna','restaurant','pizzeria'],
+    taxi:       ['taxi']
   };
 
   function _syncCategoryByType(type, selected) {
-    if (!pfCategory) return;
+    if (!pfCategoriesWrap) return;
+    // Normalize: accept string (legacy single-cat) or array (new multi-cat)
+    var sel = Array.isArray(selected) ? selected : (selected ? [selected] : []);
     var cats = CAT_BY_TYPE[type] || [];
     var customInput = document.getElementById('pf-category-custom');
-    // if selected is a known key use it; if it's unknown (custom) keep select on 'custom'
-    var isPredefined = !selected || cats.indexOf(selected) >= 0;
-    var selectVal = isPredefined ? selected : 'custom';
-    pfCategory.innerHTML = cats.map(function(c) {
-      return '<option value="' + c + '"' + (c === selectVal ? ' selected' : '') + '>' + (PARTNER_CAT_LABELS[c] || c) + '</option>';
-    }).join('');
+    // Any values in sel that are not in predefined list → custom
+    var customValues = sel.filter(function(s) { return cats.indexOf(s) < 0 && s !== '__custom__'; });
+    var hasCustom = customValues.length > 0;
+    // Render predefined checkboxes + custom option at the end
+    pfCategoriesWrap.innerHTML = cats.map(function(c) {
+      var checked = sel.indexOf(c) >= 0 ? ' checked' : '';
+      return '<label style="display:flex;align-items:center;gap:4px;font-size:0.82rem;opacity:0.9;cursor:pointer">' +
+        '<input type="checkbox" class="pf-cat-cb" value="' + c + '"' + checked + ' style="cursor:pointer"> ' +
+        (PARTNER_CAT_LABELS[c] || c) + '</label>';
+    }).join('') +
+    '<label style="display:flex;align-items:center;gap:4px;font-size:0.82rem;opacity:0.9;cursor:pointer">' +
+    '<input type="checkbox" class="pf-cat-cb" id="pf-cat-custom-cb" value="__custom__"' + (hasCustom ? ' checked' : '') + ' style="cursor:pointer"> ✏️ Prilagođena</label>';
+    // Show/hide + fill custom text input
     if (customInput) {
-      if (!isPredefined) {
-        // existing partner with custom category → show input with value
-        customInput.style.display = 'block';
-        customInput.value = selected;
-      } else if (selectVal === 'custom') {
-        customInput.style.display = 'block';
-        customInput.value = '';
-      } else {
-        customInput.style.display = 'none';
-        customInput.value = '';
-      }
+      customInput.style.display = hasCustom ? 'block' : 'none';
+      customInput.value = hasCustom ? customValues.join(', ') : '';
+    }
+    // Wire custom checkbox toggle after render
+    var customCb = document.getElementById('pf-cat-custom-cb');
+    if (customCb && customInput) {
+      customCb.addEventListener('change', function() {
+        customInput.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) customInput.value = '';
+      });
     }
   }
 
-  if (pfTypeSel) pfTypeSel.addEventListener('change', function() { _syncCategoryByType(this.value, ''); });
-  if (pfCategory) pfCategory.addEventListener('change', function() {
-    var customInput = document.getElementById('pf-category-custom');
-    if (customInput) {
-      customInput.style.display = this.value === 'custom' ? 'block' : 'none';
-      if (this.value !== 'custom') customInput.value = '';
-    }
-  });
+  if (pfTypeSel) pfTypeSel.addEventListener('change', function() { _syncCategoryByType(this.value, []); });
 
   // Render partner list
   function _renderPartnerRow(p) {
@@ -1770,7 +1772,7 @@
       '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center">' +
       '<span style="font-size:0.72rem;opacity:0.6;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px">' + (PARTNER_TIER_LABELS[p.tier] || p.tier) + '</span>' +
       '<span style="font-size:0.72rem;opacity:0.6;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px">' + (PARTNER_TYPE_LABELS[p.type] || p.type) + '</span>' +
-      '<span style="font-size:0.72rem;opacity:0.6">' + (PARTNER_CAT_LABELS[p.category] || p.category) + '</span>' +
+      '<span style="font-size:0.72rem;opacity:0.6">' + (function() { var cs = (p.categories && p.categories.length) ? p.categories : (p.category ? [p.category] : []); return cs.map(function(c) { return PARTNER_CAT_LABELS[c] || c; }).join(', ') || '—'; })() + '</span>' +
       (!p.is_active ? '<span style="font-size:0.72rem;color:#f87171">● Neaktivan</span>' : '') +
       '<button class="btn-secondary btn-sm btn-p-up" data-pid="' + p.id + '" title="Pomeri gore (manji redosled)">▲</button>' +
       '<button class="btn-secondary btn-sm btn-p-down" data-pid="' + p.id + '" title="Pomeri dole (veći redosled)">▼</button>' +
@@ -1859,7 +1861,7 @@
     if (pfId)       pfId.value       = p ? p.id : '';
     if (pfName)     pfName.value     = p ? p.name : '';
     if (pfTypeSel)  pfTypeSel.value  = p ? p.type : 'activities';
-    _syncCategoryByType(p ? p.type : 'activities', p ? p.category : '');
+    _syncCategoryByType(p ? p.type : 'activities', p ? (p.categories && p.categories.length ? p.categories : (p.category ? [p.category] : [])) : []);
     if (pfTierSel)  pfTierSel.value  = p ? p.tier : 'standard';
     if (pfOrder)    pfOrder.value    = p ? p.order_index : 100;
     if (pfDesc)     pfDesc.value     = p ? (p.short_desc || '') : '';
@@ -1899,12 +1901,32 @@
       name:              name,
       type:              pfTypeSel  ? pfTypeSel.value  : 'activities',
       category:          (function() {
-        if (!pfCategory) return 'other';
-        if (pfCategory.value === 'custom') {
-          var ci = document.getElementById('pf-category-custom');
-          return (ci && ci.value.trim()) ? ci.value.trim() : 'other';
+        if (!pfCategoriesWrap) return 'other';
+        var checked = Array.from(pfCategoriesWrap.querySelectorAll('.pf-cat-cb:checked'));
+        var vals = checked.map(function(cb) { return cb.value; });
+        var hasCustom = vals.indexOf('__custom__') >= 0;
+        var ci = document.getElementById('pf-category-custom');
+        if (hasCustom && ci && ci.value.trim()) {
+          return ci.value.trim().split(',')[0].trim() || 'other';
         }
-        return pfCategory.value;
+        vals = vals.filter(function(v) { return v !== '__custom__'; });
+        return vals[0] || 'other';
+      }()),
+      categories:        (function() {
+        if (!pfCategoriesWrap) return [];
+        var checked = Array.from(pfCategoriesWrap.querySelectorAll('.pf-cat-cb:checked'));
+        var vals = checked.map(function(cb) { return cb.value; }).filter(function(v) { return v !== '__custom__'; });
+        var customCb = document.getElementById('pf-cat-custom-cb');
+        if (customCb && customCb.checked) {
+          var ci = document.getElementById('pf-category-custom');
+          if (ci && ci.value.trim()) {
+            ci.value.trim().split(',').forEach(function(cv) {
+              var t = cv.trim();
+              if (t && vals.indexOf(t) < 0) vals.push(t);
+            });
+          }
+        }
+        return vals;
       }()),
       tier:              pfTierSel  ? pfTierSel.value  : 'standard',
       order_index:       pfOrder    ? (parseInt(pfOrder.value) || 100) : 100,

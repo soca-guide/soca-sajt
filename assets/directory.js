@@ -168,7 +168,10 @@
   // ── Render ────────────────────────────────────────────────────────────────
   function getFiltered() {
     if (currentFilter === 'all') return ALL_PARTNERS;
-    return ALL_PARTNERS.filter(function (p) { return p.category === currentFilter; });
+    return ALL_PARTNERS.filter(function (p) {
+      var cats = (p.categories && p.categories.length) ? p.categories : (p.category ? [p.category] : []);
+      return cats.indexOf(currentFilter) >= 0;
+    });
   }
 
   function renderAll(partners) {
@@ -181,7 +184,8 @@
     if (!bar) return;
     var cats = [];
     partners.forEach(function (p) {
-      if (cats.indexOf(p.category) < 0) cats.push(p.category);
+      var pCats = (p.categories && p.categories.length) ? p.categories : (p.category ? [p.category] : []);
+      pCats.forEach(function(c) { if (c && cats.indexOf(c) < 0) cats.push(c); });
     });
     var html = '<button class="dir-chip' + (currentFilter === 'all' ? ' active' : '') + '" data-cat="all" aria-selected="' + (currentFilter === 'all') + '">' + t('all') + '</button>';
     cats.forEach(function (c) {
@@ -332,7 +336,7 @@
         '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">' +
           _logoEl(p, 'md') +
           '<div>' +
-            '<div class="dir-card-badge">' + catLabel(p.category) + '</div>' +
+            '<div class="dir-card-badge">' + ((p.categories && p.categories.length) ? p.categories.map(catLabel).join(' · ') : catLabel(p.category || '')) + '</div>' +
             '<h3 class="dir-card-name" style="margin:0">' + _esc(p.name) + '</h3>' +
           '</div>' +
         '</div>' +
@@ -347,7 +351,7 @@
     return '<article class="dir-feat-card" data-pid="' + _esc(p.id) + '">' +
       heroHtml +
       '<div class="dir-feat-body">' +
-        '<div class="dir-feat-cat">' + catLabel(p.category) + '</div>' +
+        '<div class="dir-feat-cat">' + ((p.categories && p.categories.length) ? p.categories.map(catLabel).join(' · ') : catLabel(p.category || '')) + '</div>' +
         '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem">' +
           _logoEl(p, 'sm') +
           '<h3 class="dir-feat-name" style="margin:0">' + _esc(p.name) + '</h3>' +
@@ -362,7 +366,7 @@
       _logoEl(p, 'sm') +
       '<div class="dir-row-main">' +
         '<span class="dir-row-name">' + _esc(p.name) + '</span>' +
-        '<span class="dir-row-cat">' + catLabel(p.category) + '</span>' +
+        '<span class="dir-row-cat">' + ((p.categories && p.categories.length) ? p.categories.map(catLabel).join(' · ') : catLabel(p.category || '')) + '</span>' +
         (p.short_desc ? '<span class="dir-row-desc">' + _esc(p.short_desc.substring(0,80)) + '</span>' : '') +
       '</div>' +
       '<div class="dir-row-btns">' + _btns(p) + '</div>' +
