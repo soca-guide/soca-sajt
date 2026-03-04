@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Soča Live</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../assets/supabase-client.js?v=20260228-2"></script>
 </head>
 <body class="min-h-screen bg-[#0b0f14] text-gray-100">
 
@@ -13,16 +12,30 @@
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <button id="backBtn" class="px-3 py-2 rounded-xl border border-white/15 bg-white/5"></button>
       <div class="text-center">
-        <div class="font-semibold text-center" id="pageTitle">Soča Live</div>
-        <div id="updated" class="text-xs text-gray-400 text-center"></div>
+        <div class="font-semibold" id="pageTitle">Soča Live</div>
+        <div id="updated" class="text-xs text-gray-400"></div>
       </div>
       <div id="live-badge" class="text-xs px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300">LIVE</div>
     </div>
 
+    <div class="max-w-4xl mx-auto px-4 pb-3 overflow-x-auto">
+      <div id="chips" class="flex gap-2 whitespace-nowrap">
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="all"></button>
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="bovec">Bovec/Čezsoča</button>
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="kobarid">Kobarid</button>
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="tolmin">Tolmin</button>
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="zaga">Žaga</button>
+        <button class="chip px-3 py-2 rounded-full border border-white/10 bg-white/5" data-filter="koritnica">Koritnica</button>
+      </div>
+    </div>
   </div>
 
   <main class="max-w-4xl mx-auto px-4 py-5 space-y-4">
     <section id="stations"></section>
+    <section id="municipal" class="space-y-3" style="display:none;">
+      <h2 class="text-lg font-semibold" id="municipalTitle"></h2>
+      <div id="municipalList" class="space-y-3"></div>
+    </section>
   </main>
 
 <script>
@@ -48,7 +61,12 @@
     if(titleEl) titleEl.textContent = t.title;
     var updatedEl = document.getElementById('updated');
     if(updatedEl) updatedEl.textContent = t.updated + ': --:--';
-    if(typeof renderStations === 'function') renderStations();
+    var chips = document.getElementById('chips');
+    if(chips){
+      var allBtn = chips.querySelector('[data-filter="all"]');
+      if(allBtn) allBtn.textContent = t.all;
+    }
+    if(typeof renderStations === 'function') renderStations(currentFilter);
   }
   document.getElementById('backBtn').addEventListener('click', function(){ window.parent && window.parent.postMessage('CLOSE_MODAL','*'); });
   (function(){
@@ -116,34 +134,11 @@
   var _liveData = null; // { updated_at, stations, municipal }
 
   async function fetchARSO(){
-    var badge=document.getElementById('live-badge');
-    var t=labelsByLang[getSelectedLang()]||labelsByLang.en;
-    var updatedEl=document.getElementById('updated');
-    function _setUpdated(ts){ if(updatedEl) updatedEl.textContent=t.updated+': '+new Date(ts).toLocaleString(); }
-    function _setBadge(label,cls){ if(badge){badge.textContent=label;badge.className=cls;} }
-
-    // Try Supabase cache first (max 4 hours)
-    var sb=window.supabaseClient;
-    if(sb){
-      try{
-        var { data: cache }=await sb.from('river_data_cache').select('*').maybeSingle();
-        var isExpired=!cache||(new Date()-new Date(cache.updated_at))>(4*60*60*1000);
-        if(!isExpired&&cache.data&&cache.data.stations&&cache.data.stations.length){
-          _liveData=cache.data;
-          _setBadge('CACHE','text-xs px-2 py-1 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300');
-          renderStations();
-          _setUpdated(_liveData.updated_at);
-          return;
-        }
-      }catch(e){ /* cache read failed, fall through to live fetch */ }
-    }
-
-    // Live ARSO fetch
-    try{
-      var r=await fetch('https://www.arso.gov.si/storitve/opendata/hidro.json');
+    try {
+      var r = await fetch('https://www.arso.gov.si/storitve/opendata/hidro.json');
       if(!r.ok) throw new Error('HTTP '+r.status);
-      var json=await r.json();
-      var postaje=(json.hidro&&json.hidro.postaja)||json.postaja||[];
+      var json = await r.json();
+      var postaje = (json.hidro&&json.hidro.postaja)||json.postaja||[];
       if(!Array.isArray(postaje)) postaje=[];
       var stations=[];
       postaje.forEach(function(p){
@@ -162,33 +157,45 @@
       });
       if(stations.length===0) throw new Error('no stations parsed');
       _liveData={updated_at:new Date().toISOString(),stations:stations,municipal:DEMO_MUNICIPAL};
-      _setBadge('LIVE','text-xs px-2 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 text-emerald-300');
-      // Persist fresh data to cache
-      if(sb){
-        try{ await sb.from('river_data_cache').upsert({id:1,data:_liveData,updated_at:_liveData.updated_at}); }
-        catch(e){ /* cache write failed, non-fatal */ }
-      }
-    }catch(e){
+      var badge=document.getElementById('live-badge');
+      if(badge){badge.textContent='LIVE';badge.className='text-xs px-2 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 text-emerald-300';}
+    } catch(e) {
       _liveData={updated_at:new Date().toISOString(),stations:DEMO_STATIONS,municipal:DEMO_MUNICIPAL};
-      _setBadge('OFFLINE','text-xs px-2 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-300');
+      var badge=document.getElementById('live-badge');
+      if(badge){badge.textContent='OFFLINE';badge.className='text-xs px-2 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-300';}
     }
-    renderStations();
-    _setUpdated(_liveData.updated_at);
+    renderStations(currentFilter);
+    var t=labelsByLang[getSelectedLang()]||labelsByLang.en;
+    var updated=document.getElementById('updated');
+    if(updated) updated.textContent=t.updated+': '+new Date(_liveData.updated_at).toLocaleString();
   }
 
-  var stationsEl=document.getElementById('stations');
+  var updated=document.getElementById('updated'),stationsEl=document.getElementById('stations'),municipalEl=document.getElementById('municipal'),municipalList=document.getElementById('municipalList'),chips=document.getElementById('chips');
+  var currentFilter='all';
   function trendIcon(t){return t==='up'?'↑':t==='down'?'↓':'→';}
   function trendColor(t){return t==='up'?'text-red-400':t==='down'?'text-emerald-300':'text-amber-300';}
-  function renderStations(){
+  function renderStations(filter){
+    if(filter==='municipal'){stationsEl.innerHTML='';return;}
     var data=_liveData||{stations:DEMO_STATIONS};
     var t=labelsByLang[getSelectedLang()]||labelsByLang.en;
-    var list=data.stations;
-    if(!list||!list.length){stationsEl.innerHTML='<div class="text-sm text-gray-400 text-center py-8">…</div>';return;}
+    var list=data.stations.filter(function(s){return filter==='all'?true:s.group===filter;});
+    if(!list.length){stationsEl.innerHTML='<div class="text-sm text-gray-400 text-center py-8">…</div>';return;}
     stationsEl.innerHTML=list.map(function(s){
       var trendLabel=s.metrics.trend==='up'?t.trend_up:s.metrics.trend==='down'?t.trend_down:t.trend_stable;
       return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3"><div class="flex items-start justify-between gap-3"><div><div class="font-semibold">'+s.name+'</div></div><div class="px-2 py-1 rounded-lg border border-white/10 bg-black/20 flex items-center gap-2"><span class="'+trendColor(s.metrics.trend)+' font-bold text-lg">'+trendIcon(s.metrics.trend)+'</span><span class="text-xs text-gray-400">'+trendLabel+'</span></div></div><div class="grid grid-cols-3 gap-2 mt-3"><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold">'+s.metrics.level_cm+'</div><div class="text-xs text-gray-400">cm • '+t.level+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-cyan-300">'+s.metrics.flow_m3s+'</div><div class="text-xs text-gray-400">m³/s • '+t.flow+'</div></div><div class="rounded-xl bg-black/20 border border-white/10 p-3 text-center"><div class="text-2xl font-bold text-amber-300">'+s.metrics.temp_c+'</div><div class="text-xs text-gray-400">°C • '+t.temp+'</div></div></div></div>';
     }).join('');
   }
+  function renderMunicipal(show){
+    municipalEl.style.display=show?'block':'none';
+    if(!show)return;
+    var data=_liveData||{municipal:DEMO_MUNICIPAL};
+    municipalList.innerHTML=(data.municipal||DEMO_MUNICIPAL).map(function(m){return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4"><div class="font-semibold">'+m.name+'</div><div class="mt-2 space-y-2">'+m.items.slice(0,3).map(function(i){return '<div class="rounded-xl bg-black/20 border border-white/10 p-3"><div class="text-sm">'+i.title+'</div><div class="text-xs text-gray-400 mt-1">'+i.date+'</div></div>';}).join('')+'</div></div>';}).join('');
+  }
+  function setActiveChip(filter){
+    [].slice.call(chips.querySelectorAll('.chip')).forEach(function(b){b.classList.remove('bg-emerald-500/20','border-emerald-500/30');if(b.dataset.filter===filter)b.classList.add('bg-emerald-500/20','border-emerald-500/30');});
+  }
+  chips.addEventListener('click',function(e){var btn=e.target.closest('.chip');if(!btn)return;currentFilter=btn.dataset.filter;setActiveChip(currentFilter);renderStations(currentFilter);renderMunicipal(currentFilter==='municipal');});
+  setActiveChip('all');
   applyLang();
   // Show loading state, then fetch ARSO
   stationsEl.innerHTML='<div class="text-sm text-gray-400 text-center py-8">Nalaganje…</div>';
