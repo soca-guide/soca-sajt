@@ -101,14 +101,19 @@ serve(async (req) => {
     const { data: listData } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const existing = (listData?.users ?? []).find((u) => u.email === owner_email);
 
+    // redirectTo lands owner on their panel, not master panel
+    const adminUrl   = (Deno.env.get('ADMIN_URL') ?? siteUrl + '/admin').replace(/\/$/, '');
+    const ownerRedirect = tenant_slug
+      ? `${adminUrl}/?view=owner&t=${encodeURIComponent(tenant_slug)}`
+      : `${adminUrl}/`;
+
     if (existing) {
       userId = existing.id;
     } else {
-      const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
       const { data: invData, error: invErr } = await admin.auth.admin.generateLink({
         type: 'invite',
         email: owner_email,
-        options: redirectTo ? { redirectTo } : undefined,
+        options: { redirectTo: ownerRedirect },
       });
       if (invErr || !invData?.user) {
         return json({ error: 'Could not create user/link: ' + (invErr?.message ?? '?') }, 500);
@@ -120,11 +125,10 @@ serve(async (req) => {
 
     // Step 2: generate magic-link for existing users (still no Supabase auto-email)
     if (existing) {
-      const redirectTo = siteUrl ? `${siteUrl}/admin/` : undefined;
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: owner_email,
-        options: redirectTo ? { redirectTo } : undefined,
+        options: { redirectTo: ownerRedirect },
       });
       sent = !linkErr && !!((linkData as { properties?: { action_link?: string } } | null)?.properties?.action_link);
     }

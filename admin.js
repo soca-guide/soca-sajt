@@ -549,9 +549,8 @@
           tenant_slug: tenantSlug,
           tenant_name: tenantSlug || 'apartma',
           owner_email: ownerEmail,
-          locale: 'sl',
-          admin_url: window.location.origin + '/admin',
-          site_url: window.location.origin
+          locale: 'sl'
+          // NO admin_url / site_url — edge function reads ONLY from env secrets
         }
       }).then(function (r2) {
         console.log('[Admin LoginLink] invoke end', {
@@ -994,59 +993,26 @@
           owner_email: email
         });
 
-        function _afterInvite(sent) {
+        function _afterInvite() {
           unlockButtons();
           setStatus(createTenantStatus, 'Apartman "' + name + '" kreiran! ✓', 'info');
           loadTenants();
           clearForm();
-          showOwnerWelcomeModal(name, slug, email, sent);
+          showOwnerWelcomeModal(name, slug, email, true);
         }
 
-        function _fallbackInvite(reason) {
-          console.warn('[Admin Save+Send] fallback invite start', {
-            function_name: '_inviteFallback',
-            reason: reason || 'unknown',
-            tenant_id: newId,
-            tenant_slug: slug,
-            owner_email: email
-          });
-          _inviteFallback(
-            email,
-            newId,
-            function () {
-              console.log('[Admin Save+Send] fallback invite end', {
-                ok: true,
-                tenant_id: newId,
-                owner_email: email
-              });
-              _afterInvite(false); // DB only — email not sent via fallback
-            },
-            function (errMsg) {
-              console.error('[Admin Save+Send] fallback invite error', {
-                tenant_id: newId,
-                owner_email: email,
-                error_message: errMsg || null
-              });
-              unlockButtons(); clearForm(); loadTenants();
-              setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana: ' + (errMsg || 'unknown'), 'warning');
-              showOwnerWelcomeModal(name, slug, email, false);
-            }
-          );
-        }
-
-        // Refresh session before calling send-owner-invite (JWT may have expired)
+        // Refresh session (JWT may have expired between login and tenant creation)
         sb.auth.refreshSession().catch(function () {}).then(function () {
-        return sb.functions.invoke('send-owner-invite', {
-          body: {
-            tenant_id:   newId,
-            tenant_slug: slug,
-            tenant_name: name,
-            owner_email: email,
-            locale:      'sl',
-            admin_url:   window.location.origin + '/admin',
-            site_url:    window.location.origin
-          }
-        });
+          return sb.functions.invoke('send-owner-invite', {
+            body: {
+              tenant_id:   newId,
+              tenant_slug: slug,
+              tenant_name: name,
+              owner_email: email,
+              locale:      'sl'
+              // NO site_url / admin_url — edge function reads ONLY from env secrets
+            }
+          });
         }).then(function (fnResult) {
           console.log('[Admin Save+Send] invoke end', {
             ok: !fnResult.error && !!(fnResult.data && fnResult.data.ok),
@@ -1056,19 +1022,23 @@
             error: fnResult.error || null
           });
           if (fnResult.error || !(fnResult.data && fnResult.data.ok)) {
-            _fallbackInvite((fnResult.error && fnResult.error.message) || (fnResult.data && fnResult.data.error) || 'edge_function_failed');
+            var errMsg = (fnResult.data && fnResult.data.error) || (fnResult.error && fnResult.error.message) || 'edge_function_failed';
+            unlockButtons(); clearForm(); loadTenants();
+            setStatus(createTenantStatus, 'Apartman kreiran ✓, ali slanje pozivnice nije uspjelo: ' + errMsg, 'error');
+            showOwnerWelcomeModal(name, slug, email, false);
             return;
           }
-          _afterInvite(true);
+          _afterInvite();
         }).catch(function (err) {
           console.error('[Admin Save+Send] invoke error', {
             function_name: 'send-owner-invite',
             tenant_id: newId,
             owner_email: email,
-            error_message: err && err.message ? err.message : null,
-            error: err || null
+            error_message: err && err.message ? err.message : null
           });
-          _fallbackInvite((err && err.message) || 'network');
+          unlockButtons(); clearForm(); loadTenants();
+          setStatus(createTenantStatus, 'Apartman kreiran ✓, ali slanje nije uspjelo: ' + (err && err.message || 'network'), 'error');
+          showOwnerWelcomeModal(name, slug, email, false);
         });
       });
   }
