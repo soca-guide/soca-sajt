@@ -30,7 +30,6 @@ function json(body: unknown, status = 200) {
 function buildEmailSl(p: {
   tenant_name: string;
   action_link: string;
-  admin_url: string;
   manage_url: string;
   guest_url: string;
 }) {
@@ -55,9 +54,6 @@ function buildEmailSl(p: {
     <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:16px;margin-bottom:12px">
       <p style="color:#9ca3af;font-size:0.75rem;margin:0 0 8px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase">Povezave</p>
       <p style="margin:0 0 6px;font-size:0.85rem;color:#e5e7eb">
-        🔧 Admin panel: <a href="${p.admin_url}" style="color:#22d3ee">${p.admin_url}</a>
-      </p>
-      <p style="margin:0 0 6px;font-size:0.85rem;color:#e5e7eb">
         🏠 Urejanje apartmaja: <a href="${p.manage_url}" style="color:#22d3ee">${p.manage_url}</a>
       </p>
       <p style="margin:0;font-size:0.85rem;color:#e5e7eb">
@@ -79,7 +75,6 @@ function buildEmailSl(p: {
 function buildEmailEn(p: {
   tenant_name: string;
   action_link: string;
-  admin_url: string;
   manage_url: string;
   guest_url: string;
 }) {
@@ -103,9 +98,6 @@ function buildEmailEn(p: {
   <div style="padding:0 28px 24px">
     <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:16px;margin-bottom:12px">
       <p style="color:#9ca3af;font-size:0.75rem;margin:0 0 8px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase">Links</p>
-      <p style="margin:0 0 6px;font-size:0.85rem;color:#e5e7eb">
-        🔧 Admin panel: <a href="${p.admin_url}" style="color:#22d3ee">${p.admin_url}</a>
-      </p>
       <p style="margin:0 0 6px;font-size:0.85rem;color:#e5e7eb">
         🏠 Manage your apartment: <a href="${p.manage_url}" style="color:#22d3ee">${p.manage_url}</a>
       </p>
@@ -232,6 +224,11 @@ serve(async (req) => {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
 
+  // Tenant-specific redirect target — owner lands directly in their panel, never in generic /admin
+  const manage_url_for_redirect = tenant_slug
+    ? `${site_url}/admin/?tenant=${encodeURIComponent(tenant_slug)}`
+    : `${site_url}/admin/`;
+
   console.log("[send-owner-invite] start", {
     tenant_id,
     tenant_slug,
@@ -284,7 +281,7 @@ serve(async (req) => {
     const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.generateLink({
       type: "invite",
       email: owner_email,
-      options: { redirectTo: admin_url },
+      options: { redirectTo: manage_url_for_redirect },
     });
 
     if (!inviteErr && inviteData?.user) {
@@ -316,7 +313,7 @@ serve(async (req) => {
       const { data: mlData, error: mlErr } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email: owner_email,
-        options: { redirectTo: admin_url },
+        options: { redirectTo: manage_url_for_redirect },
       });
 
       if (mlErr) {
@@ -330,6 +327,10 @@ serve(async (req) => {
     }
 
     if (!userId) return json({ ok: false, error: "Could not determine user ID" }, 500);
+    if (!action_link) {
+      console.error("[send-owner-invite] action_link empty after generateLink — hard stop, no email sent", { tenant_id, owner_email: maskEmail(owner_email) });
+      return json({ ok: false, error: "action_link_generation_failed" }, 500);
+    }
 
     // ── Step 2: DB first (pending_owner_invites), then email ───────────────────
     const poi = await upsertPendingInvite(supabaseAdmin, owner_email, tenant_id);
@@ -378,7 +379,7 @@ serve(async (req) => {
     }
 
     // ── Step 5: Build and send ONE email via Resend ─────────────────────────────
-    const manage_url = tenant_slug ? `${admin_url}?tenant=${encodeURIComponent(tenant_slug)}` : admin_url;
+    const manage_url = manage_url_for_redirect; // already computed as site_url/admin/?tenant=SLUG
 
   // BITNO: tvoj sistem koristi index.html?t=slug (sigurno radi)
     const guest_url = tenant_slug
@@ -390,8 +391,8 @@ serve(async (req) => {
       : `Invitation to access the admin panel – ${tenant_name || tenant_slug || "apartment"}`;
 
     const html = locale === "sl"
-      ? buildEmailSl({ tenant_name: tenant_name || tenant_slug || "apartma", action_link, admin_url, manage_url, guest_url })
-      : buildEmailEn({ tenant_name: tenant_name || tenant_slug || "apartment", action_link, admin_url, manage_url, guest_url });
+      ? buildEmailSl({ tenant_name: tenant_name || tenant_slug || "apartma", action_link, manage_url, guest_url })
+      : buildEmailEn({ tenant_name: tenant_name || tenant_slug || "apartment", action_link, manage_url, guest_url });
 
     const fromAddr = `${fromName} <${fromEmail}>`;
 

@@ -971,6 +971,13 @@
         });
 
         if (!sendInvite || !email) {
+          // Ako je email upisan ali se ne šalje pozivnica — svejedno ga sačuvaj
+          // u pending_owner_invites da se ne izgubi (best-effort, ne blokira UI)
+          if (email && !sendInvite) {
+            sb.from('pending_owner_invites')
+              .upsert({ email: email.toLowerCase(), tenant_id: newId }, { onConflict: 'email' })
+              .catch(function () {});
+          }
           unlockButtons();
           clearForm();
           setStatus(createTenantStatus, 'Apartman "' + name + '" kreiran! ✓', 'info');
@@ -1027,7 +1034,9 @@
           );
         }
 
-        sb.functions.invoke('send-owner-invite', {
+        // Refresh session before calling send-owner-invite (JWT may have expired)
+        sb.auth.refreshSession().catch(function () {}).then(function () {
+        return sb.functions.invoke('send-owner-invite', {
           body: {
             tenant_id:   newId,
             tenant_slug: slug,
@@ -1037,6 +1046,7 @@
             admin_url:   window.location.origin + '/admin',
             site_url:    window.location.origin
           }
+        });
         }).then(function (fnResult) {
           console.log('[Admin Save+Send] invoke end', {
             ok: !fnResult.error && !!(fnResult.data && fnResult.data.ok),

@@ -26,8 +26,11 @@ function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; 
   // Prefer directly-passed URLs (direct call), fall back to SITE_URL + slug (webhook)
   const guestUrl    = String(row.guest_url || '') ||
     (siteUrl ? `${siteUrl}/index.html?t=${encodeURIComponent(tenantSlug)}` : `?t=${tenantSlug}`);
-  const adminUrl    = String(row.admin_url || '') ||
-    (siteUrl ? `${siteUrl}/admin/` : '/admin/');
+  // Tenant-specific manage URL (never generic /admin)
+  const manageUrl   = String(row.admin_url || '') ||
+    (tenantSlug && siteUrl
+      ? `${siteUrl}/admin/?tenant=${encodeURIComponent(tenantSlug)}`
+      : (siteUrl ? `${siteUrl}/admin/` : '/admin/'));
 
   const ctaBlock = actionLink
     ? `
@@ -36,11 +39,7 @@ function templateOwnerWelcome(row: Record<string, unknown>): { subject: string; 
         </div>
         <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0 0 24px">Klik na gumb vas prijavi in odpre admin ploščo brez dodatnega vnosa.</p>`
     : `
-        <div style="background:#0a2e1f;border:1px solid #059669;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:0 0 6px;font-size:13px;color:#4ade80;font-weight:600">🔑 Skrbniška plošča:</p>
-          <a href="${adminUrl}" style="color:#22d3ee;word-break:break-all">${adminUrl}</a>
-          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af">Odprite povezavo in se prijavite z možnostjo &bdquo;Pošlji čarobno povezavo&ldquo;.</p>
-        </div>`;
+        <p style="font-size:13px;color:#9ca3af;margin:20px 0">Za dostop do panela se obrnite na podporo / Please contact support.</p>`;
 
   return {
     to: ownerEmail,
@@ -343,10 +342,13 @@ serve(async (req: Request) => {
       const ownerEmail = String(payload.owner_email || '').trim().toLowerCase();
       const tenantName = String(payload.tenant_name || 'vaš apartman');
       const tenantSlug = String(payload.tenant_slug || '');
-      const guestUrl   = String(payload.guest_url   || '');
-      const adminUrl  = String(payload.admin_url   || '').replace(/\/$/, '') || (supabaseUrl ? '' : '');
-      const siteUrl   = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
-      const fallbackAdmin = siteUrl ? `${siteUrl}/admin` : '/admin';
+      const siteUrl    = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
+      // Tenant-specific URLs — never generic /admin
+      const manageUrl  = tenantSlug && siteUrl
+        ? `${siteUrl}/admin/?tenant=${encodeURIComponent(tenantSlug)}`
+        : (siteUrl ? `${siteUrl}/admin/` : '/admin/');
+      const guestUrl   = String(payload.guest_url || '') ||
+        (tenantSlug && siteUrl ? `${siteUrl}/index.html?t=${encodeURIComponent(tenantSlug)}` : siteUrl || '');
 
       if (!ownerEmail || !ownerEmail.includes('@')) {
         return new Response(JSON.stringify({ error: 'Missing owner_email' }), {
@@ -357,11 +359,10 @@ serve(async (req: Request) => {
       const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
       });
-      const redirectTo = adminUrl || fallbackAdmin;
       const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: ownerEmail,
-        options: { redirectTo },
+        options: { redirectTo: manageUrl },
       });
 
       let actionLink = '';
@@ -371,7 +372,7 @@ serve(async (req: Request) => {
 
       const tpl = templateOwnerWelcome({
         email: ownerEmail, tenant_name: tenantName, tenant_slug: tenantSlug,
-        guest_url: guestUrl, admin_url: adminUrl || fallbackAdmin, action_link: actionLink,
+        guest_url: guestUrl, admin_url: manageUrl, action_link: actionLink,
       });
       const result = await sendViaResend(resendKey, tpl.to, tpl.subject, tpl.html, finalFrom, 'Welcome to Soča Guide');
       return new Response(JSON.stringify(result), {
