@@ -1001,8 +1001,13 @@
           showOwnerWelcomeModal(name, slug, email, true);
         }
 
-        // Refresh session (JWT may have expired between login and tenant creation)
-        sb.auth.refreshSession().catch(function () {}).then(function () {
+        // Get fresh session token before invoking edge function
+        sb.auth.getSession().then(function (sr) {
+          if (sr.data && sr.data.session && sr.data.session.access_token) {
+            return Promise.resolve();
+          }
+          return sb.auth.refreshSession().then(function () {}).catch(function () {});
+        }).catch(function () {}).then(function () {
           return sb.functions.invoke('send-owner-invite', {
             body: {
               tenant_id:   newId,
