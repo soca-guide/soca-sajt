@@ -482,30 +482,18 @@
   }
 
   // ── MASTER: Fallback invite (bez Edge Function) ──────────────────────────────
-  // 1) pending_owner_invites + 2) signInWithOtp → trigger auto-kreira profile
-  // tenantSlug is optional — used to build a ?t= redirect so owner lands in their panel
-  function _inviteFallback(ownerEmail, tenantId, onSuccess, onError, tenantSlug) {
-    var adminBase     = window.location.origin + '/admin/';
-    var adminRedirect = tenantSlug ? adminBase + '?t=' + encodeURIComponent(tenantSlug) : adminBase;
-    // Korak 1: upsert pending invite — OBAVEZNO provjeri rezultat
+  // Samo upisuje pending_owner_invites — NE poziva signInWithOtp (inače Supabase šalje
+  // vlastiti "Your Magic Link" email umjesto Revantora branded email-a).
+  // DB trigger auto_link_pending_owner kreira owner profil pri prvoj prijavi vlasnika.
+  function _inviteFallback(ownerEmail, tenantId, onSuccess, onError) {
     sb.from('pending_owner_invites')
       .upsert({ email: ownerEmail.toLowerCase(), tenant_id: tenantId },
                { onConflict: 'email' })
       .then(function (upsertRes) {
         if (upsertRes && upsertRes.error) {
-          // RLS blokira ili tabela ne postoji — prijavi grešku, ne nastavljaj
           onError('pending_owner_invites: ' + upsertRes.error.message);
           return;
         }
-        // Korak 2: pošalji magic link
-        return sb.auth.signInWithOtp({
-          email: ownerEmail,
-          options: { shouldCreateUser: true, emailRedirectTo: adminRedirect }
-        });
-      })
-      .then(function (r) {
-        if (!r) return; // early return from error branch above
-        if (r && r.error) { onError(r.error.message); return; }
         onSuccess();
       })
       .catch(function (err) { onError(err && err.message ? err.message : String(err)); });
@@ -1024,7 +1012,7 @@
                 tenant_id: newId,
                 owner_email: email
               });
-              _afterInvite(true);
+              _afterInvite(false); // DB only — email not sent via fallback
             },
             function (errMsg) {
               console.error('[Admin Save+Send] fallback invite error', {
@@ -1035,8 +1023,7 @@
               unlockButtons(); clearForm(); loadTenants();
               setStatus(createTenantStatus, 'Apartman kreiran ✓, pozivnica nije poslana: ' + (errMsg || 'unknown'), 'warning');
               showOwnerWelcomeModal(name, slug, email, false);
-            },
-            slug
+            }
           );
         }
 
