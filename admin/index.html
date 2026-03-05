@@ -830,7 +830,7 @@
       <details class="admin-section" id="sporocila-section" style="margin-top:1.5rem">
         <summary class="admin-section-title">💬 Sporočila — Izgubljeno / Najdeno</summary>
         <div class="admin-section-body">
-          <p style="font-size:0.8rem;color:#9ca3af;margin-bottom:0.75rem">Vse objave iz vseh apartmanov (zadnjih 30 dni).</p>
+          <p style="font-size:0.8rem;color:#9ca3af;margin-bottom:0.75rem">Vse objave iz vseh apartmanov (zadnjih 10 dni).</p>
           <button id="btn-load-sporocila" style="margin-bottom:0.75rem;padding:4px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e5e7eb;cursor:pointer;font-size:0.82rem">🔄 Osveži</button>
           <div id="sporocila-list" style="font-size:0.82rem"></div>
         </div>
@@ -995,6 +995,14 @@
         <p id="owner-save-status" class="msg hidden"></p>
         <button id="btn-owner-save">Shrani</button>
 
+        <details class="admin-section" id="sporocila-section-owner" open style="margin-top:1.5rem">
+          <summary class="admin-section-title">💬 Sporočila — Izgubljeno / Najdeno</summary>
+          <div class="admin-section-body">
+            <p style="font-size:0.8rem;color:#9ca3af;margin-bottom:0.75rem">Vse objave (zadnjih 10 dni). Filter: Vse / Samo moj apartma.</p>
+            <div id="sporocila-list-owner" style="font-size:0.82rem"><span style="color:#9ca3af">Nalagam…</span></div>
+          </div>
+        </details>
+
       </div><!-- /#owner-panel -->
 
     </div>
@@ -1041,6 +1049,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Creates window.SB + window.supabaseClient from the shared client file -->
   <script src="/assets/supabase-client.js?v=20260228-2"></script>
-  <script src="/admin.js?v=20260304-1"></script>
+  <script src="/admin.js?v=20260304-2"></script>
 </body>
 </html>

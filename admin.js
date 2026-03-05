@@ -131,6 +131,7 @@
   var btnMasterSave                = document.getElementById('btn-master-save');
   var btnLoadSporocila             = document.getElementById('btn-load-sporocila');
   var sporocilaList                = document.getElementById('sporocila-list');
+  var sporocilaListOwner           = document.getElementById('sporocila-list-owner');
 
   // Quick-add refs
   var quickSocaIdInput    = document.getElementById('quick-soca-id');
@@ -4249,8 +4250,10 @@
 
   function loadSporocila(tenantSlug) {
     if (tenantSlug !== undefined) _sporocilaOwnerSlug = tenantSlug || null;
-    if (!sporocilaList) return;
-    sporocilaList.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>';
+    // write to whichever list element(s) are present
+    var targets = [sporocilaList, sporocilaListOwner].filter(Boolean);
+    if (!targets.length) return;
+    targets.forEach(function(el) { el.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>'; });
     var tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
     var q = sb.from('lost_found_posts')
       .select('id, created_at, email, message, tenant_slug')
@@ -4262,35 +4265,37 @@
         var noMsgLabel = _sporocilaFilterMine
           ? 'Ni sporočil za ta apartma v zadnjih 10 dneh.'
           : 'Ni sporočil v zadnjih 10 dneh.';
+        var html;
         if (r.error || !r.data || !r.data.length) {
-          sporocilaList.innerHTML = '<span style="color:#9ca3af">' + noMsgLabel + '</span>';
-          return;
+          html = '<span style="color:#9ca3af">' + noMsgLabel + '</span>';
+        } else {
+          html = r.data.map(function(x) {
+            var d = new Date(x.created_at).toLocaleString('sl-SI');
+            var emailMasked = (x.email || '').replace(/(^.{2}).*(@.*)$/, '$1***$2');
+            return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
+              '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
+              '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(emailMasked) + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
+              '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
+              '</div>' +
+              '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
+              '</div>';
+          }).join('');
         }
-        sporocilaList.innerHTML = r.data.map(function(x) {
-          var d = new Date(x.created_at).toLocaleString('sl-SI');
-          var emailMasked = (x.email || '').replace(/(^.{2}).*(@.*)$/, '$1***$2');
-          return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
-            '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
-            '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(emailMasked) + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
-            '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
-            '</div>' +
-            '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
-            '</div>';
-        }).join('');
+        targets.forEach(function(el) { el.innerHTML = html; });
       })
       .catch(function() {
-        sporocilaList.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>';
+        targets.forEach(function(el) { el.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>'; });
       });
   }
 
-  // Inject All/Mine toggle above the list (only if owner context exists)
-  function _initSporocilaToggle() {
-    if (!sporocilaList || !_sporocilaOwnerSlug) return;
-    var wrap = sporocilaList.parentElement;
-    if (!wrap || wrap.querySelector('#lf-filter-toggle')) return;
+  // Inject All/Mine toggle above the list element (only if owner context exists)
+  function _injectToggle(listEl) {
+    if (!listEl || !_sporocilaOwnerSlug) return;
+    var wrap = listEl.parentElement;
+    if (!wrap || wrap.querySelector('.lf-filter-toggle')) return;
     var toggleWrap = document.createElement('div');
     toggleWrap.style.cssText = 'display:flex;gap:6px;margin-bottom:8px';
-    toggleWrap.id = 'lf-filter-toggle';
+    toggleWrap.className = 'lf-filter-toggle';
     function makeBtn(label, active) {
       var b = document.createElement('button');
       b.textContent = label;
@@ -4314,7 +4319,12 @@
     });
     toggleWrap.appendChild(btnAll);
     toggleWrap.appendChild(btnMine);
-    wrap.insertBefore(toggleWrap, sporocilaList);
+    wrap.insertBefore(toggleWrap, listEl);
+  }
+
+  function _initSporocilaToggle() {
+    _injectToggle(sporocilaList);
+    _injectToggle(sporocilaListOwner);
   }
 
   if (btnLoadSporocila) {
