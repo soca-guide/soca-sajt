@@ -225,7 +225,7 @@
   // Initial load — wait for Supabase then render
   waitForSB(function(client) {
     if (client) {
-      client.rpc('cleanup_lost_found_posts').catch(function(){});
+      client.rpc('cleanup_lost_found_posts').then(null, function(){});
     }
     render(client);
   }, 6000);
