@@ -44,12 +44,12 @@
     return SUPPORTED_LANGS.indexOf(raw) >= 0 ? raw : 'en';
   }
   var labelsByLang = {
-    sl: { back:'← Nazaj', title:'Izgubljeno / Najdeno', intro:'Vnesi svojo e-pošto in sporočilo (max 500 znakov). Sprejemamo največ 3 objave/spremembe objav na uporabnika v izogib zlorabam. Sporočila, starejša od 30 dni, se brišejo samodejno.', yourEmail:'Tvoj email', messageMax:'Sporočilo (max 500)', placeholderMsg:'Npr. Izgubil sem modro jakno v bližini...', publish:'Objavi / Shrani', limitReached:'Dosežena omejitev (max 3 spremembe na e-pošto).', messagesTitle:'Sporočila (zadnjih 30 dni)', noMessages:'Ni sporočil.' },
-    en: { back:'← Back', title:'Lost & Found', intro:'No login required: enter your email and message (max 500 characters). Same email can edit/publish max 3 times. Messages older than 30 days are deleted automatically.', yourEmail:'Your email', messageMax:'Message (max 500)', placeholderMsg:'E.g. I lost a blue jacket near...', publish:'Publish / Save', limitReached:'Limit reached (max 3 edits per email).', messagesTitle:'Messages (last 30 days)', noMessages:'No messages.' },
-    de: { back:'← Zurück', title:'Verloren / Gefunden', intro:'Ohne Anmeldung: E-Mail und Nachricht eingeben (max 500 Zeichen). Dieselbe E-Mail kann max 3-mal bearbeiten/veröffentlichen. Nachrichten älter als 30 Tage werden automatisch gelöscht.', yourEmail:'Deine E-Mail', messageMax:'Nachricht (max 500)', placeholderMsg:'Z.B. Ich habe eine blaue Jacke verloren bei...', publish:'Veröffentlichen / Speichern', limitReached:'Limit erreicht (max 3 Bearbeitungen pro E-Mail).', messagesTitle:'Nachrichten (letzte 30 Tage)', noMessages:'Keine Nachrichten.' },
-    pl: { back:'← Wstecz', title:'Zgubione / Znalezione', intro:'Bez logowania: wpisz e-mail i wiadomość (max 500 znaków). Ten sam e-mail może edytować/opublikować max 3 razy. Wiadomości starsze niż 30 dni są usuwane automatycznie.', yourEmail:'Twój e-mail', messageMax:'Wiadomość (max 500)', placeholderMsg:'Np. Zgubiłem niebieską kurtkę w okolicy...', publish:'Opublikuj / Zapisz', limitReached:'Osiągnięto limit (max 3 edycje na e-mail).', messagesTitle:'Wiadomości (ostatnie 30 dni)', noMessages:'Brak wiadomości.' },
-    cs: { back:'← Zpět', title:'Ztraceno / Nalezeno', intro:'Bez přihlášení: zadejte e-mail a zprávu (max 500 znaků). Stejný e-mail může upravit/zveřejnit max 3×. Zprávy starší než 30 dní se automaticky smažou.', yourEmail:'Váš e-mail', messageMax:'Zpráva (max 500)', placeholderMsg:'Např. Ztratil jsem modrou bundu u...', publish:'Publikovat / Uložit', limitReached:'Dosažen limit (max 3 úpravy na e-mail).', messagesTitle:'Zprávy (posledních 30 dní)', noMessages:'Žádné zprávy.' },
-    it: { back:'← Indietro', title:'Perso / Trovato', intro:'Senza accesso: inserisci email e messaggio (max 500 caratteri). Stessa email può modificare/pubblicare max 3 volte. Messaggi più vecchi di 30 giorni vengono cancellati automaticamente.', yourEmail:'La tua email', messageMax:'Messaggio (max 500)', placeholderMsg:'Es. Ho perso una giacca blu vicino a...', publish:'Pubblica / Salva', limitReached:'Limite raggiunto (max 3 modifiche per email).', messagesTitle:'Messaggi (ultimi 30 giorni)', noMessages:'Nessun messaggio.' }
+    sl: { back:'← Nazaj', title:'Izgubljeno / Najdeno', intro:'Vnesi svojo e-pošto in sporočilo (max 500 znakov). Sprejemamo največ 3 objave na e-pošto v 10 dneh. Sporočila, starejša od 10 dni, se brišejo samodejno. Prikazana so sporočila iz vseh apartmajev.', yourEmail:'Tvoj email', messageMax:'Sporočilo (max 500)', placeholderMsg:'Npr. Izgubil sem modro jakno v bližini...', publish:'Objavi / Shrani', limitReached:'Dosežena omejitev (max 3 objave na e-pošto v 10 dneh).', messagesTitle:'Sporočila (zadnjih 10 dni — vsi apartmaji)', noMessages:'Ni sporočil.' },
+    en: { back:'← Back', title:'Lost & Found', intro:'No login required: enter your email and message (max 500 characters). Max 3 posts per email in 10 days. Messages older than 10 days are deleted automatically. Posts from all apartments are shown.', yourEmail:'Your email', messageMax:'Message (max 500)', placeholderMsg:'E.g. I lost a blue jacket near...', publish:'Publish / Save', limitReached:'Limit reached (max 3 posts per email in 10 days).', messagesTitle:'Messages (last 10 days — all apartments)', noMessages:'No messages.' },
+    de: { back:'← Zurück', title:'Verloren / Gefunden', intro:'Ohne Anmeldung: E-Mail und Nachricht eingeben (max 500 Zeichen). Max 3 Beiträge pro E-Mail in 10 Tagen. Nachrichten älter als 10 Tage werden automatisch gelöscht. Beiträge aller Apartments werden angezeigt.', yourEmail:'Deine E-Mail', messageMax:'Nachricht (max 500)', placeholderMsg:'Z.B. Ich habe eine blaue Jacke verloren bei...', publish:'Veröffentlichen / Speichern', limitReached:'Limit erreicht (max 3 Beiträge pro E-Mail in 10 Tagen).', messagesTitle:'Nachrichten (letzte 10 Tage — alle Apartments)', noMessages:'Keine Nachrichten.' },
+    pl: { back:'← Wstecz', title:'Zgubione / Znalezione', intro:'Bez logowania: wpisz e-mail i wiadomość (max 500 znaków). Max 3 posty na e-mail w 10 dniach. Wiadomości starsze niż 10 dni są usuwane. Posty ze wszystkich apartamentów są widoczne.', yourEmail:'Twój e-mail', messageMax:'Wiadomość (max 500)', placeholderMsg:'Np. Zgubiłem niebieską kurtkę w okolicy...', publish:'Opublikuj / Zapisz', limitReached:'Osiągnięto limit (max 3 posty na e-mail w 10 dniach).', messagesTitle:'Wiadomości (ostatnie 10 dni — wszystkie apartamenty)', noMessages:'Brak wiadomości.' },
+    cs: { back:'← Zpět', title:'Ztraceno / Nalezeno', intro:'Bez přihlášení: zadejte e-mail a zprávu (max 500 znaků). Max 3 příspěvky na e-mail za 10 dní. Zprávy starší než 10 dní se automaticky smažou. Zobrazeny jsou příspěvky ze všech apartmánů.', yourEmail:'Váš e-mail', messageMax:'Zpráva (max 500)', placeholderMsg:'Např. Ztratil jsem modrou bundu u...', publish:'Publikovat / Uložit', limitReached:'Dosažen limit (max 3 příspěvky na e-mail za 10 dní).', messagesTitle:'Zprávy (posledních 10 dní — všechny apartmány)', noMessages:'Žádné zprávy.' },
+    it: { back:'← Indietro', title:'Perso / Trovato', intro:'Senza accesso: inserisci email e messaggio (max 500 caratteri). Max 3 post per email in 10 giorni. Messaggi più vecchi di 10 giorni vengono cancellati. I post di tutti gli appartamenti sono visibili.', yourEmail:'La tua email', messageMax:'Messaggio (max 500)', placeholderMsg:'Es. Ho perso una giacca blu vicino a...', publish:'Pubblica / Salva', limitReached:'Limite raggiunto (max 3 post per email in 10 giorni).', messagesTitle:'Messaggi (ultimi 10 giorni — tutti gli appartamenti)', noMessages:'Nessun messaggio.' }
   };
   function applyLang(){
     var t = labelsByLang[getSelectedLang()] || labelsByLang.en;
@@ -113,22 +113,23 @@
       return;
     }
     list.innerHTML = '<div class="text-sm text-gray-400">\u2026</div>';
-    var slug = (new URLSearchParams(window.location.search).get('t') || '').toLowerCase().trim();
-    console.log('[LostFound] list fetch start', { tenant_slug: slug || null });
+    // Global view — pass null to get ALL apartments' posts
+    console.log('[LostFound] list fetch start global');
     client
-      .rpc('get_lost_found_posts_public', { p_tenant_slug: slug || null, p_limit: 50 })
+      .rpc('get_lost_found_posts_public', { p_tenant_slug: null, p_limit: 50 })
       .then(function(r) {
-        console.log('[LostFound] list fetch end', { ok: !r.error, count: (r.data || []).length, tenant_slug: slug || null });
+        console.log('[LostFound] list fetch end', { ok: !r.error, count: (r.data || []).length });
         var items = (!r.error && r.data) ? r.data : [];
         if (!items.length) {
           list.innerHTML = '<div class="text-sm text-gray-400">' + t.noMessages + '</div>';
           return;
         }
         list.innerHTML = items.map(function(x) {
+          var source = x.tenant_slug ? '<span class="text-emerald-400/70">@' + escapeHtml(x.tenant_slug) + '</span>' : '';
           return '<div class="rounded-2xl border border-white/10 bg-white/5 p-4">' +
-            '<div class="flex items-center justify-between">' +
-            '<div class="text-sm text-gray-300">' + escapeHtml(x.email) + '</div>' +
-            '<div class="text-xs text-gray-400">' + new Date(x.created_at).toLocaleString() + '</div>' +
+            '<div class="flex items-center justify-between gap-2 flex-wrap">' +
+            source +
+            '<div class="text-xs text-gray-400 ml-auto">' + new Date(x.created_at).toLocaleString() + '</div>' +
             '</div>' +
             '<div class="mt-2 text-sm">' + escapeHtml(x.message) + '</div>' +
             '</div>';

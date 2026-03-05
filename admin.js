@@ -3879,6 +3879,8 @@
                 } else {
                   ownerPanel.classList.remove('hidden');
                   loadOwnerEditableData(tr.data.tenant_id);
+                  loadSporocila(_slugParam);
+                  setTimeout(_initSporocilaToggle, 50);
                   // Sakrij ulogu/tenant_id kao za pravog OWNER-a; prikaži samo email VLASNIKA
                   var _rblk = document.getElementById('info-block-role');
                   if (_rblk) _rblk.style.display = 'none';
@@ -3929,6 +3931,11 @@
           } else {
             ownerPanel.classList.remove('hidden');
             loadOwnerEditableData(data.tenant_id);
+            sb.from('tenants').select('slug').eq('tenant_id', data.tenant_id).maybeSingle()
+              .then(function(tr) {
+                loadSporocila(tr.data && tr.data.slug);
+                setTimeout(_initSporocilaToggle, 50);
+              });
           }
         }
       });
@@ -4235,27 +4242,37 @@
   // Expose so quickAddTenant can call it
   window._showOwnerWelcomeModal = showOwnerWelcomeModal;
 
-  // ── Sporočila (Lost & Found) — master only ───────────────────────────────────
-  function loadSporocila() {
+  // ── Sporočila (Lost & Found) — owner/master panel ─────────────────────────────
+  // tenantSlug: if set, enables "Samo moj" filter toggle; null = always show all
+  var _sporocilaOwnerSlug = null;
+  var _sporocilaFilterMine = false;
+
+  function loadSporocila(tenantSlug) {
+    if (tenantSlug !== undefined) _sporocilaOwnerSlug = tenantSlug || null;
     if (!sporocilaList) return;
     sporocilaList.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>';
-    var thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    sb.from('lost_found_posts')
+    var tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    var q = sb.from('lost_found_posts')
       .select('id, created_at, email, message, tenant_slug')
-      .gte('created_at', thirtyDaysAgo)
+      .gte('created_at', tenDaysAgo)
       .order('created_at', { ascending: false })
-      .limit(200)
-      .then(function(r) {
+      .limit(200);
+    if (_sporocilaFilterMine && _sporocilaOwnerSlug) q = q.eq('tenant_slug', _sporocilaOwnerSlug);
+    q.then(function(r) {
+        var noMsgLabel = _sporocilaFilterMine
+          ? 'Ni sporočil za ta apartma v zadnjih 10 dneh.'
+          : 'Ni sporočil v zadnjih 10 dneh.';
         if (r.error || !r.data || !r.data.length) {
-          sporocilaList.innerHTML = '<span style="color:#9ca3af">Ni sporočil v zadnjih 30 dneh.</span>';
+          sporocilaList.innerHTML = '<span style="color:#9ca3af">' + noMsgLabel + '</span>';
           return;
         }
         sporocilaList.innerHTML = r.data.map(function(x) {
           var d = new Date(x.created_at).toLocaleString('sl-SI');
+          var emailMasked = (x.email || '').replace(/(^.{2}).*(@.*)$/, '$1***$2');
           return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
-            '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
-            '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(x.email) + '</span>' +
-            '<span style="color:#9ca3af;font-size:0.72rem">' + d + (x.tenant_slug ? ' · ' + esc(x.tenant_slug) : '') + '</span>' +
+            '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
+            '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(emailMasked) + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
+            '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
             '</div>' +
             '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
             '</div>';
@@ -4265,9 +4282,43 @@
         sporocilaList.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>';
       });
   }
+
+  // Inject All/Mine toggle above the list (only if owner context exists)
+  function _initSporocilaToggle() {
+    if (!sporocilaList || !_sporocilaOwnerSlug) return;
+    var wrap = sporocilaList.parentElement;
+    if (!wrap || wrap.querySelector('#lf-filter-toggle')) return;
+    var toggleWrap = document.createElement('div');
+    toggleWrap.style.cssText = 'display:flex;gap:6px;margin-bottom:8px';
+    toggleWrap.id = 'lf-filter-toggle';
+    function makeBtn(label, active) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'font-size:0.78rem;padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' +
+        (active ? 'background:rgba(110,231,183,0.15);color:#6ee7b7' : 'background:transparent;color:#9ca3af');
+      return b;
+    }
+    var btnAll  = makeBtn('Vse', !_sporocilaFilterMine);
+    var btnMine = makeBtn('Samo moj', _sporocilaFilterMine);
+    btnAll.addEventListener('click', function() {
+      _sporocilaFilterMine = false;
+      btnAll.style.cssText  = btnAll.style.cssText.replace('color:#9ca3af','color:#6ee7b7').replace('background:transparent','background:rgba(110,231,183,0.15)');
+      btnMine.style.cssText = btnMine.style.cssText.replace('color:#6ee7b7','color:#9ca3af').replace('background:rgba(110,231,183,0.15)','background:transparent');
+      loadSporocila();
+    });
+    btnMine.addEventListener('click', function() {
+      _sporocilaFilterMine = true;
+      btnMine.style.cssText = btnMine.style.cssText.replace('color:#9ca3af','color:#6ee7b7').replace('background:transparent','background:rgba(110,231,183,0.15)');
+      btnAll.style.cssText  = btnAll.style.cssText.replace('color:#6ee7b7','color:#9ca3af').replace('background:rgba(110,231,183,0.15)','background:transparent');
+      loadSporocila();
+    });
+    toggleWrap.appendChild(btnAll);
+    toggleWrap.appendChild(btnMine);
+    wrap.insertBefore(toggleWrap, sporocilaList);
+  }
+
   if (btnLoadSporocila) {
-    btnLoadSporocila.addEventListener('click', loadSporocila);
-    // Auto-load when section is opened
+    btnLoadSporocila.addEventListener('click', function() { loadSporocila(); });
     var _sporocilaDetails = document.getElementById('sporocila-section');
     if (_sporocilaDetails) _sporocilaDetails.addEventListener('toggle', function() {
       if (_sporocilaDetails.open && sporocilaList && !sporocilaList.innerHTML) loadSporocila();
