@@ -4254,14 +4254,10 @@
     var targets = [sporocilaList, sporocilaListOwner].filter(Boolean);
     if (!targets.length) return;
     targets.forEach(function(el) { el.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>'; });
-    var tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-    var q = sb.from('lost_found_posts')
-      .select('id, created_at, email, message, tenant_slug')
-      .gte('created_at', tenDaysAgo)
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (_sporocilaFilterMine && _sporocilaOwnerSlug) q = q.eq('tenant_slug', _sporocilaOwnerSlug);
-    q.then(function(r) {
+    // Use RPC (SECURITY DEFINER) to bypass RLS for both anon and authenticated roles
+    var slugFilter = (_sporocilaFilterMine && _sporocilaOwnerSlug) ? _sporocilaOwnerSlug : null;
+    sb.rpc('get_lost_found_posts_public', { p_tenant_slug: slugFilter, p_limit: 200 })
+      .then(function(r) {
         var noMsgLabel = _sporocilaFilterMine
           ? 'Ni sporočil za ta apartma v zadnjih 10 dneh.'
           : 'Ni sporočil v zadnjih 10 dneh.';
@@ -4271,10 +4267,9 @@
         } else {
           html = r.data.map(function(x) {
             var d = new Date(x.created_at).toLocaleString('sl-SI');
-            var emailMasked = (x.email || '').replace(/(^.{2}).*(@.*)$/, '$1***$2');
             return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
               '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
-              '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(emailMasked) + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
+              '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(x.email || '') + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
               '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
               '</div>' +
               '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
