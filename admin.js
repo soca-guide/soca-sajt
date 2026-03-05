@@ -131,7 +131,6 @@
   var btnMasterSave                = document.getElementById('btn-master-save');
   var btnLoadSporocila             = document.getElementById('btn-load-sporocila');
   var sporocilaList                = document.getElementById('sporocila-list');
-  var sporocilaListOwner           = document.getElementById('sporocila-list-owner');
 
   // Quick-add refs
   var quickSocaIdInput    = document.getElementById('quick-soca-id');
@@ -3880,8 +3879,6 @@
                 } else {
                   ownerPanel.classList.remove('hidden');
                   loadOwnerEditableData(tr.data.tenant_id);
-                  loadSporocila(_slugParam);
-                  setTimeout(_initSporocilaToggle, 50);
                   // Sakrij ulogu/tenant_id kao za pravog OWNER-a; prikaži samo email VLASNIKA
                   var _rblk = document.getElementById('info-block-role');
                   if (_rblk) _rblk.style.display = 'none';
@@ -3918,6 +3915,7 @@
           loadGlobalSettings();
           loadLegalPages();
           loadCardLabels();
+          loadSporocila();
         } else if (data.role === 'OWNER') {
           // Hide email + role/tenant_id info blocks from owners
           var _eblk = document.getElementById('info-block-email');
@@ -3932,11 +3930,6 @@
           } else {
             ownerPanel.classList.remove('hidden');
             loadOwnerEditableData(data.tenant_id);
-            sb.from('tenants').select('slug').eq('tenant_id', data.tenant_id).maybeSingle()
-              .then(function(tr) {
-                loadSporocila(tr.data && tr.data.slug);
-                setTimeout(_initSporocilaToggle, 50);
-              });
           }
         }
       });
@@ -4243,83 +4236,46 @@
   // Expose so quickAddTenant can call it
   window._showOwnerWelcomeModal = showOwnerWelcomeModal;
 
-  // ── Sporočila (Lost & Found) — owner/master panel ─────────────────────────────
-  // tenantSlug: if set, enables "Samo moj" filter toggle; null = always show all
-  var _sporocilaOwnerSlug = null;
-  var _sporocilaFilterMine = false;
-
-  function loadSporocila(tenantSlug) {
-    if (tenantSlug !== undefined) _sporocilaOwnerSlug = tenantSlug || null;
-    // write to whichever list element(s) are present
-    var targets = [sporocilaList, sporocilaListOwner].filter(Boolean);
-    if (!targets.length) return;
-    targets.forEach(function(el) { el.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>'; });
+  // ── Sporočila (Lost & Found) — master panel only ─────────────────────────────
+  function loadSporocila(_retry) {
+    if (!sporocilaList) return;
+    if (!_retry) sporocilaList.innerHTML = '<span style="color:#9ca3af">Nalagam…</span>';
     // Use RPC (SECURITY DEFINER) to bypass RLS for both anon and authenticated roles
-    var slugFilter = (_sporocilaFilterMine && _sporocilaOwnerSlug) ? _sporocilaOwnerSlug : null;
-    sb.rpc('get_lost_found_posts_public', { p_tenant_slug: slugFilter, p_limit: 200 })
+    sb.rpc('get_lost_found_posts_public', { p_tenant_slug: null, p_limit: 200 })
       .then(function(r) {
-        var noMsgLabel = _sporocilaFilterMine
-          ? 'Ni sporočil za ta apartma v zadnjih 10 dneh.'
-          : 'Ni sporočil v zadnjih 10 dneh.';
-        var html;
-        if (r.error || !r.data || !r.data.length) {
-          html = '<span style="color:#9ca3af">' + noMsgLabel + '</span>';
-        } else {
-          html = r.data.map(function(x) {
-            var d = new Date(x.created_at).toLocaleString('sl-SI');
-            return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
-              '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
-              '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(x.email || '') + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
-              '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
-              '</div>' +
-              '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
-              '</div>';
-          }).join('');
+        if (r.error) {
+          console.error('[loadSporocila] RPC error:', r.error.message, r.error.code);
+          if (!_retry) { setTimeout(function() { loadSporocila(true); }, 2000); }
+          else { sporocilaList.innerHTML = '<span style="color:#f87171">Napaka: ' + r.error.message + '</span>'; }
+          return;
         }
-        targets.forEach(function(el) { el.innerHTML = html; });
+        var noMsgLabel = 'Ni sporočil v zadnjih 10 dneh.';
+        var html;
+        if (!r.data || !r.data.length) {
+          // No data on first try — retry once after 2s (handles auth token timing edge case)
+          if (!_retry) {
+            setTimeout(function() { loadSporocila(true); }, 2000);
+            return;
+          }
+          sporocilaList.innerHTML = '<span style="color:#9ca3af">' + noMsgLabel + '</span>';
+          return;
+        }
+        sporocilaList.innerHTML = r.data.map(function(x) {
+          var d = new Date(x.created_at).toLocaleString('sl-SI');
+          return '<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
+            '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
+            '<span style="color:#6ee7b7;font-size:0.78rem">' + esc(x.email || '') + (x.tenant_slug ? ' <em style="opacity:0.6">@' + esc(x.tenant_slug) + '</em>' : '') + '</span>' +
+            '<span style="color:#9ca3af;font-size:0.72rem">' + d + '</span>' +
+            '</div>' +
+            '<div style="font-size:0.82rem;white-space:pre-wrap">' + esc(x.message) + '</div>' +
+            '</div>';
+        }).join('');
       })
-      .catch(function() {
-        targets.forEach(function(el) { el.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>'; });
+      .catch(function(err) {
+        console.error('[loadSporocila] fetch failed:', err);
+        if (!_retry) { setTimeout(function() { loadSporocila(true); }, 2000); }
+        else { sporocilaList.innerHTML = '<span style="color:#f87171">Napaka pri nalaganju.</span>'; }
       });
-  }
-
-  // Inject All/Mine toggle above the list element (only if owner context exists)
-  function _injectToggle(listEl) {
-    if (!listEl || !_sporocilaOwnerSlug) return;
-    var wrap = listEl.parentElement;
-    if (!wrap || wrap.querySelector('.lf-filter-toggle')) return;
-    var toggleWrap = document.createElement('div');
-    toggleWrap.style.cssText = 'display:flex;gap:6px;margin-bottom:8px';
-    toggleWrap.className = 'lf-filter-toggle';
-    function makeBtn(label, active) {
-      var b = document.createElement('button');
-      b.textContent = label;
-      b.style.cssText = 'font-size:0.78rem;padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;' +
-        (active ? 'background:rgba(110,231,183,0.15);color:#6ee7b7' : 'background:transparent;color:#9ca3af');
-      return b;
-    }
-    var btnAll  = makeBtn('Vse', !_sporocilaFilterMine);
-    var btnMine = makeBtn('Samo moj', _sporocilaFilterMine);
-    btnAll.addEventListener('click', function() {
-      _sporocilaFilterMine = false;
-      btnAll.style.cssText  = btnAll.style.cssText.replace('color:#9ca3af','color:#6ee7b7').replace('background:transparent','background:rgba(110,231,183,0.15)');
-      btnMine.style.cssText = btnMine.style.cssText.replace('color:#6ee7b7','color:#9ca3af').replace('background:rgba(110,231,183,0.15)','background:transparent');
-      loadSporocila();
-    });
-    btnMine.addEventListener('click', function() {
-      _sporocilaFilterMine = true;
-      btnMine.style.cssText = btnMine.style.cssText.replace('color:#9ca3af','color:#6ee7b7').replace('background:transparent','background:rgba(110,231,183,0.15)');
-      btnAll.style.cssText  = btnAll.style.cssText.replace('color:#6ee7b7','color:#9ca3af').replace('background:rgba(110,231,183,0.15)','background:transparent');
-      loadSporocila();
-    });
-    toggleWrap.appendChild(btnAll);
-    toggleWrap.appendChild(btnMine);
-    wrap.insertBefore(toggleWrap, listEl);
-  }
-
-  function _initSporocilaToggle() {
-    _injectToggle(sporocilaList);
-    _injectToggle(sporocilaListOwner);
   }
 
   if (btnLoadSporocila) {
