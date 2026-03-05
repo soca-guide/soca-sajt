@@ -310,7 +310,7 @@ serve(async (req) => {
     // ── 7. Build URLs ──────────────────────────────────────────────────────────
     // manage_url: owner panel URL — matches ?view=owner&t=SLUG pattern in admin.js
     const manage_url = `${adminUrl}/?view=owner&t=${encodeURIComponent(tenant_slug)}`;
-    const public_url = `${siteUrl}/${tenant_slug}`;
+    const public_url = `${siteUrl}/index.html?t=${encodeURIComponent(tenant_slug)}`;
 
     // ── 8. Send ONE email via Resend ───────────────────────────────────────────
     const displayName = tenant_name || tenant_slug || "apartma";

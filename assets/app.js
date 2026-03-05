@@ -2552,9 +2552,9 @@
     function closeTripIdeas() {
       hideTripIdeasScreen();
       window.APP.utils.scrollToTopReliable();
-      // Clear URL hash
+      // Clear URL hash but preserve ?t= query param
       if (window.location.hash.includes('trip-ideas')) {
-        window.history.replaceState(null, '', window.location.pathname);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
     
