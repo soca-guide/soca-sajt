@@ -1,8 +1,12 @@
 (function() {
   'use strict';
 
+  // Guard: set to true when tenant is SUSPENDED — blocks all boot/show logic
+  window._tenantSuspended = false;
+
   // Safety net: always force main after delay so splash never stays stuck (even if config/i18n fail to load)
   function forceEnterMainNow() {
+    if (window._tenantSuspended) return; // do not show app if tenant is suspended
     var wo = document.getElementById('welcome-overlay');
     var ac = document.getElementById('app-container');
     if (wo) { wo.style.display = 'none'; wo.classList.add('hide'); }
@@ -40,6 +44,7 @@
 
     // Force transition from splash to main (hide welcome overlay, show app container)
     function forceEnterMain() {
+      if (window._tenantSuspended) return; // do not show app if tenant is suspended
       var welcomeOverlay = document.getElementById('welcome-overlay');
       var appContainer = document.getElementById('app-container');
       if (welcomeOverlay) {
@@ -151,11 +156,19 @@
         window.TenantLoader.loadOverrides(_slug).then(function (ov) {
           if (window.__DEBUG) console.log('[TENANT]', ov && (ov.__health || ov));
           if (ov && ov.__health && ov.__health.reason === 'SUSPENDED') {
-            // Tenant is inactive — show suspension banner and stop
+            // Tenant is suspended — block all further boot logic
+            window._tenantSuspended = true;
+            // Immediately hide app content and welcome overlay
+            var _ac = document.getElementById('app-container');
+            var _wo = document.getElementById('welcome-overlay');
+            if (_ac) { _ac.style.display = 'none'; }
+            if (_wo) { _wo.style.display = 'none'; }
+            // Show full-screen suspension banner
             var _banner = document.createElement('div');
             _banner.id = 'tenant-suspended-banner';
             _banner.setAttribute('style',
-              'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;' +
+              'position:fixed;inset:0;top:0;left:0;right:0;bottom:0;' +
+              'z-index:99999;display:flex;flex-direction:column;' +
               'align-items:center;justify-content:center;background:#0a1612;color:#e5e7eb;' +
               'font-family:system-ui,sans-serif;text-align:center;padding:2rem;');
             _banner.innerHTML =
