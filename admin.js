@@ -1792,6 +1792,32 @@
     partnersListEl.appendChild(d);
   }
 
+  // Track whether the `categories text[]` column exists in DB
+  var _catColExists = null; // null=unknown, true=ok, false=missing
+
+  function _showCatColWarning() {
+    var existing = document.getElementById('cat-col-warning');
+    if (existing) return;
+    var warn = document.createElement('div');
+    warn.id = 'cat-col-warning';
+    warn.style.cssText = 'background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.45);' +
+      'border-radius:8px;padding:0.65rem 0.9rem;font-size:0.8rem;color:#fbbf24;margin-bottom:0.75rem;line-height:1.5';
+    warn.innerHTML = '<strong>⚠️ Višestruke kategorije ne rade!</strong><br>' +
+      'Kolona <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px">categories</code> ' +
+      'ne postoji u Supabase bazi. Pokreni u <strong>Supabase → SQL Editor</strong>:<br>' +
+      '<code style="display:block;margin-top:0.4rem;background:rgba(0,0,0,0.35);padding:0.35rem 0.6rem;' +
+      'border-radius:5px;font-size:0.78rem;user-select:all">' +
+      'ALTER TABLE partners ADD COLUMN IF NOT EXISTS categories text[];</code>';
+    if (partnersListEl && partnersListEl.parentNode) {
+      partnersListEl.parentNode.insertBefore(warn, partnersListEl);
+    }
+  }
+
+  function _hideCatColWarning() {
+    var w = document.getElementById('cat-col-warning');
+    if (w) w.remove();
+  }
+
   function loadPartners() {
     if (!partnersListEl) return;
     partnersListEl.innerHTML = '<p style="opacity:0.45;font-size:0.82rem;margin:0">⏳ Učitavam partnere…</p>';
@@ -1817,6 +1843,19 @@
       }
 
       var rows = r.data || [];
+
+      // Detect if `categories` column exists (key present in result object)
+      if (rows.length > 0) {
+        _catColExists = ('categories' in rows[0]);
+      } else {
+        // No rows yet — check via a direct query
+        sb.from('partners').select('categories').limit(1).then(function(probe) {
+          _catColExists = !probe.error;
+          if (!_catColExists) _showCatColWarning();
+        }).catch(function() { _catColExists = false; _showCatColWarning(); });
+      }
+      if (_catColExists === true)  _hideCatColWarning();
+      if (_catColExists === false) _showCatColWarning();
 
       // Client-side municipality filter
       if (fMun) {
@@ -1901,6 +1940,7 @@
     var allMun   = pfAllMun  ? pfAllMun.checked  : false;
     var muns     = allMun    ? null : _getPartnerMunSelected();
     var _selCats = _getPartnerCatsSelected();
+    console.log('[savePartner] selected categories:', _selCats);
     var payload  = {
       name:              name,
       type:              pfTypeSel  ? pfTypeSel.value  : 'activities',
@@ -1930,27 +1970,48 @@
       return q;
     }
 
+    console.log('[savePartner] payload:', JSON.stringify(payload));
     _doSave(payload).then(function(r) {
+      console.log('[savePartner] response:', r.error ? ('ERROR: ' + r.error.message) : 'OK', r.data);
       if (btnPartnerSave) btnPartnerSave.disabled = false;
       if (r.error) {
-        // Fallback: if error mentions 'categories' column missing, retry without it
-        if (r.error.message && r.error.message.indexOf('categories') >= 0) {
-          var fallbackPayload = Object.assign({}, payload);
-          delete fallbackPayload.categories;
-          _doSave(fallbackPayload).then(function(r2) {
-            if (r2.error) { if (partnerFormStatus) { partnerFormStatus.textContent = 'Greška: ' + r2.error.message; partnerFormStatus.className = 'msg msg--error'; } return; }
-            if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano! ⚠️ Dodaj kolonu "categories text[]" u Supabase za višestruke kategorije.'; partnerFormStatus.className = 'msg msg--ok'; }
-            partnerFormWrap.style.display = 'none';
-            loadPartners();
-          });
-          return;
-        }
         if (partnerFormStatus) { partnerFormStatus.textContent = 'Greška: ' + r.error.message; partnerFormStatus.className = 'msg msg--error'; }
         return;
       }
-      if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano!'; partnerFormStatus.className = 'msg msg--ok'; }
-      partnerFormWrap.style.display = 'none';
-      loadPartners();
+      // After save, verify that `categories` was actually stored
+      var savedId = id || (r.data && r.data[0] && r.data[0].id);
+      if (savedId && _selCats.length > 1) {
+        sb.from('partners').select('categories').eq('id', savedId).maybeSingle().then(function(chk) {
+          console.log('[savePartner] verify categories stored:', chk.data, 'error:', chk.error);
+          var stored = chk.data && chk.data.categories;
+          if (!stored || !stored.length) {
+            // Column missing — categories were silently dropped
+            _catColExists = false;
+            _showCatColWarning();
+            if (partnerFormStatus) {
+              partnerFormStatus.textContent = '✓ Partner sačuvan, ali višestruke kategorije NISU sačuvane — nedostaje kolona u bazi! Vidi upozorenje iznad.';
+              partnerFormStatus.className = 'msg msg--error';
+              partnerFormStatus.style.display = 'block';
+            }
+            partnerFormWrap.style.display = 'none';
+            loadPartners();
+          } else {
+            _catColExists = true;
+            _hideCatColWarning();
+            if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano!'; partnerFormStatus.className = 'msg msg--ok'; }
+            partnerFormWrap.style.display = 'none';
+            loadPartners();
+          }
+        }).catch(function() {
+          if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano!'; partnerFormStatus.className = 'msg msg--ok'; }
+          partnerFormWrap.style.display = 'none';
+          loadPartners();
+        });
+      } else {
+        if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano!'; partnerFormStatus.className = 'msg msg--ok'; }
+        partnerFormWrap.style.display = 'none';
+        loadPartners();
+      }
     });
   }
 
