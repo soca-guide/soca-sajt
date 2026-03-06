@@ -14,6 +14,28 @@
   <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
   <!-- Bump ?v= on deploy for cache-bust (e.g. 20260220-1 = YYYYMMDD-N) -->
   <link rel="stylesheet" href="./assets/app.css?v=20260228-2">
+  <!-- Daily Essentials – scoped styles (only affects #daily-essentials-screen) -->
+  <style>
+    #daily-essentials-screen .de-grid{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
+    #daily-essentials-screen .de-card{display:flex;align-items:center;gap:1rem;background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:16px;padding:1rem 1.25rem;text-decoration:none;color:inherit;transition:border-color .2s,background .2s,transform .15s;cursor:pointer}
+    #daily-essentials-screen .de-card:hover{border-color:var(--accent);background:rgba(34,211,238,.08)}
+    #daily-essentials-screen .de-card:active{transform:scale(.98)}
+    #daily-essentials-screen .de-icon-wrap{width:2.75rem;height:2.75rem;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+    #daily-essentials-screen .de-icon-shop    {background:rgba(251,191,36,.18)}
+    #daily-essentials-screen .de-icon-wc      {background:rgba(34,211,238,.18)}
+    #daily-essentials-screen .de-icon-pharmacy{background:rgba(52,211,153,.2)}
+    #daily-essentials-screen .de-icon-food    {background:rgba(251,113,133,.18)}
+    #daily-essentials-screen .de-icon-other   {background:rgba(148,163,184,.15)}
+    #daily-essentials-screen .de-info{flex:1;min-width:0}
+    #daily-essentials-screen .de-name{font-size:.95rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #daily-essentials-screen .de-category{font-size:.7rem;color:var(--accent);margin-top:.2rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+    #daily-essentials-screen .de-map-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.4rem .9rem;background:var(--accent);color:#001a1a;border-radius:999px;font-size:.72rem;font-weight:700;flex-shrink:0;white-space:nowrap;transition:opacity .2s}
+    #daily-essentials-screen .de-card:hover .de-map-btn{opacity:.85}
+    #daily-essentials-screen .de-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3.5rem 1.5rem;text-align:center;gap:.75rem}
+    #daily-essentials-screen .de-empty-icon{font-size:2.5rem;opacity:.7}
+    #daily-essentials-screen .de-empty-title{font-size:1.05rem;font-weight:700;color:var(--text-primary)}
+    #daily-essentials-screen .de-empty-desc{font-size:.85rem;color:var(--text-secondary);line-height:1.5}
+  </style>
   <script>window.dataSdk=window.dataSdk||{};</script>
   <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-8B48GQC9F3"></script>

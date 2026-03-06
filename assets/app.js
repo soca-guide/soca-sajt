@@ -3418,12 +3418,12 @@
     }
 
     function renderDailyEssentialsContent() {
-      const body = document.getElementById('daily-essentials-body');
+      var body = document.getElementById('daily-essentials-body');
       if (!body) return;
-      
-      const trans = translations[currentLang];
+
+      var trans = translations[currentLang];
       if (!trans) return;
-      
+
       var _deItems;
       if (_deDbCache && _deDbCache.length) {
         _deItems = _deDbCache.map(function(item) {
@@ -3432,20 +3432,59 @@
       } else {
         _deItems = (CL && CL.getDataset('dailyEssentials')) || [];
       }
-      var _deLinks = _deItems.map(function(item) {
-        var title = (item.labelKey === 'custom' && item.customLabel)
-          ? item.customLabel
-          : (trans[item.labelKey] || item.customLabel || item.labelKey || '');
-        return '<a href="' + (item.url || '#') + '" target="_blank" rel="noopener noreferrer" class="quick-help-button">' +
-               '<div class="quick-help-button-title">' + title + '</div>' +
-               '</a>';
-      }).join('\n          ');
-      var html = '<div style="padding: 1rem;">' +
-        '<div class="quick-help-section">' +
-        '<h2 class="quick-help-section-title">' + (trans.daily_essentials || 'Daily essentials') + '</h2>' +
-        _deLinks +
-        '</div></div>';
-      
+
+      var _deIconMap = {
+        quick_help_supermarket: { icon: '🛍️', cat: 'shop' },
+        quick_help_atm:         { icon: '🏧', cat: 'other' },
+        quick_help_gas:         { icon: '⛽', cat: 'other' },
+        quick_help_parking:     { icon: '🅿️', cat: 'other' },
+        quick_help_toilet:      { icon: '🚻', cat: 'wc' },
+        quick_help_pharmacy:    { icon: '💊', cat: 'pharmacy' },
+        quick_help_hospital:    { icon: '🏥', cat: 'other' },
+        quick_help_post:        { icon: '📮', cat: 'other' },
+        custom:                 { icon: '📍', cat: 'other' }
+      };
+
+      var _deCatKey = {
+        shop:     'de_cat_shop',
+        wc:       'de_cat_wc',
+        pharmacy: 'de_cat_pharmacy',
+        food:     'de_cat_food',
+        other:    'de_cat_other'
+      };
+
+      var openMapLabel = trans.de_open_map || 'Open map';
+      var html;
+
+      if (!_deItems || !_deItems.length) {
+        html = '<div class="de-empty">' +
+          '<div class="de-empty-icon">🗺️</div>' +
+          '<div class="de-empty-title">' + (trans.de_empty_title || 'No places yet') + '</div>' +
+          '<div class="de-empty-desc">' + (trans.de_empty_desc || '') + '</div>' +
+          '</div>';
+      } else {
+        html = '<div class="de-grid">';
+        _deItems.forEach(function(item) {
+          var lk = item.labelKey || 'custom';
+          var meta = _deIconMap[lk] || { icon: '📍', cat: 'other' };
+          var title = (lk === 'custom' && item.customLabel)
+            ? item.customLabel
+            : (trans[lk] || item.customLabel || lk || '');
+          var catKey = _deCatKey[meta.cat] || 'de_cat_other';
+          var catLabel = trans[catKey] || meta.cat;
+          var mapUrl = item.url || '#';
+          html += '<a href="' + mapUrl + '" target="_blank" rel="noopener noreferrer" class="de-card">' +
+            '<div class="de-icon-wrap de-icon-' + meta.cat + '">' + meta.icon + '</div>' +
+            '<div class="de-info">' +
+              '<div class="de-name">' + title + '</div>' +
+              '<div class="de-category">' + catLabel + '</div>' +
+            '</div>' +
+            '<span class="de-map-btn">📍 ' + openMapLabel + '</span>' +
+            '</a>';
+        });
+        html += '</div>';
+      }
+
       body.innerHTML = html;
     }
     
