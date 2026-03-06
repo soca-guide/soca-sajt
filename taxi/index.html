@@ -6,6 +6,7 @@
   <title>Taxi & Bus</title>
   <link rel="stylesheet" href="../assets/directory.css?v=20260306-1">
   <link rel="stylesheet" href="../assets/theme-soca.css">
+  <link rel="stylesheet" href="../assets/footer.css">
 </head>
 <body class="theme-soca">
   <header class="dir-header">
@@ -64,36 +65,10 @@
       if (emptyEl) emptyEl.textContent = ui[lang] || ui.en;
     });
   </script>
-  <div id="footer-legal"></div>
-  <script>
-  (function(){
-    var el=document.getElementById('footer-legal');if(!el)return;
-    var lang=(localStorage.getItem('preferredLanguage')||'sl').toLowerCase().split('-')[0];
-    if(lang!=='sl'&&lang!=='en')lang='sl';
-    var COPYRIGHT='© 2026 Soča Guide';
-    var DOCS=['impressum','privacy','cookies','terms'];
-    el.innerHTML='<span class="footer-copy">'+COPYRIGHT+'</span>';
-    var _w=0;function tryLoad(){
-      var sb=window.supabaseClient||window.SB;
-      if(!sb){_w+=200;if(_w<8000)setTimeout(tryLoad,200);return;}
-      sb.from('items').select('item_key,data_json')
-        .eq('section_key','ui').is('tenant_id',null)
-        .in('item_key',['legal_impressum','legal_privacy','legal_cookies','legal_terms'])
-        .then(function(r){
-          if(!r||!r.data)return;
-          var h='<span class="footer-copy">'+COPYRIGHT+'</span>';
-          DOCS.forEach(function(doc){
-            var dj=null;
-            for(var i=0;i<r.data.length;i++){if(r.data[i].item_key==='legal_'+doc){dj=r.data[i].data_json;break;}}
-            if(!dj||dj.enabled_in_footer===false)return;
-            var title=dj.title&&(dj.title[lang]||dj.title.sl);
-            if(!title)return;
-            h+='<a href="/legal/index.html?doc='+doc+'" class="footer-link">'+title+'</a>';
-          });
-          el.innerHTML=h;
-        }).catch(function(){});
-    }tryLoad();
-  })();
-  </script>
+  <footer id="main-site-footer">
+    <div class="footer-copy">© 2026 Soča Guide</div>
+    <div class="footer-links"></div>
+  </footer>
+  <script src="../assets/footer.js"></script>
 </body>
 </html>

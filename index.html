@@ -14,6 +14,7 @@
   <script>window.elementSdk=window.elementSdk||{init:function(){},setConfig:function(){}};</script>
   <!-- Bump ?v= on deploy for cache-bust (e.g. 20260220-1 = YYYYMMDD-N) -->
   <link rel="stylesheet" href="./assets/app.css?v=20260306-1">
+  <link rel="stylesheet" href="./assets/footer.css">
   <!-- Daily Essentials – scoped styles (only affects #daily-essentials-screen) -->
   <style>
     #daily-essentials-screen .de-grid{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
@@ -35,40 +36,6 @@
     #daily-essentials-screen .de-empty-icon{font-size:2.5rem;opacity:.7}
     #daily-essentials-screen .de-empty-title{font-size:1.05rem;font-weight:700;color:var(--text-primary)}
     #daily-essentials-screen .de-empty-desc{font-size:.85rem;color:var(--text-secondary);line-height:1.5}
-    /* ── Footer: dark-theme override (main page has no .theme-soca class) ─── */
-    #footer-legal {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 6px 14px;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 1rem 1.5rem 2.5rem;
-      font-size: 12px;
-      position: relative;
-      z-index: 100;
-      pointer-events: auto;
-    }
-    #footer-legal .footer-copy {
-      flex-basis: 100%;
-      text-align: center;
-      color: rgba(255,255,255,0.32);
-      font-weight: 400;
-      letter-spacing: 0.02em;
-    }
-    #footer-legal .footer-link,
-    #footer-legal a {
-      color: #888 !important;
-      text-decoration: none !important;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: color 0.15s;
-    }
-    #footer-legal .footer-link:hover,
-    #footer-legal a:hover {
-      color: rgba(255,255,255,0.85) !important;
-    }
   </style>
   <script>window.dataSdk=window.dataSdk||{};</script>
   <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID -->
@@ -477,7 +444,10 @@
    </div>
   </div><!-- Footer Attribution -->
   <footer class="app-footer" id="app-footer" style="display:none"></footer>
-  <div id="footer-legal"></div>
+  <footer id="main-site-footer">
+    <div class="footer-copy">© 2026 Soča Guide</div>
+    <div class="footer-links"></div>
+  </footer>
 <script src="./assets/config.js?v=20260306-1"></script>
   <script src="./assets/i18n.js?v=20260306-1"></script>
   <script src="./assets/utils.js?v=20260306-1"></script>
@@ -591,43 +561,7 @@
    navigator.serviceWorker.addEventListener('controllerchange',function(){ window.location.reload(); });
  })();
  </script>
- <script>
-(function(){
-  var el = document.getElementById('footer-legal');
-  if (!el) return;
-  var lang = (localStorage.getItem('preferredLanguage') || 'sl').toLowerCase().split('-')[0];
-  if (lang !== 'sl' && lang !== 'en') lang = 'sl';
-  var COPYRIGHT = '© 2026 Soča Guide';
-  var DOCS = ['impressum', 'privacy', 'cookies', 'terms'];
+   <script src="./assets/footer.js"></script>
+</body>
 
-  // Show copyright immediately — never wrong, never empty
-  el.innerHTML = '<span class="footer-copy">' + COPYRIGHT + '</span>';
-
-  var _w = 0;
-  function tryLoad() {
-    var sb = window.supabaseClient || window.SB;
-    if (!sb) { _w += 200; if (_w < 8000) setTimeout(tryLoad, 200); return; }
-    sb.from('items').select('item_key, data_json')
-      .eq('section_key', 'ui').is('tenant_id', null)
-      .in('item_key', ['legal_impressum', 'legal_privacy', 'legal_cookies', 'legal_terms'])
-      .then(function(r) {
-        if (!r || !r.data) return;
-        var html = '<span class="footer-copy">' + COPYRIGHT + '</span>';
-        DOCS.forEach(function(doc) {
-          var dj = null;
-          for (var i = 0; i < r.data.length; i++) {
-            if (r.data[i].item_key === 'legal_' + doc) { dj = r.data[i].data_json; break; }
-          }
-          if (!dj || dj.enabled_in_footer === false) return;
-          var title = dj.title && (dj.title[lang] || dj.title.sl);
-          if (!title) return;
-          html += '<a href="/legal/index.html?doc=' + doc + '" class="footer-link">' + title + '</a>';
-        });
-        el.innerHTML = html;
-      }).catch(function(){});
-  }
-  tryLoad();
-})();
- </script>
- </body>  
 </html>

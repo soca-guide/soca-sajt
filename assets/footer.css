@@ -1,0 +1,73 @@
+/* ── Footer: clean isolated styles ────────────────────────────────────────── *
+ * Scope: #main-site-footer only. Do not add unrelated rules here.
+ * Dark theme  → gray links  (#888)
+ * Light theme → blue links  (#3687CE), triggered by body.theme-soca
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+#main-site-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 1rem 1.5rem 2.5rem;
+  font-size: 0.75rem;
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+#main-site-footer .footer-copy {
+  color: rgba(255, 255, 255, 0.32);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+#main-site-footer .footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 15px;
+}
+
+#main-site-footer .footer-links a {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+#main-site-footer .footer-links a:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Light theme override (body.theme-soca pages) ──────────────────────────── */
+body.theme-soca #main-site-footer {
+  border-top: 1px solid #E6EAF0;
+  margin-top: 1rem;
+}
+
+body.theme-soca #main-site-footer .footer-copy {
+  color: #64748B;
+  opacity: 0.7;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+body.theme-soca #main-site-footer .footer-links a {
+  color: #3687CE;
+  opacity: 0.85;
+  padding: 0.25rem 0.1rem;
+  display: inline-block;
+}
+
+body.theme-soca #main-site-footer .footer-links a:hover {
+  color: #1a5fa8;
+  opacity: 1;
+}
+
+@media (max-width: 480px) {
+  #main-site-footer {
+    gap: 6px;
+    padding: 0.85rem 1rem 1.75rem;
+  }
+}
