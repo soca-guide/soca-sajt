@@ -35,6 +35,38 @@
     #daily-essentials-screen .de-empty-icon{font-size:2.5rem;opacity:.7}
     #daily-essentials-screen .de-empty-title{font-size:1.05rem;font-weight:700;color:var(--text-primary)}
     #daily-essentials-screen .de-empty-desc{font-size:.85rem;color:var(--text-secondary);line-height:1.5}
+    /* ── Footer: dark-theme override (main page has no .theme-soca class) ─── */
+    #footer-legal {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem 1.5rem 2.5rem;
+      font-size: 12px;
+      position: relative;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    #footer-legal .footer-copy {
+      flex-basis: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.32);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+    #footer-legal .footer-link,
+    #footer-legal a {
+      color: #888 !important;
+      text-decoration: none !important;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: color 0.15s;
+    }
+    #footer-legal .footer-link:hover,
+    #footer-legal a:hover {
+      color: rgba(255,255,255,0.85) !important;
+    }
   </style>
   <script>window.dataSdk=window.dataSdk||{};</script>
   <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID -->
