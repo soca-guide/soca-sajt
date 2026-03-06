@@ -373,16 +373,17 @@
 .theme-soca #footer-legal .footer-link,
 .theme-soca #footer-legal a {
   color: #3687CE;
-  text-decoration: none;
+  text-decoration: none !important;
   opacity: 0.85;
   cursor: pointer;
-  padding: 0.15rem 0;
+  padding: 0.25rem 0.1rem;
+  display: inline-block;
   transition: opacity 0.15s, color 0.15s;
 }
 .theme-soca #footer-legal .footer-link:hover,
 .theme-soca #footer-legal a:hover {
   opacity: 1;
-  text-decoration: underline;
+  color: #1a5fa8;
 }
 @media (max-width: 480px) {
   #footer-legal {

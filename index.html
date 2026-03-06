@@ -621,7 +621,7 @@
           if (!dj || dj.enabled_in_footer === false) return;
           var title = dj.title && (dj.title[lang] || dj.title.sl);
           if (!title) return;
-          html += '<a href="/legal/index.html?doc=' + doc + '" onclick="if(window.__MODALS&&window.__MODALS.openLegal){window.__MODALS.openLegal(\'' + doc + '\');return false;}" class="footer-link">' + title + '</a>';
+          html += '<a href="/legal/index.html?doc=' + doc + '" class="footer-link">' + title + '</a>';
         });
         el.innerHTML = html;
       }).catch(function(){});
