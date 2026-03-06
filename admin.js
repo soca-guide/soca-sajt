@@ -2709,11 +2709,14 @@
         .maybeSingle()
         .then(function(r) {
           if (!r || !r.data || !r.data.data_json) return;
-          var bh = r.data.data_json.body_html || {};
+          var dj = r.data.data_json;
+          var bh = dj.body_html || {};
           var sl = document.getElementById('legal-' + k + '-sl');
           var en = document.getElementById('legal-' + k + '-en');
           if (sl) sl.value = bh.sl || '';
           if (en) en.value = bh.en || '';
+          var cb = document.getElementById('legal-' + k + '-enabled');
+          if (cb) cb.checked = (dj.enabled_in_footer !== false);
         });
     });
   }
@@ -2746,49 +2749,27 @@
       var rows = LEGAL_KEYS.map(function(k, i) {
         var slEl = document.getElementById('legal-' + k + '-sl');
         var enEl = document.getElementById('legal-' + k + '-en');
+        var cb   = document.getElementById('legal-' + k + '-enabled');
         return {
           tenant_id: null, section_key: 'ui', item_key: 'legal_' + k,
           type: 'config', order: 20 + i, visible: true,
           data_json: {
-            title:     TITLES[k],
-            body_html: { sl: slEl ? slEl.value : '', en: enEl ? enEl.value : '' }
+            title:             TITLES[k],
+            body_html:         { sl: slEl ? slEl.value : '', en: enEl ? enEl.value : '' },
+            enabled_in_footer: cb ? cb.checked : true
           },
           municipality_slugs: null,
           updated_at: new Date().toISOString()
         };
       });
       sb.from('items').insert(rows).then(function(insRes) {
+        if (btnLegalSave) btnLegalSave.disabled = false;
         if (insRes && insRes.error) {
-          if (btnLegalSave) btnLegalSave.disabled = false;
           setStatus(legalSaveStatus, 'Greška: ' + insRes.error.message, 'error');
           return;
         }
-        // Also save footer_config with all 4 legal links so they appear in the footer
-        var footerConfig = {
-          copyright: { sl: '© 2026 Soča Guide', en: '© 2026 Soča Guide' },
-          links: [
-            { label: { sl: 'Impressum', en: 'Imprint' },        url: './legal/?doc=impressum', enabled: true },
-            { label: { sl: 'Zasebnost', en: 'Privacy' },        url: './legal/?doc=privacy',   enabled: true },
-            { label: { sl: 'Piškotki', en: 'Cookies' },         url: './legal/?doc=cookies',   enabled: true },
-            { label: { sl: 'Pogoji',   en: 'Terms' },           url: './legal/?doc=terms',     enabled: true }
-          ]
-        };
-        sb.from('items').delete()
-          .eq('section_key', 'ui').eq('item_key', 'footer_config').is('tenant_id', null)
-          .then(function() {
-            return sb.from('items').insert({
-              tenant_id: null, section_key: 'ui', item_key: 'footer_config',
-              type: 'config', order: 10, visible: true,
-              data_json: footerConfig, municipality_slugs: null
-            });
-          }).then(function() {
-            if (btnLegalSave) btnLegalSave.disabled = false;
-            setStatus(legalSaveStatus, 'Sačuvano ✓', 'success');
-            loadLegalPages();
-          }).catch(function(err) {
-            if (btnLegalSave) btnLegalSave.disabled = false;
-            setStatus(legalSaveStatus, 'Greška (footer): ' + (err && err.message ? err.message : err), 'error');
-          });
+        setStatus(legalSaveStatus, 'Sačuvano ✓', 'success');
+        loadLegalPages();
       }).catch(function(err) {
         if (btnLegalSave) btnLegalSave.disabled = false;
         setStatus(legalSaveStatus, 'Greška: ' + (err && err.message ? err.message : err), 'error');

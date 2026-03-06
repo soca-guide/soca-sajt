@@ -345,20 +345,47 @@
 }
 
 /* ── 20. Footer legal ─────────────────────────────────────────────────────── */
+#footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem 1.1rem;
+  text-align: center;
+  padding: 1rem 1.25rem 2rem;
+  font-size: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
 .theme-soca #footer-legal {
   color: #64748B;
   border-top: 1px solid #E6EAF0;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
 }
+.theme-soca #footer-legal .footer-copy {
+  opacity: 0.7;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.theme-soca #footer-legal .footer-link,
 .theme-soca #footer-legal a {
   color: #3687CE;
   text-decoration: none;
-  opacity: 1 !important;
+  opacity: 0.85;
   cursor: pointer;
-  padding: 0.25rem 0.1rem;
+  padding: 0.15rem 0;
+  transition: opacity 0.15s, color 0.15s;
 }
+.theme-soca #footer-legal .footer-link:hover,
 .theme-soca #footer-legal a:hover {
+  opacity: 1;
   text-decoration: underline;
+}
+@media (max-width: 480px) {
+  #footer-legal {
+    gap: 0.35rem 0.9rem;
+    padding: 0.85rem 1rem 1.75rem;
+  }
 }
 
 /* ── 21. Responsive tweaks ────────────────────────────────────────────────── */
