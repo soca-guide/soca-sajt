@@ -153,8 +153,8 @@
       <option value="taxi">🚌 Taxi</option>
     </select>
 
-    <label for="f-cat">Kategorija *</label>
-    <select id="f-cat"></select>
+    <label>Kategorija * <span style="font-size:0.72rem;font-weight:400;color:#6b7280">(možete izbrati več)</span></label>
+    <div id="f-cat-wrap" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.3rem"></div>
     <input type="text" id="f-cat-custom" placeholder="Vpiši naziv kategorije (npr. Wellness)" style="display:none;margin-top:0.35rem" />
 
     <label for="f-tier">Nivo prikaza</label>
@@ -241,20 +241,17 @@
       { v:'zipline',    l:'Zipline' },
       { v:'cycling',    l:'Kolesarstvo' },
       { v:'paragliding',l:'Paragliding' },
-      { v:'skydiving',  l:'Skydiving' },
-      { v:'custom',     l:'✏️ Drugo…' }
+      { v:'skydiving',  l:'Skydiving' }
     ],
     food: [
       { v:'cafe',        l:'Kavarna' },
       { v:'street_food', l:'Street food' },
       { v:'gostilna',    l:'Gostilna' },
       { v:'restaurant',  l:'Restavracija' },
-      { v:'pizzeria',    l:'Pizzerija' },
-      { v:'custom',      l:'✏️ Drugo…' }
+      { v:'pizzeria',    l:'Pizzerija' }
     ],
     taxi: [
-      { v:'taxi',   l:'Taksi' },
-      { v:'custom', l:'✏️ Drugo…' }
+      { v:'taxi', l:'Taksi' }
     ]
   };
 
@@ -270,7 +267,7 @@
   var btnReset     = document.getElementById('btn-reset');
   var fName        = document.getElementById('f-name');
   var fType        = document.getElementById('f-type');
-  var fCat         = document.getElementById('f-cat');
+  var fCatWrap     = document.getElementById('f-cat-wrap');
   var fCatCustom   = document.getElementById('f-cat-custom');
   var fTier        = document.getElementById('f-tier');
   var fDesc        = document.getElementById('f-desc');
@@ -319,18 +316,24 @@
   // ── Category sync ─────────────────────────────────────────────────────
   function syncCats() {
     var cats = CAT_BY_TYPE[fType.value] || [];
-    fCat.innerHTML = cats.map(function(c) {
-      return '<option value="' + c.v + '">' + c.l + '</option>';
-    }).join('');
-    fCatCustom.style.display = 'none';
-    fCatCustom.value = '';
+    if (fCatWrap) {
+      fCatWrap.innerHTML = cats.map(function(c) {
+        return '<label style="display:flex;align-items:center;gap:4px;font-size:0.85rem;' +
+          'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);' +
+          'border-radius:8px;padding:5px 10px;cursor:pointer;user-select:none">' +
+          '<input type="checkbox" class="pec-cb" value="' + c.v + '" style="accent-color:#22d3ee;cursor:pointer"> ' +
+          c.l + '</label>';
+      }).join('');
+    }
+    if (fCatCustom) { fCatCustom.style.display = 'none'; fCatCustom.value = ''; }
   }
   fType.addEventListener('change', syncCats);
-  fCat.addEventListener('change', function() {
-    fCatCustom.style.display = (fCat.value === 'custom') ? 'block' : 'none';
-    if (fCat.value !== 'custom') fCatCustom.value = '';
-  });
   syncCats();
+
+  function getSelectedCats() {
+    if (!fCatWrap) return [];
+    return Array.from(fCatWrap.querySelectorAll('.pec-cb:checked')).map(function(c) { return c.value; });
+  }
 
   // ── Load municipalities from DB ───────────────────────────────────────
   var _loadedMuns = ['bovec', 'kobarid', 'tolmin']; // fallback
@@ -472,9 +475,8 @@
     var name = fName.value.trim();
     if (!name) { showMsg(formMsg, '⚠️ Ime podjetja je obvezno.', 'error'); fName.focus(); return; }
 
-    var catVal = fCat.value === 'custom'
-      ? (fCatCustom.value.trim() || 'other')
-      : fCat.value;
+    var selectedCats = getSelectedCats();
+    var catVal = selectedCats[0] || 'other';
 
     var muns = [];
     fMunGrid.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { muns.push(cb.value); });
@@ -488,8 +490,9 @@
     }
     var payload = {
       name:               name,
-      type:               fType.value   || 'activity',
+      type:               fType.value   || 'activities',
       category:           catVal        || 'other',
+      categories:         selectedCats.length ? selectedCats : null,
       tier:               fTier.value   || 'free',
       order_index:        100,
       short_desc:         fDesc.value.trim()  || null,

@@ -268,25 +268,10 @@
                     <option value="taxi">🚌 Taxi & Bus</option>
                   </select>
                 </div>
-                <div>
-                  <label for="pf-category" style="font-size:0.78rem;opacity:0.7">Kategorija *</label>
-                  <select id="pf-category" style="width:100%">
-                    <option value="rafting">Rafting</option>
-                    <option value="kayak">Kajak</option>
-                    <option value="canyoning">Kanjoning</option>
-                    <option value="zipline">Zipline</option>
-                    <option value="cycling">Kolesarstvo</option>
-                    <option value="paragliding">Paragliding</option>
-                    <option value="skydiving">Skydiving</option>
-                    <option value="cafe">Kavarna</option>
-                    <option value="street_food">Street food</option>
-                    <option value="gostilna">Gostilna</option>
-                    <option value="restaurant">Restavracija</option>
-                    <option value="pizzeria">Pizzerija</option>
-                    <option value="taxi">Taksi</option>
-                    <option value="custom">✏️ Prilagođena…</option>
-                  </select>
-                  <input type="text" id="pf-category-custom" placeholder="Upiši naziv kategorije (npr. Wellness)" style="width:100%;box-sizing:border-box;display:none;margin-top:0.35rem">
+                <div style="grid-column:1/-1">
+                  <label style="font-size:0.78rem;opacity:0.7">Kategorija * <span style="opacity:0.55;font-weight:400">(može više)</span></label>
+                  <div id="pf-categories-wrap" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.3rem"></div>
+                  <input type="text" id="pf-category-custom" placeholder="Prilagođena kategorija (npr. Wellness)" style="width:100%;box-sizing:border-box;display:none;margin-top:0.4rem">
                 </div>
                 <div>
                   <label for="pf-tier" style="font-size:0.78rem;opacity:0.7">Tier *</label>

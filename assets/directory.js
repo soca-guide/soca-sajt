@@ -165,10 +165,18 @@
       .catch(function () { renderAll([]); });
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function _partnerCats(p) {
+    if (p.categories && p.categories.length) return p.categories;
+    return p.category ? [p.category] : [];
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   function getFiltered() {
     if (currentFilter === 'all') return ALL_PARTNERS;
-    return ALL_PARTNERS.filter(function (p) { return p.category === currentFilter; });
+    return ALL_PARTNERS.filter(function (p) {
+      return _partnerCats(p).indexOf(currentFilter) >= 0;
+    });
   }
 
   function renderAll(partners) {
@@ -181,7 +189,9 @@
     if (!bar) return;
     var cats = [];
     partners.forEach(function (p) {
-      if (cats.indexOf(p.category) < 0) cats.push(p.category);
+      _partnerCats(p).forEach(function(c) {
+        if (cats.indexOf(c) < 0) cats.push(c);
+      });
     });
     var html = '<button class="dir-chip' + (currentFilter === 'all' ? ' active' : '') + '" data-cat="all" aria-selected="' + (currentFilter === 'all') + '">' + t('all') + '</button>';
     cats.forEach(function (c) {
@@ -324,6 +334,12 @@
       : '<div class="' + cls + ' ' + cls + '--placeholder"></div>';
   }
 
+  function _catBadgesHtml(p) {
+    var cats = _partnerCats(p);
+    if (!cats.length) return '';
+    return cats.map(function(c) { return catLabel(c); }).join(' · ');
+  }
+
   function _cardPremium(p) {
     var heroHtml = _coverMediaHtml(p, 'premium');
     return '<article class="dir-card dir-card--premium" data-pid="' + _esc(p.id) + '">' +
@@ -332,7 +348,7 @@
         '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">' +
           _logoEl(p, 'md') +
           '<div>' +
-            '<div class="dir-card-badge">' + catLabel(p.category) + '</div>' +
+            '<div class="dir-card-badge">' + _catBadgesHtml(p) + '</div>' +
             '<h3 class="dir-card-name" style="margin:0">' + _esc(p.name) + '</h3>' +
           '</div>' +
         '</div>' +
@@ -347,7 +363,7 @@
     return '<article class="dir-feat-card" data-pid="' + _esc(p.id) + '">' +
       heroHtml +
       '<div class="dir-feat-body">' +
-        '<div class="dir-feat-cat">' + catLabel(p.category) + '</div>' +
+        '<div class="dir-feat-cat">' + _catBadgesHtml(p) + '</div>' +
         '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem">' +
           _logoEl(p, 'sm') +
           '<h3 class="dir-feat-name" style="margin:0">' + _esc(p.name) + '</h3>' +
@@ -362,7 +378,7 @@
       _logoEl(p, 'sm') +
       '<div class="dir-row-main">' +
         '<span class="dir-row-name">' + _esc(p.name) + '</span>' +
-        '<span class="dir-row-cat">' + catLabel(p.category) + '</span>' +
+        '<span class="dir-row-cat">' + _catBadgesHtml(p) + '</span>' +
         (p.short_desc ? '<span class="dir-row-desc">' + _esc(p.short_desc.substring(0,80)) + '</span>' : '') +
       '</div>' +
       '<div class="dir-row-btns">' + _btns(p) + '</div>' +
