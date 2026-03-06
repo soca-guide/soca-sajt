@@ -161,10 +161,10 @@
             _banner.innerHTML =
               '<div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>' +
               '<div style="font-size:1.15rem;font-weight:700;margin-bottom:0.5rem;color:#f87171">' +
-                'Service temporarily unavailable' +
+                'Service unavailable' +
               '</div>' +
               '<div style="font-size:0.9rem;color:#9ca3af;max-width:320px">' +
-                'The owner has temporarily suspended this service. Please try again later.' +
+                'This accommodation guide is currently disabled. The service is unavailable until the owner settles their outstanding obligations.' +
               '</div>';
             document.body.appendChild(_banner);
             return;

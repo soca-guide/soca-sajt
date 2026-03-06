@@ -4,7 +4,7 @@
   window.TenantLoader = window.TenantLoader || {};
 
   // ── sessionStorage cache ──────────────────────────────────────────────────────
-  var _CACHE_TTL    = 300000; // 5 minutes in ms
+  var _CACHE_TTL    = 0; // no cache — status changes (suspend/activate) take effect immediately
   var _CACHE_PREFIX = 'tenantOv:';
 
   function _readCache(slug) {
