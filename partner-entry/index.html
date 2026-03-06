@@ -155,7 +155,7 @@
 
     <label>Kategorija * <span style="font-size:0.72rem;font-weight:400;color:#6b7280">(možete izbrati več)</span></label>
     <div id="f-cat-wrap" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.3rem"></div>
-    <input type="text" id="f-cat-custom" placeholder="Vpiši naziv kategorije (npr. Wellness)" style="display:none;margin-top:0.35rem" />
+    <input type="text" id="f-cat-custom" placeholder="Npr. Wellness, Spa (ločite z vejico / zarezom)" style="display:none;margin-top:0.35rem" />
 
     <label for="f-tier">Nivo prikaza</label>
     <select id="f-tier">
@@ -314,16 +314,31 @@
   function hideMsg(el)             { el.className = 'msg'; el.textContent = ''; }
 
   // ── Category sync ─────────────────────────────────────────────────────
+  var _CB_S = 'display:flex;align-items:center;gap:4px;font-size:0.85rem;' +
+    'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);' +
+    'border-radius:8px;padding:5px 10px;cursor:pointer;user-select:none';
+
   function syncCats() {
     var cats = CAT_BY_TYPE[fType.value] || [];
     if (fCatWrap) {
       fCatWrap.innerHTML = cats.map(function(c) {
-        return '<label style="display:flex;align-items:center;gap:4px;font-size:0.85rem;' +
-          'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);' +
-          'border-radius:8px;padding:5px 10px;cursor:pointer;user-select:none">' +
+        return '<label style="' + _CB_S + '">' +
           '<input type="checkbox" class="pec-cb" value="' + c.v + '" style="accent-color:#22d3ee;cursor:pointer"> ' +
           c.l + '</label>';
-      }).join('');
+      }).join('') +
+      '<label style="' + _CB_S + ';border-color:rgba(34,211,238,0.3)">' +
+        '<input type="checkbox" class="pec-cb pec-custom-toggle" value="__custom__" style="accent-color:#22d3ee;cursor:pointer"> ' +
+        '✏️ Prilagođeno…' +
+      '</label>';
+
+      var toggle = fCatWrap.querySelector('.pec-custom-toggle');
+      if (toggle && fCatCustom) {
+        toggle.addEventListener('change', function() {
+          fCatCustom.style.display = this.checked ? 'block' : 'none';
+          if (!this.checked) fCatCustom.value = '';
+          if (this.checked) fCatCustom.focus();
+        });
+      }
     }
     if (fCatCustom) { fCatCustom.style.display = 'none'; fCatCustom.value = ''; }
   }
@@ -332,7 +347,17 @@
 
   function getSelectedCats() {
     if (!fCatWrap) return [];
-    return Array.from(fCatWrap.querySelectorAll('.pec-cb:checked')).map(function(c) { return c.value; });
+    var result = Array.from(fCatWrap.querySelectorAll('.pec-cb:checked'))
+      .filter(function(cb) { return cb.value !== '__custom__'; })
+      .map(function(cb) { return cb.value; });
+    var toggle = fCatWrap.querySelector('.pec-custom-toggle');
+    if (toggle && toggle.checked && fCatCustom && fCatCustom.value.trim()) {
+      fCatCustom.value.trim().split(',').forEach(function(v) {
+        var val = v.trim();
+        if (val && result.indexOf(val) < 0) result.push(val);
+      });
+    }
+    return result;
   }
 
   // ── Load municipalities from DB ───────────────────────────────────────
@@ -513,10 +538,28 @@
     hideMsg(formMsg);
     formSuccess.style.display = 'none';
 
-    sb.from('partners').insert(payload)
+    function _doInsert(pl) {
+      return sb.from('partners').insert(pl);
+    }
+
+    _doInsert(payload)
       .then(function(r) {
         btnSave.disabled = false; btnSave.textContent = '💾 Shrani partnerja';
-        if (r.error) { showMsg(formMsg, '❌ Napaka: ' + r.error.message, 'error'); return; }
+        if (r.error) {
+          if (r.error.message && r.error.message.indexOf('categories') >= 0) {
+            var fb = Object.assign({}, payload);
+            delete fb.categories;
+            _doInsert(fb).then(function(r2) {
+              btnSave.disabled = false; btnSave.textContent = '💾 Shrani partnerja';
+              if (r2.error) { showMsg(formMsg, '❌ Napaka: ' + r2.error.message, 'error'); return; }
+              formSuccess.style.display = 'block';
+              formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              setTimeout(doReset, 3000);
+            });
+            return;
+          }
+          showMsg(formMsg, '❌ Napaka: ' + r.error.message, 'error'); return;
+        }
         formSuccess.style.display = 'block';
         formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         setTimeout(doReset, 3000);

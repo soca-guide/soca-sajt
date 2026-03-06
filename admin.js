@@ -1687,24 +1687,63 @@
     taxi:       ['taxi']
   };
 
+  var _CB_STYLE = 'display:flex;align-items:center;gap:4px;font-size:0.8rem;opacity:0.85;' +
+    'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;' +
+    'padding:3px 8px;cursor:pointer;user-select:none';
+  var _CB_INPUT = ' style="accent-color:#22d3ee;cursor:pointer"';
+
   function _syncCategoryByType(type, selectedArr) {
     if (!pfCategoriesWrap) return;
-    // selectedArr = array of selected category keys, e.g. ['rafting','kayak']
     var cats = CAT_BY_TYPE[type] || [];
+    var customInput = document.getElementById('pf-category-custom');
+
+    // Detect custom values: anything not in the predefined list for this type
+    var customVals = (selectedArr || []).filter(function(s) { return cats.indexOf(s) < 0; });
+    var hasCustom = customVals.length > 0;
+
     pfCategoriesWrap.innerHTML = cats.map(function(c) {
       var checked = selectedArr && selectedArr.indexOf(c) >= 0;
-      return '<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;opacity:0.85;' +
-        'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;' +
-        'padding:3px 8px;cursor:pointer;user-select:none">' +
-        '<input type="checkbox" class="pfc-cb" value="' + c + '"' + (checked ? ' checked' : '') +
-        ' style="accent-color:#22d3ee;cursor:pointer"> ' +
+      return '<label style="' + _CB_STYLE + '">' +
+        '<input type="checkbox" class="pfc-cb" value="' + c + '"' + (checked ? ' checked' : '') + _CB_INPUT + '> ' +
         (PARTNER_CAT_LABELS[c] || c) + '</label>';
-    }).join('');
+    }).join('') +
+    '<label style="' + _CB_STYLE + ';border-color:rgba(34,211,238,0.25)">' +
+      '<input type="checkbox" class="pfc-cb pfc-custom-toggle" value="__custom__"' + (hasCustom ? ' checked' : '') + _CB_INPUT + '> ' +
+      '✏️ Prilagođena…' +
+    '</label>';
+
+    if (customInput) {
+      customInput.style.display = hasCustom ? 'block' : 'none';
+      customInput.value = customVals.join(', ');
+    }
+
+    // Wire custom toggle
+    var toggle = pfCategoriesWrap.querySelector('.pfc-custom-toggle');
+    if (toggle && customInput) {
+      toggle.addEventListener('change', function() {
+        customInput.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) customInput.value = '';
+        if (this.checked) customInput.focus();
+      });
+    }
   }
 
   function _getPartnerCatsSelected() {
     if (!pfCategoriesWrap) return [];
-    return Array.from(pfCategoriesWrap.querySelectorAll('.pfc-cb:checked')).map(function(c) { return c.value; });
+    var result = Array.from(pfCategoriesWrap.querySelectorAll('.pfc-cb:checked'))
+      .filter(function(cb) { return cb.value !== '__custom__'; })
+      .map(function(cb) { return cb.value; });
+    var toggle = pfCategoriesWrap.querySelector('.pfc-custom-toggle');
+    if (toggle && toggle.checked) {
+      var customInput = document.getElementById('pf-category-custom');
+      if (customInput && customInput.value.trim()) {
+        customInput.value.trim().split(',').forEach(function(v) {
+          var val = v.trim();
+          if (val && result.indexOf(val) < 0) result.push(val);
+        });
+      }
+    }
+    return result;
   }
 
   if (pfTypeSel) pfTypeSel.addEventListener('change', function() { _syncCategoryByType(this.value, []); });
@@ -1883,12 +1922,32 @@
     };
     if (btnPartnerSave) btnPartnerSave.disabled = true;
     if (partnerFormStatus) { partnerFormStatus.textContent = 'Čuvam…'; partnerFormStatus.className = 'msg'; }
-    var q = id
-      ? sb.from('partners').update(payload).eq('id', id)
-      : sb.from('partners').insert(payload);
-    q.then(function(r) {
+
+    function _doSave(pl) {
+      var q = id
+        ? sb.from('partners').update(pl).eq('id', id)
+        : sb.from('partners').insert(pl);
+      return q;
+    }
+
+    _doSave(payload).then(function(r) {
       if (btnPartnerSave) btnPartnerSave.disabled = false;
-      if (r.error) { if (partnerFormStatus) { partnerFormStatus.textContent = 'Greška: ' + r.error.message; partnerFormStatus.className = 'msg msg--error'; } return; }
+      if (r.error) {
+        // Fallback: if error mentions 'categories' column missing, retry without it
+        if (r.error.message && r.error.message.indexOf('categories') >= 0) {
+          var fallbackPayload = Object.assign({}, payload);
+          delete fallbackPayload.categories;
+          _doSave(fallbackPayload).then(function(r2) {
+            if (r2.error) { if (partnerFormStatus) { partnerFormStatus.textContent = 'Greška: ' + r2.error.message; partnerFormStatus.className = 'msg msg--error'; } return; }
+            if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano! ⚠️ Dodaj kolonu "categories text[]" u Supabase za višestruke kategorije.'; partnerFormStatus.className = 'msg msg--ok'; }
+            partnerFormWrap.style.display = 'none';
+            loadPartners();
+          });
+          return;
+        }
+        if (partnerFormStatus) { partnerFormStatus.textContent = 'Greška: ' + r.error.message; partnerFormStatus.className = 'msg msg--error'; }
+        return;
+      }
       if (partnerFormStatus) { partnerFormStatus.textContent = '✓ Sačuvano!'; partnerFormStatus.className = 'msg msg--ok'; }
       partnerFormWrap.style.display = 'none';
       loadPartners();
