@@ -3645,22 +3645,33 @@
     emergencyListEl.addEventListener('change', function (e) {
       var cb = e.target;
       if (!cb || cb.tagName !== 'INPUT' || cb.type !== 'checkbox') return;
+      if (!cb.dataset.mun) return;
       var row = cb.closest('.emergency-row');
       if (!row) return;
 
       if (cb.dataset.mun === 'svuda') {
-        // "Svuda" checked → uncheck all individual municipalities
         if (cb.checked) {
+          // "Svuda" checked → uncheck all individual municipalities
           KNOWN_MUNICIPALITIES.forEach(function (m) {
             var munCb = row.querySelector('[data-mun="' + m + '"]');
             if (munCb) munCb.checked = false;
           });
         }
-      } else if (cb.dataset.mun) {
-        // Individual municipality checked → uncheck "Svuda"
+      } else {
         if (cb.checked) {
+          // Individual municipality checked → uncheck "Svuda"
           var svudaCb = row.querySelector('[data-mun="svuda"]');
           if (svudaCb) svudaCb.checked = false;
+        } else {
+          // Individual municipality unchecked → if nothing remains, auto-check "Svuda"
+          var anyChecked = KNOWN_MUNICIPALITIES.some(function (m) {
+            var munCb = row.querySelector('[data-mun="' + m + '"]');
+            return munCb && munCb.checked;
+          });
+          if (!anyChecked) {
+            var svudaCb2 = row.querySelector('[data-mun="svuda"]');
+            if (svudaCb2) svudaCb2.checked = true;
+          }
         }
       }
     });
