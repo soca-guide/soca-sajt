@@ -1,5 +1,5 @@
 /* Service Worker - cache version; bump on deploy for instant updates */
-const NEW_VERSION = '20260228-2';
+const NEW_VERSION = '20260306-2';
 const CACHE_NAME = 'app-cache-' + NEW_VERSION;
 var BASE = self.location.pathname.replace(/\/[^/]*$/, '') || '/';
 if (BASE !== '/') BASE += '/';
@@ -12,8 +12,8 @@ var STATIC_ASSETS = [
   BASE + 'assets/utils.js?v=20260228-2',
   BASE + 'assets/content-loader.js?v=20260228-2',
   BASE + 'assets/supabase-client.js?v=20260228-2',
-  BASE + 'assets/tenant-loader.js?v=20260228-2',
-  BASE + 'assets/app.js?v=20260228-2',
+  BASE + 'assets/tenant-loader.js?v=20260306-2',
+  BASE + 'assets/app.js?v=20260306-2',
   BASE + 'assets/modals.css?v=20260228-2',
   BASE + 'assets/modals.js?v=20260228-2',
   BASE + 'assets/analytics.js?v=20260228-2',
