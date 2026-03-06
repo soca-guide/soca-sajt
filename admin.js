@@ -3640,6 +3640,30 @@
         if (row) _deleteEmergencyRow(row);
       }
     });
+
+    // Mutual exclusivity: "Svuda" ↔ individual municipality checkboxes
+    emergencyListEl.addEventListener('change', function (e) {
+      var cb = e.target;
+      if (!cb || cb.tagName !== 'INPUT' || cb.type !== 'checkbox') return;
+      var row = cb.closest('.emergency-row');
+      if (!row) return;
+
+      if (cb.dataset.mun === 'svuda') {
+        // "Svuda" checked → uncheck all individual municipalities
+        if (cb.checked) {
+          KNOWN_MUNICIPALITIES.forEach(function (m) {
+            var munCb = row.querySelector('[data-mun="' + m + '"]');
+            if (munCb) munCb.checked = false;
+          });
+        }
+      } else if (cb.dataset.mun) {
+        // Individual municipality checked → uncheck "Svuda"
+        if (cb.checked) {
+          var svudaCb = row.querySelector('[data-mun="svuda"]');
+          if (svudaCb) svudaCb.checked = false;
+        }
+      }
+    });
   }
   if (btnEmergencyAdd)  btnEmergencyAdd.addEventListener('click', _addEmergencyRow);
   if (btnEmergencySave) btnEmergencySave.addEventListener('click', saveEmergencyItems);
