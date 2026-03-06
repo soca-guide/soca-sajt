@@ -1690,24 +1690,30 @@
   var _CB_STYLE = 'display:flex;align-items:center;gap:4px;font-size:0.8rem;opacity:0.85;' +
     'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;' +
     'padding:3px 8px;cursor:pointer;user-select:none';
-  var _CB_INPUT = ' style="accent-color:#22d3ee;cursor:pointer"';
+  var _CB_INPUT = ' style="accent-color:#22d3ee;cursor:pointer;width:15px;height:15px"';
+
+  // JS-state array tracks selected categories — source of truth for save
+  var _partnerCatsState = [];
 
   function _syncCategoryByType(type, selectedArr) {
-    if (!pfCategoriesWrap) return;
+    // Update state
+    _partnerCatsState = selectedArr ? selectedArr.slice() : [];
+
+    var wrap = document.getElementById('pf-categories-wrap');
+    if (!wrap) return;
+
     var cats = CAT_BY_TYPE[type] || [];
     var customInput = document.getElementById('pf-category-custom');
-
-    // Detect custom values: anything not in the predefined list for this type
-    var customVals = (selectedArr || []).filter(function(s) { return cats.indexOf(s) < 0; });
+    var customVals = _partnerCatsState.filter(function(s) { return cats.indexOf(s) < 0; });
     var hasCustom = customVals.length > 0;
 
-    pfCategoriesWrap.innerHTML = cats.map(function(c) {
-      var checked = selectedArr && selectedArr.indexOf(c) >= 0;
-      return '<label style="' + _CB_STYLE + '">' +
+    wrap.innerHTML = cats.map(function(c) {
+      var checked = _partnerCatsState.indexOf(c) >= 0;
+      return '<label style="' + _CB_STYLE + (checked ? ';border-color:rgba(34,211,238,0.5);background:rgba(34,211,238,0.08)' : '') + '">' +
         '<input type="checkbox" class="pfc-cb" value="' + c + '"' + (checked ? ' checked' : '') + _CB_INPUT + '> ' +
         (PARTNER_CAT_LABELS[c] || c) + '</label>';
     }).join('') +
-    '<label style="' + _CB_STYLE + ';border-color:rgba(34,211,238,0.25)">' +
+    '<label style="' + _CB_STYLE + ';border-color:rgba(34,211,238,0.25)' + (hasCustom ? ';background:rgba(34,211,238,0.08)' : '') + '">' +
       '<input type="checkbox" class="pfc-cb pfc-custom-toggle" value="__custom__"' + (hasCustom ? ' checked' : '') + _CB_INPUT + '> ' +
       '✏️ Prilagođena…' +
     '</label>';
@@ -1717,23 +1723,37 @@
       customInput.value = customVals.join(', ');
     }
 
-    // Wire custom toggle
-    var toggle = pfCategoriesWrap.querySelector('.pfc-custom-toggle');
-    if (toggle && customInput) {
-      toggle.addEventListener('change', function() {
-        customInput.style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) customInput.value = '';
-        if (this.checked) customInput.focus();
+    // Attach change listeners to update JS state on each checkbox click
+    wrap.querySelectorAll('.pfc-cb').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        var val = this.value;
+        if (val === '__custom__') {
+          if (customInput) {
+            customInput.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) customInput.value = '';
+            if (this.checked) customInput.focus();
+          }
+          return;
+        }
+        if (this.checked) {
+          if (_partnerCatsState.indexOf(val) < 0) _partnerCatsState.push(val);
+          this.parentElement.style.borderColor = 'rgba(34,211,238,0.5)';
+          this.parentElement.style.background  = 'rgba(34,211,238,0.08)';
+        } else {
+          _partnerCatsState = _partnerCatsState.filter(function(c) { return c !== val; });
+          this.parentElement.style.borderColor = 'rgba(255,255,255,0.12)';
+          this.parentElement.style.background  = 'rgba(255,255,255,0.05)';
+        }
+        console.log('[categories] state:', _partnerCatsState);
       });
-    }
+    });
   }
 
   function _getPartnerCatsSelected() {
-    if (!pfCategoriesWrap) return [];
-    var result = Array.from(pfCategoriesWrap.querySelectorAll('.pfc-cb:checked'))
-      .filter(function(cb) { return cb.value !== '__custom__'; })
-      .map(function(cb) { return cb.value; });
-    var toggle = pfCategoriesWrap.querySelector('.pfc-custom-toggle');
+    var result = _partnerCatsState.slice();
+    // Include custom text field values if custom toggle is checked
+    var wrap = document.getElementById('pf-categories-wrap');
+    var toggle = wrap && wrap.querySelector('.pfc-custom-toggle');
     if (toggle && toggle.checked) {
       var customInput = document.getElementById('pf-category-custom');
       if (customInput && customInput.value.trim()) {

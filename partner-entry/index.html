@@ -317,40 +317,55 @@
   var _CB_S = 'display:flex;align-items:center;gap:4px;font-size:0.85rem;' +
     'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);' +
     'border-radius:8px;padding:5px 10px;cursor:pointer;user-select:none';
+  var _CB_S_ON = _CB_S + ';border-color:rgba(34,211,238,0.5);background:rgba(34,211,238,0.08)';
+
+  // JS-state array — source of truth for selected categories
+  var _entryCatsState = [];
 
   function syncCats() {
+    _entryCatsState = []; // reset on type change
     var cats = CAT_BY_TYPE[fType.value] || [];
-    if (fCatWrap) {
-      fCatWrap.innerHTML = cats.map(function(c) {
-        return '<label style="' + _CB_S + '">' +
-          '<input type="checkbox" class="pec-cb" value="' + c.v + '" style="accent-color:#22d3ee;cursor:pointer"> ' +
-          c.l + '</label>';
-      }).join('') +
-      '<label style="' + _CB_S + ';border-color:rgba(34,211,238,0.3)">' +
-        '<input type="checkbox" class="pec-cb pec-custom-toggle" value="__custom__" style="accent-color:#22d3ee;cursor:pointer"> ' +
-        '✏️ Prilagođeno…' +
-      '</label>';
+    if (!fCatWrap) return;
+    fCatWrap.innerHTML = cats.map(function(c) {
+      return '<label style="' + _CB_S + '">' +
+        '<input type="checkbox" class="pec-cb" value="' + c.v + '" style="accent-color:#22d3ee;cursor:pointer;width:15px;height:15px"> ' +
+        c.l + '</label>';
+    }).join('') +
+    '<label style="' + _CB_S + ';border-color:rgba(34,211,238,0.3)">' +
+      '<input type="checkbox" class="pec-cb pec-custom-toggle" value="__custom__" style="accent-color:#22d3ee;cursor:pointer;width:15px;height:15px"> ' +
+      '✏️ Prilagođeno…' +
+    '</label>';
 
-      var toggle = fCatWrap.querySelector('.pec-custom-toggle');
-      if (toggle && fCatCustom) {
-        toggle.addEventListener('change', function() {
-          fCatCustom.style.display = this.checked ? 'block' : 'none';
-          if (!this.checked) fCatCustom.value = '';
-          if (this.checked) fCatCustom.focus();
-        });
-      }
-    }
     if (fCatCustom) { fCatCustom.style.display = 'none'; fCatCustom.value = ''; }
+
+    // Attach change listeners to update JS state
+    fCatWrap.querySelectorAll('.pec-cb').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        var val = this.value;
+        if (val === '__custom__') {
+          if (fCatCustom) {
+            fCatCustom.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) fCatCustom.value = '';
+            if (this.checked) fCatCustom.focus();
+          }
+          return;
+        }
+        if (this.checked) {
+          if (_entryCatsState.indexOf(val) < 0) _entryCatsState.push(val);
+          this.parentElement.style.cssText = _CB_S_ON;
+        } else {
+          _entryCatsState = _entryCatsState.filter(function(c) { return c !== val; });
+          this.parentElement.style.cssText = _CB_S;
+        }
+      });
+    });
   }
   fType.addEventListener('change', syncCats);
   syncCats();
 
   function getSelectedCats() {
-    if (!fCatWrap) return [];
-    var result = Array.from(fCatWrap.querySelectorAll('.pec-cb:checked'))
-      .filter(function(cb) { return cb.value !== '__custom__'; })
-      .map(function(cb) { return cb.value; });
-    var toggle = fCatWrap.querySelector('.pec-custom-toggle');
+    var result = _entryCatsState.slice();
+    var toggle = fCatWrap && fCatWrap.querySelector('.pec-custom-toggle');
     if (toggle && toggle.checked && fCatCustom && fCatCustom.value.trim()) {
       fCatCustom.value.trim().split(',').forEach(function(v) {
         var val = v.trim();
