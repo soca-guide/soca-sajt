@@ -3453,6 +3453,23 @@
 
   if (munFilterSelect) munFilterSelect.addEventListener('change', _applyMunFilter);
 
+  function _buildServiceTypeSelect(current) {
+    var opts = [
+      ['',             '— bez tipa —'],
+      ['general',      'Opšta medicina'],
+      ['emergency',    'Hitna pomoć'],
+      ['dental',       'Stomatolog'],
+      ['pharmacy',     'Apoteka'],
+      ['police',       'Policija'],
+      ['firefighters', 'Vatrogasci'],
+    ];
+    return '<select data-field="serviceType" style="font-size:0.82rem;background:#1a2535;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:0.3rem 0.5rem;color:#fff;width:100%">' +
+      opts.map(function(o) {
+        return '<option value="' + o[0] + '"' + (current === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('') +
+    '</select>';
+  }
+
   function renderEmergencyAdmin(items) {
     if (!emergencyListEl) return;
     if (!items || !items.length) {
@@ -3473,10 +3490,11 @@
       row.innerHTML =
         '<div style="display:flex;gap:0.5rem;align-items:center">' +
           '<span style="font-size:0.72rem;opacity:0.45;min-width:1.4rem">#' + (idx + 1) + '</span>' +
-          '<input data-field="name" style="flex:1" type="text" placeholder="Naziv servisa" value="' + _escHtml(dj.name) + '"/>' +
+          '<input data-field="name" style="flex:1" type="text" placeholder="Naziv mesta / lokacije (npr. Bovec)" value="' + _escHtml(dj.name) + '"/>' +
           '<button data-action="delete" style="background:none;border:1px solid rgba(255,80,80,0.35);' +
             'color:#f87171;border-radius:5px;padding:0.15rem 0.45rem;cursor:pointer;font-size:0.78rem">✕</button>' +
         '</div>' +
+        _buildServiceTypeSelect(dj.serviceType || '') +
         '<input data-field="phone"      type="text" placeholder="Telefon (+386 ...)"          value="' + _escHtml(dj.phone)      + '"/>' +
         '<input data-field="address"    type="text" placeholder="Adresa (opciono)"             value="' + _escHtml(dj.address)    + '"/>' +
         '<input data-field="tel"        type="text" placeholder="tel: link — npr. tel:+38656…" value="' + _escHtml(dj.tel)        + '"/>' +
@@ -3524,10 +3542,11 @@
     row.innerHTML =
       '<div style="display:flex;gap:0.5rem;align-items:center">' +
         '<span style="font-size:0.72rem;opacity:0.45;min-width:1.4rem">#' + (idx + 1) + '</span>' +
-        '<input data-field="name" style="flex:1" type="text" placeholder="Naziv servisa" value=""/>' +
+        '<input data-field="name" style="flex:1" type="text" placeholder="Naziv mesta / lokacije (npr. Bovec)" value=""/>' +
         '<button data-action="delete" style="background:none;border:1px solid rgba(255,80,80,0.35);' +
           'color:#f87171;border-radius:5px;padding:0.15rem 0.45rem;cursor:pointer;font-size:0.78rem">✕</button>' +
       '</div>' +
+      _buildServiceTypeSelect('') +
       '<input data-field="phone"      type="text" placeholder="Telefon (+386 ...)"          value=""/>' +
       '<input data-field="address"    type="text" placeholder="Adresa (opciono)"             value=""/>' +
       '<input data-field="tel"        type="text" placeholder="tel: link — npr. tel:+38656…" value=""/>' +
@@ -3564,11 +3583,12 @@
         order:   idx + 1,
         municipalitySlugs: _getMunSlugs(row),
         dataJson: {
-          name:       row.querySelector('[data-field=name]').value.trim(),
-          phone:      row.querySelector('[data-field=phone]').value.trim(),
-          address:    row.querySelector('[data-field=address]').value.trim(),
-          tel:        row.querySelector('[data-field=tel]').value.trim(),
-          directions: row.querySelector('[data-field=directions]').value.trim()
+          name:        row.querySelector('[data-field=name]').value.trim(),
+          serviceType: (row.querySelector('[data-field=serviceType]') || {}).value || '',
+          phone:       row.querySelector('[data-field=phone]').value.trim(),
+          address:     row.querySelector('[data-field=address]').value.trim(),
+          tel:         row.querySelector('[data-field=tel]').value.trim(),
+          directions:  row.querySelector('[data-field=directions]').value.trim()
         }
       });
     });

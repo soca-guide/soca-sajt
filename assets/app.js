@@ -598,7 +598,8 @@
           if (r.error || !r.data || !r.data.length) return; // keep hardcoded fallback
           _emergencyDbCache = r.data.map(function (row) {
             var dj = row.data_json || {};
-            return { name: dj.name || '', address: dj.address || '', phone: dj.phone || '',
+            return { name: dj.name || '', serviceType: dj.serviceType || '',
+                     address: dj.address || '', phone: dj.phone || '',
                      tel: dj.tel || '', web: dj.web || '', directions: dj.directions || '' };
           });
           // Refresh panel only if it is currently open
@@ -636,16 +637,31 @@
         <a href="tel:113" class="quick-help-call-btn">${trans.call || 'Pozovi'}</a>
       </div>`;
       
+      // Prevodi za tipove hitnih službi — koristi se samo u ovoj sekciji
+      const EMERGENCY_SERVICE_TYPES = {
+        general:      { sl: 'Splošna medicina',  en: 'General medicine',   de: 'Allgemeinmedizin', it: 'Medicina generale',  pl: 'Medycyna ogólna',  cs: 'Všeobecné lékařství' },
+        emergency:    { sl: 'Nujna ambulanta',   en: 'Emergency service',  de: 'Notaufnahme',      it: 'Pronto soccorso',    pl: 'Pogotowie',        cs: 'Záchranná služba'    },
+        dental:       { sl: 'Zobozdravstvo',     en: 'Dentist',            de: 'Zahnarzt',         it: 'Dentista',           pl: 'Stomatolog',       cs: 'Zubař'               },
+        pharmacy:     { sl: 'Lekarna',           en: 'Pharmacy',           de: 'Apotheke',         it: 'Farmacia',           pl: 'Apteka',           cs: 'Lékárna'             },
+        police:       { sl: 'Policija',          en: 'Police',             de: 'Polizei',          it: 'Polizia',            pl: 'Policja',          cs: 'Policie'             },
+        firefighters: { sl: 'Gasilci',           en: 'Firefighters',       de: 'Feuerwehr',        it: 'Vigili del fuoco',   pl: 'Straż pożarna',    cs: 'Hasiči'              },
+      };
+
       // Services list — prefer Supabase DB data, fall back to hardcoded APP_DATA
       const services = (_emergencyDbCache && _emergencyDbCache.length)
         ? _emergencyDbCache
         : ((CL && CL.getDataset('emergencyServices')) || []).map(function(s) {
-            return { name: trans[s.nameKey] || s.nameDefault, address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
+            return { name: trans[s.nameKey] || s.nameDefault, serviceType: '', address: s.address, phone: s.phone, tel: s.tel, web: s.web, directions: s.directions };
           });
       
       services.forEach(service => {
+        const typeLabels = service.serviceType && EMERGENCY_SERVICE_TYPES[service.serviceType];
+        const typeLabel  = typeLabels ? (typeLabels[currentLang] || typeLabels.en || '') : '';
+        const serviceName = typeLabel
+          ? typeLabel + (service.name ? ' ' + service.name : '')
+          : service.name;
         html += `<div class="quick-help-service-item">
-          <div class="quick-help-service-name">${service.name}</div>`;
+          <div class="quick-help-service-name">${serviceName}</div>`;
         if (service.address) {
           html += `<div class="quick-help-service-address">${service.address}</div>`;
         }
