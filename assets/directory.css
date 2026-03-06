@@ -130,6 +130,8 @@ body {
 .dir-premium-wrap { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .dir-card--premium {
+  display: flex;
+  flex-direction: column;
   background: var(--dir-glass);
   border: 1px solid rgba(34,211,238,0.25);
   border-radius: var(--dir-radius);
@@ -194,7 +196,7 @@ body {
   font-size: 2.5rem;
   opacity: 0.3;
 }
-.dir-card-body { padding: 0.85rem 1rem 1rem; }
+.dir-card-body { padding: 0.85rem 1rem 1rem; display: flex; flex-direction: column; flex: 1; }
 .dir-card-badge {
   display: inline-block;
   background: rgba(34,211,238,0.15);
@@ -209,7 +211,7 @@ body {
 }
 .dir-card-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; }
 .dir-card-desc { font-size: 0.82rem; color: var(--dir-muted); line-height: 1.5; margin-bottom: 0.7rem; }
-.dir-card-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.dir-card-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem; }
 
 /* ── FEATURED — horizontal scroll ────────────────────────────────────────── */
 .dir-featured-scroll {
@@ -225,6 +227,8 @@ body {
 
 .dir-feat-card {
   flex: 0 0 240px;
+  display: flex;
+  flex-direction: column;
   background: var(--dir-glass);
   border: 1px solid var(--dir-border);
   border-radius: var(--dir-radius);
@@ -250,11 +254,11 @@ body {
   justify-content: center;
 }
 .dir-feat-img--placeholder::after { content: '🏞️'; font-size: 2rem; opacity: 0.3; }
-.dir-feat-body { padding: 0.65rem 0.75rem 0.75rem; }
+.dir-feat-body { padding: 0.65rem 0.75rem 0.75rem; display: flex; flex-direction: column; flex: 1; }
 .dir-feat-cat { font-size: 0.7rem; color: var(--dir-accent); font-weight: 600; margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .dir-feat-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; line-height: 1.3; }
 .dir-feat-desc { font-size: 0.75rem; color: var(--dir-muted); line-height: 1.4; margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.dir-feat-btns { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.dir-feat-btns { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.4rem; }
 
 /* ── STANDARD — compact list ──────────────────────────────────────────────── */
 .dir-standard-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
