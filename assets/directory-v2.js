@@ -216,7 +216,8 @@
 
   function _ytPlayAll(container) {
     var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
-    var delays = [800, 1500, 3000];
+    // Delays: first at 1300ms (logos/images load first), then retries at 2000ms and 3000ms
+    var delays = [1300, 2000, 3000];
     delays.forEach(function(ms) {
       setTimeout(function() {
         var iframes = (container || document).querySelectorAll('iframe[src*="youtube.com/embed"]');
@@ -309,10 +310,11 @@
   }
 
   function _logoEl(p, size) {
-    // size: 'sm' (36px) | 'md' (48px)
     var px = size === 'md' ? '48' : '36';
     if (p.logo_url) {
-      return '<img src="' + _esc(p.logo_url) + '" alt="' + _esc(p.name) + ' logo" class="dir-logo" style="width:' + px + 'px;height:' + px + 'px">';
+      return '<img src="' + _esc(p.logo_url) + '" alt="' + _esc(p.name) + ' logo" class="dir-logo"' +
+        ' style="width:' + px + 'px;height:' + px + 'px"' +
+        ' loading="eager" fetchpriority="high">';
     }
     return '<div class="dir-logo dir-logo--placeholder" style="width:' + px + 'px;height:' + px + 'px">' +
       (p.name ? _esc(p.name.charAt(0).toUpperCase()) : '?') + '</div>';
@@ -467,6 +469,23 @@
   } else {
     init();
   }
+
+  // Preconnect to external origins used by partner logos and YouTube
+  (function() {
+    var origins = [
+      'https://hkztanenhxoducivluor.supabase.co',
+      'https://www.youtube.com',
+      'https://i.ytimg.com',
+      'https://cdn.jsdelivr.net'
+    ];
+    origins.forEach(function(origin) {
+      if (document.querySelector('link[href="' + origin + '"]')) return;
+      var l = document.createElement('link');
+      l.rel = 'preconnect';
+      l.href = origin;
+      document.head.appendChild(l);
+    });
+  })();
 
   // Export for external use
   window.DirectoryPage = { trackClick: trackClick };

@@ -1,23 +1,23 @@
 /* Service Worker - cache version; bump on deploy for instant updates */
-const NEW_VERSION = '20260306-2';
+const NEW_VERSION = '0803-FINAL';
 const CACHE_NAME = 'app-cache-' + NEW_VERSION;
 var BASE = self.location.pathname.replace(/\/[^/]*$/, '') || '/';
 if (BASE !== '/') BASE += '/';
 var STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'assets/app.css?v=20260228-2',
-  BASE + 'assets/config.js?v=20260228-2',
-  BASE + 'assets/i18n.js?v=20260228-2',
-  BASE + 'assets/utils.js?v=20260228-2',
-  BASE + 'assets/content-loader.js?v=20260228-2',
-  BASE + 'assets/supabase-client.js?v=20260228-2',
-  BASE + 'assets/tenant-loader.js?v=20260306-2',
-  BASE + 'assets/app.js?v=20260306-2',
-  BASE + 'assets/modals.css?v=20260228-2',
-  BASE + 'assets/modals.js?v=20260228-2',
-  BASE + 'assets/analytics.js?v=20260228-2',
-  BASE + 'weather-animations.html?v=20260228-2'
+  BASE + 'assets/app.css?v=0803-FINAL',
+  BASE + 'assets/config.js?v=0803-FINAL',
+  BASE + 'assets/i18n.js?v=0803-FINAL',
+  BASE + 'assets/utils.js?v=0803-FINAL',
+  BASE + 'assets/content-loader.js?v=0803-FINAL',
+  BASE + 'assets/supabase-client.js?v=0803-FINAL',
+  BASE + 'assets/tenant-loader.js?v=0803-FINAL',
+  BASE + 'assets/app.js?v=0803-FINAL',
+  BASE + 'assets/modals.css?v=0803-FINAL',
+  BASE + 'assets/modals.js?v=0803-FINAL',
+  BASE + 'assets/analytics.js?v=0803-FINAL',
+  BASE + 'weather-animations.html?v=0803-FINAL'
 ];
 
 self.addEventListener('install', function (e) {
