@@ -320,18 +320,43 @@
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
       var embed = 'https://www.youtube.com/embed/' + _esc(ytId) +
-        '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId) +
-        '&enablejsapi=0&fs=0';
+        '?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0&loop=1&playlist=' + _esc(ytId) +
+        '&controls=0&fs=0';
       return '<div class="' + cls + ' dir-video-wrap">' +
         '<iframe src="' + embed + '" title="' + _esc(p.name) + '"' +
           ' allow="autoplay; encrypted-media; picture-in-picture"' +
-          ' allowfullscreen loading="eager"></iframe>' +
+          ' allowfullscreen></iframe>' +
       '</div>';
     }
     return p.image_url
       ? '<div class="' + cls + '" style="background-image:url(' + _esc(p.image_url) + ')"></div>'
       : '<div class="' + cls + ' ' + cls + '--placeholder"></div>';
   }
+
+  // ── YouTube activation bypass ─────────────────────────────────────────────
+  // On first user gesture (touch or scroll), send playVideo command to all
+  // YouTube iframes on this page. This is the only reliable way to trigger
+  // autoplay on mobile after the user interacts with anything on the page.
+  (function() {
+    var _ytActivated = false;
+    function _activateYT() {
+      if (_ytActivated) return;
+      _ytActivated = true;
+      var iframes = document.querySelectorAll('iframe[src*="youtube.com/embed"]');
+      var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
+      for (var i = 0; i < iframes.length; i++) {
+        try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
+      }
+    }
+    // Also re-run after new iframes may have been rendered (cards load async)
+    function _activateWithDelay() {
+      _ytActivated = false; // allow re-activation for newly loaded iframes
+      setTimeout(_activateYT, 800);
+    }
+    window.addEventListener('touchstart', _activateWithDelay, { once: true, passive: true });
+    window.addEventListener('scroll',     _activateWithDelay, { once: true, passive: true });
+    window.addEventListener('click',      _activateWithDelay, { once: true, passive: true });
+  })();
 
   function _catBadgesHtml(p) {
     var cats = _partnerCats(p);

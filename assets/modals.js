@@ -38,12 +38,11 @@
 
   function openModal(title, url){
     titleEl.textContent = title;
-    // Reset src first so browser treats the new load as a fresh user-activated navigation
-    frame.removeAttribute('src');
+    // Set src immediately while still inside the user gesture (click) context.
+    // This is critical for mobile autoplay — the browser grants activation only
+    // if the iframe src is set synchronously within the user gesture handler.
     frame.src = '';
-    requestAnimationFrame(function() {
-      frame.src = url;
-    });
+    frame.src = url;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     lockScroll(true);
@@ -171,6 +170,24 @@
   window.addEventListener('message', (event) => {
     if (event?.data === 'CLOSE_MODAL') closeModal();
   });
+
+  // YouTube activation bypass — forward first touch/scroll inside the modal
+  // sheet to all YouTube iframes loaded inside vtFrame (cross-origin postMessage)
+  (function() {
+    var sheet = modal && modal.querySelector('.vt-sheet');
+    if (!sheet) return;
+    function _sendPlay() {
+      if (!frame || !frame.contentWindow) return;
+      var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
+      try { frame.contentWindow.postMessage(msg, '*'); } catch(e) {}
+    }
+    sheet.addEventListener('touchstart', function() {
+      setTimeout(_sendPlay, 300);
+    }, { once: false, passive: true });
+    sheet.addEventListener('scroll', function() {
+      setTimeout(_sendPlay, 300);
+    }, { once: false, passive: true });
+  })();
 
   // =========================
   // Drag & drop + save order (menu-grid / menu-card)
