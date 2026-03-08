@@ -211,127 +211,6 @@
     });
   }
 
-  // ── YouTube IFrame API ────────────────────────────────────────────────────
-
-  var _ytApiReady = false;
-  var _ytApiLoading = false;
-  var _ytPendingPlayers = [];
-  var _ytPlayerCount = 0;
-
-  function _loadYtApi() {
-    if (_ytApiReady || _ytApiLoading) return;
-    _ytApiLoading = true;
-    // Skip if already loaded by another instance (e.g. page reload)
-    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      // API script present but onYouTubeIframeAPIReady not yet called — wait
-      return;
-    }
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-  }
-
-  // YouTube calls this globally when API is ready
-  var _prevOnYtReady = window.onYouTubeIframeAPIReady;
-  window.onYouTubeIframeAPIReady = function() {
-    _ytApiReady = true;
-    if (typeof _prevOnYtReady === 'function') _prevOnYtReady();
-    var pending = _ytPendingPlayers.slice();
-    _ytPendingPlayers = [];
-    pending.forEach(function(el) { _createPlayer(el); });
-  };
-
-  function _createPlayer(el) {
-    var ytId = el.getAttribute('data-ytid');
-    if (!ytId) return;
-    if (!window.YT || typeof window.YT.Player !== 'function') {
-      _ytPendingPlayers.push(el);
-      return;
-    }
-    if (!el.id) {
-      el.id = 'yt-player-' + (++_ytPlayerCount);
-    }
-    var elId = el.id;
-
-    // Build iframe as raw HTML string with hardcoded, unencoded origin.
-    // encodeURIComponent breaks Safari's postMessage origin check — the
-    // origin= param must appear exactly as https://www.revantora.com in the src.
-    var src = 'https://www.youtube.com/embed/' + ytId +
-      '?enablejsapi=1' +
-      '&autoplay=1' +
-      '&mute=1' +
-      '&playsinline=1' +
-      '&controls=0' +
-      '&rel=0' +
-      '&loop=1' +
-      '&playlist=' + ytId +
-      '&origin=https://www.revantora.com';
-
-    var wrap = el.parentNode;
-    // Insert as HTML string so the browser parses it natively —
-    // avoids any property-setter normalisation that createElement can apply.
-    el.outerHTML = '<iframe id="' + elId + '"' +
-      ' src="' + src + '"' +
-      ' data-version="3"' +
-      ' allow="autoplay; encrypted-media; picture-in-picture"' +
-      ' allowfullscreen' +
-      ' style="position:absolute;inset:0;width:100%;height:100%;border:0;">' +
-      '</iframe>';
-
-    // Re-query the now-live iframe element from DOM
-    var iframeEl = document.getElementById(elId);
-    if (!iframeEl) return;
-
-    // Attach YT.Player only for events — src/params already set above
-    try {
-      new window.YT.Player(iframeEl, {
-        events: {
-          onReady: function(e) {
-            setTimeout(function() {
-              try {
-                var p = e.target;
-                if (p && typeof p.mute === 'function')      p.mute();
-                if (p && typeof p.playVideo === 'function') p.playVideo();
-              } catch(err) {}
-            }, 500);
-          },
-          onError: function() {}
-        }
-      });
-    } catch(err) {
-      console.warn('[YT] player init failed:', err);
-    }
-  }
-
-  function _initYtPlayers(container) {
-    var placeholders = (container || document).querySelectorAll('[data-ytid]');
-    if (!placeholders.length) return;
-    _loadYtApi();
-    placeholders.forEach(function(el) {
-      if (_ytApiReady) {
-        // Already ready — init immediately
-        _createPlayer(el);
-      } else if (window.IntersectionObserver) {
-        // Queue player init when element enters viewport AND API is ready
-        var obs = new IntersectionObserver(function(entries, o) {
-          entries.forEach(function(entry) {
-            if (!entry.isIntersecting) return;
-            o.disconnect();
-            if (_ytApiReady) {
-              _createPlayer(el);
-            } else {
-              _ytPendingPlayers.push(el);
-            }
-          });
-        }, { threshold: 0.1 });
-        obs.observe(el);
-      } else {
-        // Fallback: no IntersectionObserver
-        _ytPendingPlayers.push(el);
-      }
-    });
-  }
-
   // Fisher-Yates shuffle — returns a new shuffled copy, original untouched
   function _shuffle(arr) {
     var a = arr.slice();
@@ -358,7 +237,6 @@
       if (tier === 'premium')  sec.innerHTML = group.map(_cardPremium).join('');
       if (tier === 'featured') sec.innerHTML = group.map(_cardFeatured).join('');
       if (tier === 'standard') sec.innerHTML = group.map(_cardStandard).join('');
-      _initYtPlayers(sec);
 
       // Bind clicks + track impressions
       sec.querySelectorAll('[data-pid]').forEach(function (el) {
@@ -442,9 +320,15 @@
     var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
-      // YT IFrame API replaces this div with an iframe via YT.Player
+      var src = 'https://www.youtube.com/embed/' + _esc(ytId) +
+        '?autoplay=1&mute=1&loop=1&playlist=' + _esc(ytId) +
+        '&playsinline=1&controls=0&modestbranding=1&rel=0';
       return '<div class="' + cls + ' dir-video-wrap">' +
-        '<div data-ytid="' + _esc(ytId) + '" style="width:100%;height:100%"></div>' +
+        '<iframe src="' + src + '"' +
+          ' allow="autoplay; encrypted-media"' +
+          ' allowfullscreen playsinline' +
+          ' style="position:absolute;inset:0;width:100%;height:100%;border:0;">' +
+        '</iframe>' +
       '</div>';
     }
     return p.image_url
