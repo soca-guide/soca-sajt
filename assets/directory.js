@@ -319,10 +319,11 @@
     var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
-      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) + '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId);
+      var origin = encodeURIComponent(location.origin || 'https://soca.guide');
+      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) + '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId) + '&origin=' + origin + '&enablejsapi=0';
       var thumb = 'https://img.youtube.com/vi/' + _esc(ytId) + '/hqdefault.jpg';
       return '<div class="' + cls + ' dir-video-wrap">' +
-        '<iframe src="' + embed + '" title="' + _esc(p.name) + ' video cover" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
+        '<iframe src="' + embed + '" title="' + _esc(p.name) + ' video cover" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
         '<a href="' + _esc(p.cover_youtube_url) + '" class="dir-video-fallback" target="_blank" rel="noopener" onclick="event.stopPropagation()">' +
           '<img src="' + thumb + '" alt="' + _esc(p.name) + ' video thumbnail">' +
           '<span>▶</span>' +
