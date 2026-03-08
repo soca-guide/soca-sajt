@@ -182,9 +182,6 @@
   function renderAll(partners) {
     _renderChips(partners);
     _renderSections(getFiltered());
-    // Auto-trigger after render — works if user-gesture context is still active
-    // (e.g. user tapped the menu card to open this page)
-    _ytPlayAll(document);
   }
 
   function _renderChips(partners) {
@@ -214,17 +211,71 @@
     });
   }
 
-  function _ytPlayAll(container) {
-    var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
-    // Delays: first at 1300ms (logos/images load first), then retries at 2000ms and 3000ms
-    var delays = [1300, 2000, 3000];
-    delays.forEach(function(ms) {
-      setTimeout(function() {
-        var iframes = (container || document).querySelectorAll('iframe[src*="youtube.com/embed"]');
-        for (var i = 0; i < iframes.length; i++) {
-          try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
+  // ── YouTube IFrame API ────────────────────────────────────────────────────
+  // Proper implementation: load YT IFrame API script once, then use YT.Player
+  // with onReady callback. No raw postMessage, no timers, no race conditions.
+
+  var _ytApiReady = false;
+  var _ytApiLoading = false;
+  var _ytPendingPlayers = []; // elements waiting for API to be ready
+
+  function _loadYtApi() {
+    if (_ytApiReady || _ytApiLoading) return;
+    _ytApiLoading = true;
+    var tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }
+
+  // Called by YouTube when API is ready
+  window.onYouTubeIframeAPIReady = function() {
+    _ytApiReady = true;
+    // Initialize all players that were waiting
+    _ytPendingPlayers.forEach(function(el) { _createPlayer(el); });
+    _ytPendingPlayers = [];
+  };
+
+  function _createPlayer(el) {
+    var ytId = el.getAttribute('data-ytid');
+    if (!ytId) return;
+    if (!window.YT || typeof window.YT.Player !== 'function') {
+      _ytPendingPlayers.push(el);
+      return;
+    }
+    // Replace the placeholder div with a real YT.Player
+    new window.YT.Player(el, {
+      videoId: ytId,
+      playerVars: {
+        autoplay: 1,
+        mute:     1,
+        playsinline: 1,
+        controls: 0,
+        rel:      0,
+        loop:     1,
+        playlist: ytId,
+        fs:       0,
+        modestbranding: 1
+      },
+      events: {
+        onReady: function(e) {
+          var p = e.target;
+          if (p && typeof p.mute === 'function') p.mute();
+          if (p && typeof p.playVideo === 'function') p.playVideo();
         }
-      }, ms);
+      }
+    });
+  }
+
+  function _initYtPlayers(container) {
+    var placeholders = (container || document).querySelectorAll('[data-ytid]');
+    if (!placeholders.length) return;
+    _loadYtApi();
+    placeholders.forEach(function(el) {
+      if (_ytApiReady) {
+        _createPlayer(el);
+      } else {
+        _ytPendingPlayers.push(el);
+      }
     });
   }
 
@@ -254,7 +305,7 @@
       if (tier === 'premium')  sec.innerHTML = group.map(_cardPremium).join('');
       if (tier === 'featured') sec.innerHTML = group.map(_cardFeatured).join('');
       if (tier === 'standard') sec.innerHTML = group.map(_cardStandard).join('');
-      _ytPlayAll(sec);
+      _initYtPlayers(sec);
 
       // Bind clicks + track impressions
       sec.querySelectorAll('[data-pid]').forEach(function (el) {
@@ -338,30 +389,15 @@
     var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
-      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) +
-        '?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0&loop=1&playlist=' + _esc(ytId) +
-        '&controls=0&fs=0';
+      // YT IFrame API replaces this div with an iframe via YT.Player
       return '<div class="' + cls + ' dir-video-wrap">' +
-        '<iframe src="' + embed + '" title="' + _esc(p.name) + '"' +
-          ' allow="autoplay; encrypted-media; picture-in-picture"' +
-          ' allowfullscreen></iframe>' +
+        '<div data-ytid="' + _esc(ytId) + '" style="width:100%;height:100%"></div>' +
       '</div>';
     }
     return p.image_url
       ? '<div class="' + cls + '" style="background-image:url(' + _esc(p.image_url) + ')"></div>'
       : '<div class="' + cls + ' ' + cls + '--placeholder"></div>';
   }
-
-  // ── YouTube activation bypass ─────────────────────────────────────────────
-  // On every user gesture send playVideo to all YouTube iframes on the page.
-  // This covers: initial load, tab switches, and any subsequent re-renders.
-  (function() {
-    function _activateAll() {
-      _ytPlayAll(document);
-    }
-    window.addEventListener('touchstart', _activateAll, { passive: true });
-    window.addEventListener('scroll',     _activateAll, { passive: true });
-  })();
 
   function _catBadgesHtml(p) {
     var cats = _partnerCats(p);
@@ -469,23 +505,6 @@
   } else {
     init();
   }
-
-  // Preconnect to external origins used by partner logos and YouTube
-  (function() {
-    var origins = [
-      'https://hkztanenhxoducivluor.supabase.co',
-      'https://www.youtube.com',
-      'https://i.ytimg.com',
-      'https://cdn.jsdelivr.net'
-    ];
-    origins.forEach(function(origin) {
-      if (document.querySelector('link[href="' + origin + '"]')) return;
-      var l = document.createElement('link');
-      l.rel = 'preconnect';
-      l.href = origin;
-      document.head.appendChild(l);
-    });
-  })();
 
   // Export for external use
   window.DirectoryPage = { trackClick: trackClick };

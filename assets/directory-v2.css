@@ -153,7 +153,10 @@ body {
   position: relative;
   overflow: hidden;
 }
-.dir-video-wrap iframe {
+.dir-card-img.dir-video-wrap  { height: 180px; }
+.dir-feat-img.dir-video-wrap  { height: 130px; }
+.dir-video-wrap iframe,
+.dir-video-wrap > div {
   position: absolute;
   inset: 0;
   width: 100%;
