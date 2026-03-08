@@ -254,11 +254,14 @@
     }
     try {
       new window.YT.Player(el.id, {
+        host:    'https://www.youtube.com',
         videoId: ytId,
         playerVars: {
           autoplay:        1,
           mute:            1,
           playsinline:     1,
+          enablejsapi:     1,
+          origin:          window.location.origin,
           controls:        0,
           rel:             0,
           loop:            1,
