@@ -248,27 +248,29 @@
       _ytPendingPlayers.push(el);
       return;
     }
-    // Ensure element has a DOM id — YT.Player requires it
     if (!el.id) {
       el.id = 'yt-player-' + (++_ytPlayerCount);
     }
+    var cleanOrigin = (window.location.origin || '').replace(/\/+$/, '');
+    console.log('[YT] creating player, origin =', cleanOrigin, '| videoId =', ytId);
     try {
       new window.YT.Player(el.id, {
         host:    'https://www.youtube.com',
         videoId: ytId,
         playerVars: {
-          autoplay:        1,
-          mute:            1,
-          playsinline:     1,
-          enablejsapi:     1,
-          origin:          window.location.origin,
-          controls:        0,
-          rel:             0,
-          loop:            1,
-          playlist:        ytId,
-          fs:              0,
-          modestbranding:  1,
-          iv_load_policy:  3
+          autoplay:         1,
+          mute:             1,
+          playsinline:      1,
+          enablejsapi:      1,
+          origin:           cleanOrigin,
+          widget_referrer:  cleanOrigin,
+          controls:         0,
+          rel:              0,
+          loop:             1,
+          playlist:         ytId,
+          fs:               0,
+          modestbranding:   1,
+          iv_load_policy:   3
         },
         events: {
           onReady: function(e) {
@@ -282,7 +284,7 @@
         }
       });
     } catch(err) {
-      // AdBlock or network error — fail silently, card content remains intact
+      console.warn('[YT] player init failed:', err);
     }
   }
 
