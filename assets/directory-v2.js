@@ -212,27 +212,33 @@
   }
 
   // ── YouTube IFrame API ────────────────────────────────────────────────────
-  // Proper implementation: load YT IFrame API script once, then use YT.Player
-  // with onReady callback. No raw postMessage, no timers, no race conditions.
 
   var _ytApiReady = false;
   var _ytApiLoading = false;
-  var _ytPendingPlayers = []; // elements waiting for API to be ready
+  var _ytPendingPlayers = [];
+  var _ytPlayerCount = 0;
 
   function _loadYtApi() {
     if (_ytApiReady || _ytApiLoading) return;
     _ytApiLoading = true;
+    // Skip if already loaded by another instance (e.g. page reload)
+    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      // API script present but onYouTubeIframeAPIReady not yet called — wait
+      return;
+    }
     var tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(tag);
   }
 
-  // Called by YouTube when API is ready
+  // YouTube calls this globally when API is ready
+  var _prevOnYtReady = window.onYouTubeIframeAPIReady;
   window.onYouTubeIframeAPIReady = function() {
     _ytApiReady = true;
-    // Initialize all players that were waiting
-    _ytPendingPlayers.forEach(function(el) { _createPlayer(el); });
+    if (typeof _prevOnYtReady === 'function') _prevOnYtReady();
+    var pending = _ytPendingPlayers.slice();
     _ytPendingPlayers = [];
+    pending.forEach(function(el) { _createPlayer(el); });
   };
 
   function _createPlayer(el) {
@@ -242,28 +248,39 @@
       _ytPendingPlayers.push(el);
       return;
     }
-    // Replace the placeholder div with a real YT.Player
-    new window.YT.Player(el, {
-      videoId: ytId,
-      playerVars: {
-        autoplay: 1,
-        mute:     1,
-        playsinline: 1,
-        controls: 0,
-        rel:      0,
-        loop:     1,
-        playlist: ytId,
-        fs:       0,
-        modestbranding: 1
-      },
-      events: {
-        onReady: function(e) {
-          var p = e.target;
-          if (p && typeof p.mute === 'function') p.mute();
-          if (p && typeof p.playVideo === 'function') p.playVideo();
+    // Ensure element has a DOM id — YT.Player requires it
+    if (!el.id) {
+      el.id = 'yt-player-' + (++_ytPlayerCount);
+    }
+    try {
+      new window.YT.Player(el.id, {
+        videoId: ytId,
+        playerVars: {
+          autoplay:        1,
+          mute:            1,
+          playsinline:     1,
+          controls:        0,
+          rel:             0,
+          loop:            1,
+          playlist:        ytId,
+          fs:              0,
+          modestbranding:  1,
+          iv_load_policy:  3
+        },
+        events: {
+          onReady: function(e) {
+            try {
+              var p = e.target;
+              if (p && typeof p.mute === 'function')      p.mute();
+              if (p && typeof p.playVideo === 'function') p.playVideo();
+            } catch(err) {}
+          },
+          onError: function() {}
         }
-      }
-    });
+      });
+    } catch(err) {
+      // AdBlock or network error — fail silently, card content remains intact
+    }
   }
 
   function _initYtPlayers(container) {
@@ -272,8 +289,24 @@
     _loadYtApi();
     placeholders.forEach(function(el) {
       if (_ytApiReady) {
+        // Already ready — init immediately
         _createPlayer(el);
+      } else if (window.IntersectionObserver) {
+        // Queue player init when element enters viewport AND API is ready
+        var obs = new IntersectionObserver(function(entries, o) {
+          entries.forEach(function(entry) {
+            if (!entry.isIntersecting) return;
+            o.disconnect();
+            if (_ytApiReady) {
+              _createPlayer(el);
+            } else {
+              _ytPendingPlayers.push(el);
+            }
+          });
+        }, { threshold: 0.1 });
+        obs.observe(el);
       } else {
+        // Fallback: no IntersectionObserver
         _ytPendingPlayers.push(el);
       }
     });
