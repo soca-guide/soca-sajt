@@ -211,6 +211,16 @@
     });
   }
 
+  function _ytPlayAll(container) {
+    var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
+    setTimeout(function() {
+      var iframes = (container || document).querySelectorAll('iframe[src*="youtube.com/embed"]');
+      for (var i = 0; i < iframes.length; i++) {
+        try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
+      }
+    }, 1200);
+  }
+
   // Fisher-Yates shuffle — returns a new shuffled copy, original untouched
   function _shuffle(arr) {
     var a = arr.slice();
@@ -237,22 +247,7 @@
       if (tier === 'premium')  sec.innerHTML = group.map(_cardPremium).join('');
       if (tier === 'featured') sec.innerHTML = group.map(_cardFeatured).join('');
       if (tier === 'standard') sec.innerHTML = group.map(_cardStandard).join('');
-      // After injecting new iframes, send playVideo to each one.
-      // We are inside a user gesture (click/touch on tab), so browser allows this.
       _ytPlayAll(sec);
-    });
-  }
-
-  function _ytPlayAll(container) {
-    var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
-    // Short delay so iframes have time to initialize their JS API
-    setTimeout(function() {
-      var iframes = (container || document).querySelectorAll('iframe[src*="youtube.com/embed"]');
-      for (var i = 0; i < iframes.length; i++) {
-        try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
-      }
-    }, 1200);
-  }
 
       // Bind clicks + track impressions
       sec.querySelectorAll('[data-pid]').forEach(function (el) {
