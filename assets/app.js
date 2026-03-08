@@ -3487,10 +3487,12 @@
           var catLabel = trans[catKey] || meta.cat;
           var mapUrl = item.url || '#';
           html += '<a href="' + mapUrl + '" target="_blank" rel="noopener noreferrer" class="de-card">' +
-            '<div class="de-icon-wrap de-icon-' + meta.cat + '">' + meta.icon + '</div>' +
-            '<div class="de-info">' +
-              '<div class="de-name">' + title + '</div>' +
-              '<div class="de-category">' + catLabel + '</div>' +
+            '<div class="de-card-top">' +
+              '<div class="de-icon-wrap de-icon-' + meta.cat + '">' + meta.icon + '</div>' +
+              '<div class="de-info">' +
+                '<div class="de-name">' + title + '</div>' +
+                '<div class="de-category">' + catLabel + '</div>' +
+              '</div>' +
             '</div>' +
             '<span class="de-map-btn">📍 ' + openMapLabel + '</span>' +
             '</a>';

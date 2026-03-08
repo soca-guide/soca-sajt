@@ -348,7 +348,7 @@
         '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">' +
           _logoEl(p, 'md') +
           '<div>' +
-            '<div class="dir-card-badge">' + _catBadgesHtml(p) + '</div>' +
+            '<div class="dir-card-badge" style="display:none"></div>' +
             '<h3 class="dir-card-name" style="margin:0">' + _esc(p.name) + '</h3>' +
           '</div>' +
         '</div>' +
@@ -363,7 +363,7 @@
     return '<article class="dir-feat-card" data-pid="' + _esc(p.id) + '">' +
       heroHtml +
       '<div class="dir-feat-body">' +
-        '<div class="dir-feat-cat">' + _catBadgesHtml(p) + '</div>' +
+        '<div class="dir-feat-cat" style="display:none"></div>' +
         '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem">' +
           _logoEl(p, 'sm') +
           '<h3 class="dir-feat-name" style="margin:0">' + _esc(p.name) + '</h3>' +
@@ -375,11 +375,12 @@
 
   function _cardStandard(p) {
     return '<article class="dir-row" data-pid="' + _esc(p.id) + '">' +
-      _logoEl(p, 'sm') +
-      '<div class="dir-row-main">' +
-        '<span class="dir-row-name">' + _esc(p.name) + '</span>' +
-        '<span class="dir-row-cat">' + _catBadgesHtml(p) + '</span>' +
-        (p.short_desc ? '<span class="dir-row-desc">' + _esc(p.short_desc.substring(0,80)) + '</span>' : '') +
+      '<div class="dir-row-top">' +
+        _logoEl(p, 'sm') +
+        '<div class="dir-row-main">' +
+          '<span class="dir-row-name">' + _esc(p.name) + '</span>' +
+          (p.short_desc ? '<span class="dir-row-desc">' + _esc(p.short_desc.substring(0,80)) + '</span>' : '') +
+        '</div>' +
       '</div>' +
       '<div class="dir-row-btns">' + _btns(p) + '</div>' +
     '</article>';
