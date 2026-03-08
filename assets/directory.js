@@ -319,11 +319,13 @@
     var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
-      var embed = 'https://www.youtube-nocookie.com/embed/' + _esc(ytId) +
-        '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId);
+      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) +
+        '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId) +
+        '&enablejsapi=0&fs=0';
       return '<div class="' + cls + ' dir-video-wrap">' +
         '<iframe src="' + embed + '" title="' + _esc(p.name) + '"' +
-          ' allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
+          ' allow="autoplay; encrypted-media; picture-in-picture"' +
+          ' allowfullscreen loading="eager"></iframe>' +
       '</div>';
     }
     return p.image_url

@@ -38,7 +38,12 @@
 
   function openModal(title, url){
     titleEl.textContent = title;
-    frame.src = url;
+    // Reset src first so browser treats the new load as a fresh user-activated navigation
+    frame.removeAttribute('src');
+    frame.src = '';
+    requestAnimationFrame(function() {
+      frame.src = url;
+    });
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     lockScroll(true);
