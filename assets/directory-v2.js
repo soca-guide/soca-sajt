@@ -251,15 +251,12 @@
     if (!el.id) {
       el.id = 'yt-player-' + (++_ytPlayerCount);
     }
+    var elId = el.id;
 
-    // Use exact origin from address bar — no manipulation, no trailing slash fix.
-    // window.location.origin is always correct (e.g. "https://www.revantora.com").
-    var origin = window.location.origin;
-    console.log('[YT] origin =', origin, '| videoId =', ytId);
-
-    // Manually build the iframe so we — not the API's internal URL builder —
-    // control the exact origin value in the embed URL.
-    var iframeSrc = 'https://www.youtube.com/embed/' + ytId +
+    // Build iframe as raw HTML string with hardcoded, unencoded origin.
+    // encodeURIComponent breaks Safari's postMessage origin check — the
+    // origin= param must appear exactly as https://www.revantora.com in the src.
+    var src = 'https://www.youtube.com/embed/' + ytId +
       '?enablejsapi=1' +
       '&autoplay=1' +
       '&mute=1' +
@@ -268,34 +265,35 @@
       '&rel=0' +
       '&loop=1' +
       '&playlist=' + ytId +
-      '&fs=0' +
-      '&modestbranding=1' +
-      '&iv_load_policy=3' +
-      '&origin=' + encodeURIComponent(origin) +
-      '&widgetid=1';
+      '&origin=https://www.revantora.com';
 
-    var iframe = document.createElement('iframe');
-    iframe.id            = el.id;
-    iframe.src           = iframeSrc;
-    iframe.setAttribute('data-version', '3');
-    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+    var wrap = el.parentNode;
+    // Insert as HTML string so the browser parses it natively —
+    // avoids any property-setter normalisation that createElement can apply.
+    el.outerHTML = '<iframe id="' + elId + '"' +
+      ' src="' + src + '"' +
+      ' data-version="3"' +
+      ' allow="autoplay; encrypted-media; picture-in-picture"' +
+      ' allowfullscreen' +
+      ' style="position:absolute;inset:0;width:100%;height:100%;border:0;">' +
+      '</iframe>';
 
-    // Replace placeholder div with the iframe
-    el.parentNode.replaceChild(iframe, el);
+    // Re-query the now-live iframe element from DOM
+    var iframeEl = document.getElementById(elId);
+    if (!iframeEl) return;
 
-    // Hand the already-created iframe to YT.Player — only events, no playerVars
-    // (params are already baked into the src URL above)
+    // Attach YT.Player only for events — src/params already set above
     try {
-      new window.YT.Player(iframe, {
+      new window.YT.Player(iframeEl, {
         events: {
           onReady: function(e) {
-            try {
-              var p = e.target;
-              if (p && typeof p.mute === 'function')      p.mute();
-              if (p && typeof p.playVideo === 'function') p.playVideo();
-            } catch(err) {}
+            setTimeout(function() {
+              try {
+                var p = e.target;
+                if (p && typeof p.mute === 'function')      p.mute();
+                if (p && typeof p.playVideo === 'function') p.playVideo();
+              } catch(err) {}
+            }, 500);
           },
           onError: function() {}
         }
