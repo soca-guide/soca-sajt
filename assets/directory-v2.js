@@ -251,27 +251,44 @@
     if (!el.id) {
       el.id = 'yt-player-' + (++_ytPlayerCount);
     }
-    var cleanOrigin = (window.location.origin || '').replace(/\/+$/, '');
-    console.log('[YT] creating player, origin =', cleanOrigin, '| videoId =', ytId);
+
+    // Use exact origin from address bar — no manipulation, no trailing slash fix.
+    // window.location.origin is always correct (e.g. "https://www.revantora.com").
+    var origin = window.location.origin;
+    console.log('[YT] origin =', origin, '| videoId =', ytId);
+
+    // Manually build the iframe so we — not the API's internal URL builder —
+    // control the exact origin value in the embed URL.
+    var iframeSrc = 'https://www.youtube.com/embed/' + ytId +
+      '?enablejsapi=1' +
+      '&autoplay=1' +
+      '&mute=1' +
+      '&playsinline=1' +
+      '&controls=0' +
+      '&rel=0' +
+      '&loop=1' +
+      '&playlist=' + ytId +
+      '&fs=0' +
+      '&modestbranding=1' +
+      '&iv_load_policy=3' +
+      '&origin=' + encodeURIComponent(origin) +
+      '&widgetid=1';
+
+    var iframe = document.createElement('iframe');
+    iframe.id            = el.id;
+    iframe.src           = iframeSrc;
+    iframe.setAttribute('data-version', '3');
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+
+    // Replace placeholder div with the iframe
+    el.parentNode.replaceChild(iframe, el);
+
+    // Hand the already-created iframe to YT.Player — only events, no playerVars
+    // (params are already baked into the src URL above)
     try {
-      new window.YT.Player(el.id, {
-        host:    'https://www.youtube.com',
-        videoId: ytId,
-        playerVars: {
-          autoplay:         1,
-          mute:             1,
-          playsinline:      1,
-          enablejsapi:      1,
-          origin:           cleanOrigin,
-          widget_referrer:  cleanOrigin,
-          controls:         0,
-          rel:              0,
-          loop:             1,
-          playlist:         ytId,
-          fs:               0,
-          modestbranding:   1,
-          iv_load_policy:   3
-        },
+      new window.YT.Player(iframe, {
         events: {
           onReady: function(e) {
             try {
