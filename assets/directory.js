@@ -315,23 +315,17 @@
     return '';
   }
 
-  var _isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
   function _coverMediaHtml(p, variant) {
     var cls = variant === 'featured' ? 'dir-feat-img' : 'dir-card-img';
     var ytId = _ytIdFromUrl(p.cover_youtube_url);
     if (ytId) {
       var origin = encodeURIComponent(location.origin || 'https://soca.guide');
-      var embedBase = 'https://www.youtube.com/embed/' + _esc(ytId) + '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId) + '&origin=' + origin;
-      var thumb = 'https://img.youtube.com/vi/' + _esc(ytId) + '/hqdefault.jpg';
-      if (_isMobile) {
-        return '<div class="' + cls + ' dir-video-wrap dir-video-tap" data-embed="' + _esc(embedBase) + '">' +
-          '<img class="dir-video-thumb" src="' + thumb + '" alt="' + _esc(p.name) + ' video">' +
-          '<button class="dir-video-play-btn" aria-label="Play video" onclick="event.stopPropagation();(function(w){var i=document.createElement(\'iframe\');i.src=w.dataset.embed;i.allow=\'autoplay; encrypted-media; picture-in-picture\';i.allowFullscreen=true;i.style.cssText=\'position:absolute;inset:0;width:100%;height:100%;border:0\';w.innerHTML=\'\';w.appendChild(i);})(this.closest(\'.dir-video-tap\'))">▶</button>' +
-        '</div>';
-      }
+      var embed = 'https://www.youtube.com/embed/' + _esc(ytId) +
+        '?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&loop=1&playlist=' + _esc(ytId) +
+        '&origin=' + origin;
       return '<div class="' + cls + ' dir-video-wrap">' +
-        '<iframe src="' + embedBase + '" title="' + _esc(p.name) + ' video cover" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
+        '<iframe src="' + embed + '" title="' + _esc(p.name) + ' video"' +
+          ' allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' +
       '</div>';
     }
     return p.image_url

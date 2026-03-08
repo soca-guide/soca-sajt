@@ -161,34 +161,6 @@ body {
   border: 0;
   display: block;
 }
-/* Mobile tap-to-play */
-.dir-video-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: brightness(0.82);
-}
-.dir-video-play-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  font-size: 1.4rem;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: 3px;
-  transition: background 0.15s, transform 0.15s;
-}
-.dir-video-play-btn:hover { background: rgba(34,211,238,0.75); transform: translate(-50%,-50%) scale(1.1); }
 .dir-card-img--placeholder {
   background: linear-gradient(135deg, rgba(34,211,238,0.12) 0%, rgba(6,182,212,0.06) 100%);
   display: flex;
