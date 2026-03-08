@@ -237,6 +237,22 @@
       if (tier === 'premium')  sec.innerHTML = group.map(_cardPremium).join('');
       if (tier === 'featured') sec.innerHTML = group.map(_cardFeatured).join('');
       if (tier === 'standard') sec.innerHTML = group.map(_cardStandard).join('');
+      // After injecting new iframes, send playVideo to each one.
+      // We are inside a user gesture (click/touch on tab), so browser allows this.
+      _ytPlayAll(sec);
+    });
+  }
+
+  function _ytPlayAll(container) {
+    var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
+    // Short delay so iframes have time to initialize their JS API
+    setTimeout(function() {
+      var iframes = (container || document).querySelectorAll('iframe[src*="youtube.com/embed"]');
+      for (var i = 0; i < iframes.length; i++) {
+        try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
+      }
+    }, 1200);
+  }
 
       // Bind clicks + track impressions
       sec.querySelectorAll('[data-pid]').forEach(function (el) {
@@ -334,28 +350,14 @@
   }
 
   // ── YouTube activation bypass ─────────────────────────────────────────────
-  // On first user gesture (touch or scroll), send playVideo command to all
-  // YouTube iframes on this page. This is the only reliable way to trigger
-  // autoplay on mobile after the user interacts with anything on the page.
+  // On every user gesture send playVideo to all YouTube iframes on the page.
+  // This covers: initial load, tab switches, and any subsequent re-renders.
   (function() {
-    var _ytActivated = false;
-    function _activateYT() {
-      if (_ytActivated) return;
-      _ytActivated = true;
-      var iframes = document.querySelectorAll('iframe[src*="youtube.com/embed"]');
-      var msg = JSON.stringify({ event: 'command', func: 'playVideo', args: '' });
-      for (var i = 0; i < iframes.length; i++) {
-        try { iframes[i].contentWindow.postMessage(msg, '*'); } catch(e) {}
-      }
+    function _activateAll() {
+      _ytPlayAll(document);
     }
-    // Also re-run after new iframes may have been rendered (cards load async)
-    function _activateWithDelay() {
-      _ytActivated = false; // allow re-activation for newly loaded iframes
-      setTimeout(_activateYT, 800);
-    }
-    window.addEventListener('touchstart', _activateWithDelay, { once: true, passive: true });
-    window.addEventListener('scroll',     _activateWithDelay, { once: true, passive: true });
-    window.addEventListener('click',      _activateWithDelay, { once: true, passive: true });
+    window.addEventListener('touchstart', _activateAll, { passive: true });
+    window.addEventListener('scroll',     _activateAll, { passive: true });
   })();
 
   function _catBadgesHtml(p) {
